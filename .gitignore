@@ -23,3 +23,8 @@ dist/
 tmp/
 files.lst
 project-tree.txt
+
+# toml
+/pdf_annot.toml
+/pdf-annotations.toml
+/envs/*.toml

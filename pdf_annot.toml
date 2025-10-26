@@ -1,0 +1,28 @@
+# Minimal example configuration for pdf-annotations
+
+[paths]
+# REQUIRED: directory containing your notes named like "(ID).md"
+notes_root = "~/notes/pdf-annotations"
+
+# OPTIONAL: registry location (file or directory)
+# pdf_registry = "~/docs/registry.csv"
+
+# OPTIONAL: where to store backups (if/when implemented)
+# backup_dir = "~/notes/.backups"
+
+[frontmatter]
+title_field = "pdf_title"
+size_field  = "pdf_size"
+
+[io]
+atomic_writes = true
+create_missing_dirs = true
+
+[cli]
+# default_env = "dev"  # only used if you add multiple profiles under [envs.<name>]
+
+# Example of profiles (optional):
+# [envs.dev.paths]
+# notes_root = "~/notes/dev-vault"
+# [envs.prod.paths]
+# notes_root = "/srv/notes/prod"

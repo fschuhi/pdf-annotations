@@ -1,0 +1,7 @@
+[paths]
+notes_root = "./tests/fixtures/data/notes"
+pdf_dirs   = ["./tests/fixtures/data/pdfs"]
+backup_dir = "./tests/fixtures/data/baks"
+
+[io]
+create_missing_dirs = true
