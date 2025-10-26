@@ -34,7 +34,13 @@ class NoteInfo:
 
 class NotesDB(Mapping[str, NoteInfo]):
     """
-    Mapping-like database of notes keyed by normalized pdf_id (lowercased).
+    Lightweight index of Markdown notes named exactly "(ID).md".
+
+    * ID matching is case-insensitive; keys are normalized (e.g., "keating 1995").
+    * Only files whose basename matches r'^.+.+.md$' are included; variants like "(ID) v2.md" are ignored.
+    * Stores per-note metadata (path, mtime, size) and parsed front matter.
+    Raises:
+    DuplicateNoteIdError: when two or more notes share the same ID (case-insensitive).
     """
 
     def __init__(self, root: str, index: Dict[str, NoteInfo]) -> None:
@@ -113,6 +119,13 @@ class NotesDB(Mapping[str, NoteInfo]):
 
     @dataclass(frozen=True)
     class UpdatePlan:
+        """
+        Proposed front-matter changes for a single note.
+
+        Attributes:
+        note_path: Path to the Markdown file.
+        fields: Dict[str, Any] of keys to set/update in YAML front matter.
+        """
         pdf_id: str
         note_path: str
         desired_fields: Dict[str, object]
@@ -120,12 +133,28 @@ class NotesDB(Mapping[str, NoteInfo]):
 
     @dataclass(frozen=True)
     class PlanSummary:
+        """
+        Output of planning step.
+
+        Attributes:
+        plans: List[UpdatePlan]
+        missing_notes: Set[str] pdf_ids present in registry but missing as "(ID).md"
+        orphan_notes: Set[str] notes that have no matching pdf_id in registry
+        """
         plans: List["NotesDB.UpdatePlan"]
         missing_notes: List[str]
         orphan_notes: List[str]
 
     @dataclass(frozen=True)
     class ApplySummary:
+        """
+        Result of apply step.
+
+        Attributes:
+        updated: List[Path]
+        skipped: List[Path]
+        errors: List[tuple[Path, Exception]]
+        """
         updated: List[str]  # note paths
         unchanged: List[str]
         errors: List[Tuple[str, str]]  # (note_path, error_message)
@@ -139,21 +168,23 @@ class NotesDB(Mapping[str, NoteInfo]):
         size_attr: str = "size",
     ) -> "NotesDB.PlanSummary":
         """
-        Plan updates by joining NotesDB with a PDF DB.
+        Compare notes with a PDF registry and propose front-matter changes.
 
-        Assumptions about pdf_db values (duck-typed):
-        - An object per pdf_id, accessible case-insensitively by lowercased keys, or we normalize here.
-        - Attributes/keys:
-          - pdf_id: str
-          - title_from_filename: str (or via title_attr_path tuple)
-          - size: int (bytes)
+        Args:
+        pdfs: Mapping[str, Any] or Iterable[Any].
+        Each record must expose at least:
+        - pdf_id (normalized identifier, e.g., "Keating 1995")
+        - title_from_filename (or similar title)
+        - size (bytes)
+        Both dict-like (obj["field"]) and attribute-like (obj.field) records are supported.
+        title_field: Name of the front-matter key to store the PDF title (default: "pdf_title").
+        size_field: Name of the front-matter key to store file size in bytes (default: "pdf_size").
 
-        You can adapt attribute paths through parameters if your PdfInfo differs.
-
-        Returns PlanSummary with:
-        - plans: list of updates for notes that have corresponding PDFs
-        - missing_notes: pdf_ids present in pdf_db but not in notes
-        - orphan_notes: pdf_ids present in notes but not in pdf_db
+        Returns:
+        PlanSummary: with
+        - plans: list[UpdatePlan]
+        - missing_notes: set[str] (pdf_ids without a corresponding note)
+        - orphan_notes: set[str] (notes without a corresponding pdf entry)
         """
         # Normalize pdf_db to a dict keyed by lowercased pdf_id
         def norm_key(x: str) -> str:
@@ -227,8 +258,19 @@ class NotesDB(Mapping[str, NoteInfo]):
         logger: Optional[object] = None,
     ) -> "NotesDB.ApplySummary":
         """
-        Apply plans using frontmatter.upsert_fields. Writes atomically when not dry_run.
-        Logger can be any object with .info/.warning/.error(str).
+        Apply a list of UpdatePlan changes to note files.
+        * Writes are atomic: content is written to a temp file and moved into place.
+        * If dry_run is True, no files are changed; a preview result is returned.
+
+        Args:
+        plans: Iterable[UpdatePlan] produced by plan_frontmatter_updates.
+        dry_run: If True, only simulate changes.
+
+        Returns:
+        ApplySummary with:
+        - updated: list[pathlib.Path] successfully updated (or would be updated in dry-run)
+        - skipped: list[pathlib.Path] with no changes needed
+        - errors: list[tuple[pathlib.Path, Exception]] for failures
         """
         updated: List[str] = []
         unchanged: List[str] = []
@@ -292,4 +334,3 @@ class NotesDB(Mapping[str, NoteInfo]):
                 errors.append((path, str(e)))
 
         return NotesDB.ApplySummary(updated=updated, unchanged=unchanged, errors=errors)
-    
