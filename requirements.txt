@@ -1,0 +1,9 @@
+-e .
+numpy~=2.3
+packaging~=25.0
+Pygments~=2.19
+PyMuPDF~=1.26
+pytest~=8.4
+pluggy~=1.6
+iniconfig~=2.3
+pyyaml

@@ -1,0 +1,25 @@
+# Virtual environments
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Test cache
+.pytest_cache/
+
+# Packaging artifacts
+*.egg-info/
+build/
+dist/
+
+# OS files
+.DS_Store
+
+# PyCharm
+.idea/
+
+# local files
+tmp/
+files.lst
+project-tree.txt
