@@ -73,6 +73,8 @@ class Frontmatter(BaseModel):
 
     title_field: str = Field(default="pdf_title", description="YAML key for PDF title.")
     size_field: str = Field(default="pdf_size", description="YAML key for PDF file size in bytes.")
+    has_annots_field: str = Field(default="has_annotations", description="YAML key for boolean flag: any annotations present.")
+    last_run_field: str = Field(default="last_run_at", description="YAML key for ISO 8601 timestamp of last workflow run.")
 
 
 class IO(BaseModel):
@@ -216,6 +218,8 @@ def _build_env_from_data(data: Mapping[str, Any], profile: Optional[str]) -> Env
         "backup_dir": ("paths", "backup_dir"),
         "title_field": ("frontmatter", "title_field"),
         "size_field": ("frontmatter", "size_field"),
+        "has_annots_field": ("frontmatter", "has_annots_field"),
+        "last_run_field": ("frontmatter", "last_run_field"),
         "atomic_writes": ("io", "atomic_writes"),
         "create_missing_dirs": ("io", "create_missing_dirs"),
         "default_env": ("cli", "default_env"),

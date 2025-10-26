@@ -13,6 +13,8 @@ notes_root = "~/notes/pdf-annotations"
 [frontmatter]
 title_field = "pdf_title"
 size_field  = "pdf_size"
+# has_annots_field = "has_annotations"
+# last_run_field = "last_run_at"
 
 [io]
 atomic_writes = true

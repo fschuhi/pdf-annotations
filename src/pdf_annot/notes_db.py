@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Dict, Iterable, Iterator, List, Mapping, Optional, Tuple
 
 from .frontmatter import parse_note, upsert_fields
+from .env import Env
 
 CONTROLLED_MD_RE = re.compile(r"^\((?P<id>.+?)\)\.md$", re.IGNORECASE)
 
@@ -46,6 +47,14 @@ class NotesDB(Mapping[str, NoteInfo]):
     def __init__(self, root: str, index: Dict[str, NoteInfo]) -> None:
         self.root = os.path.abspath(root)
         self._index = index
+
+    @classmethod
+    def from_env(cls, env: "Env") -> "NotesDB":
+        """
+        Build a NotesDB using env.paths.notes_root.
+        This is just a convenience wrapper around build().
+        """
+        return cls.build(str(env.paths.notes_root))
 
     @classmethod
     def build(cls, vault_root: str) -> "NotesDB":

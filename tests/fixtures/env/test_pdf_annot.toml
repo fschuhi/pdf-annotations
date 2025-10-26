@@ -3,5 +3,11 @@ notes_root = "./tests/fixtures/data/notes"
 pdf_dirs   = ["./tests/fixtures/data/pdfs"]
 backup_dir = "./tests/fixtures/data/baks"
 
+[frontmatter]
+title_field = "pdf_title"
+size_field  = "pdf_size"
+# has_annots_field = "has_annotations"
+# last_run_field = "last_run_at"
+
 [io]
 create_missing_dirs = true
