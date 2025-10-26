@@ -14,7 +14,7 @@ Prerequisites: Python 3.13+
 
 ```bash
 # 1) Clone and enter the project
-git clone <YOUR-REPO-URL>.git
+git clone https://github.com/fschuhi/pdf-annotations
 cd pdf_annot
 ```
 
