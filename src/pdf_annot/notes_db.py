@@ -40,6 +40,7 @@ class NotesDB(Mapping[str, NoteInfo]):
     * ID matching is case-insensitive; keys are normalized (e.g., "keating 1995").
     * Only files whose basename matches r'^.+.+.md$' are included; variants like "(ID) v2.md" are ignored.
     * Stores per-note metadata (path, mtime, size) and parsed front matter.
+    * front matter updates only, body updates are not handled yet
     Raises:
     DuplicateNoteIdError: when two or more notes share the same ID (case-insensitive).
     """
@@ -127,7 +128,7 @@ class NotesDB(Mapping[str, NoteInfo]):
     # Planning and applying updates
 
     @dataclass(frozen=True)
-    class UpdatePlan:
+    class FrontmatterUpdatePlan:
         """
         Proposed front-matter changes for a single note.
 
@@ -137,11 +138,11 @@ class NotesDB(Mapping[str, NoteInfo]):
         """
         pdf_id: str
         note_path: str
-        desired_fields: Dict[str, object]
-        current_fields: Dict[str, object]
+        desired_frontmatter: Dict[str, object]
+        current_frontmatter: Dict[str, object]
 
     @dataclass(frozen=True)
-    class PlanSummary:
+    class FrontmatterPlanSummary:
         """
         Output of planning step.
 
@@ -150,12 +151,12 @@ class NotesDB(Mapping[str, NoteInfo]):
         missing_notes: Set[str] pdf_ids present in registry but missing as "(ID).md"
         orphan_notes: Set[str] notes that have no matching pdf_id in registry
         """
-        plans: List["NotesDB.UpdatePlan"]
+        plans: List["NotesDB.FrontmatterUpdatePlan"]
         missing_notes: List[str]
         orphan_notes: List[str]
 
     @dataclass(frozen=True)
-    class ApplySummary:
+    class FrontmatterApplySummary:
         """
         Result of apply step.
 
@@ -175,7 +176,7 @@ class NotesDB(Mapping[str, NoteInfo]):
         pdf_id_attr: str = "pdf_id",
         title_attr_path: Tuple[str, ...] = ("title_from_filename",),
         size_attr: str = "size",
-    ) -> "NotesDB.PlanSummary":
+    ) -> "NotesDB.FrontmatterPlanSummary":
         """
         Compare notes with a PDF registry and propose front-matter changes.
 
@@ -219,7 +220,7 @@ class NotesDB(Mapping[str, NoteInfo]):
                 continue
             pdf_index[pid] = v
 
-        plans: List[NotesDB.UpdatePlan] = []
+        plans: List[NotesDB.FrontmatterUpdatePlan] = []
         missing_notes: List[str] = []
         orphan_notes: List[str] = []
 
@@ -250,22 +251,22 @@ class NotesDB(Mapping[str, NoteInfo]):
                     would_change = True
                     break
             if would_change:
-                plans.append(NotesDB.UpdatePlan(pdf_id=note.pdf_id, note_path=note.abs_path, desired_fields=desired, current_fields=current))
+                plans.append(NotesDB.FrontmatterUpdatePlan(pdf_id=note.pdf_id, note_path=note.abs_path, desired_frontmatter=desired, current_frontmatter=current))
 
         # Orphans: notes with no pdf counterpart
         for pid in self._index.keys():
             if pid not in pdf_index:
                 orphan_notes.append(self._index[pid].pdf_id)
 
-        return NotesDB.PlanSummary(plans=plans, missing_notes=missing_notes, orphan_notes=orphan_notes)
+        return NotesDB.FrontmatterPlanSummary(plans=plans, missing_notes=missing_notes, orphan_notes=orphan_notes)
 
     def apply_frontmatter_updates(
         self,
-        plans: Iterable["NotesDB.UpdatePlan"],
+        plans: Iterable["NotesDB.FrontmatterUpdatePlan"],
         *,
         dry_run: bool = False,
         logger: Optional[object] = None,
-    ) -> "NotesDB.ApplySummary":
+    ) -> "NotesDB.FrontmatterApplySummary":
         """
         Apply a list of UpdatePlan changes to note files.
         * Writes are atomic: content is written to a temp file and moved into place.
@@ -297,7 +298,7 @@ class NotesDB(Mapping[str, NoteInfo]):
                 errors.append((path, str(e)))
                 continue
 
-            changed, new_text = upsert_fields(original, plan.desired_fields)
+            changed, new_text = upsert_fields(original, plan.desired_frontmatter)
             if not changed:
                 unchanged.append(path)
                 if logger:
@@ -342,4 +343,5 @@ class NotesDB(Mapping[str, NoteInfo]):
                     logger.error(msg)
                 errors.append((path, str(e)))
 
-        return NotesDB.ApplySummary(updated=updated, unchanged=unchanged, errors=errors)
+        return NotesDB.FrontmatterApplySummary(updated=updated, unchanged=unchanged, errors=errors)
+

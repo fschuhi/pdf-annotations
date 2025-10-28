@@ -20,7 +20,7 @@ class PdfInfo:
     # Identity and naming
     pdf_id: str                 # e.g., "(Das 2000b)"
     pdf_hash: str               # 7-letter hash from lowercase pdf_id
-    publication_name: str       # filename sans pdf_id and extension
+    pdf_title: str              # filename sans pdf_id and extension
     authors: str                # "Smith+Doe" (as parsed)
     year: str                   # "2015a" or "2015" or ""
 
@@ -95,9 +95,9 @@ def pdf_info_from_path(path: str, *, dropbox_root: Optional[str] = None) -> Opti
     # Hash is calculated from lowercase pdf_id
     pdf_hash = crc32_az7(pdf_id.lower())
 
-    # publication_name is the remainder after "(Authors Year) "
-    # parse_filename already exposes paper_name for bracket-format
-    publication_name = pf.paper_name
+    # pdf_title is the remainder after "(Authors Year) "
+    # parse_filename already exposes pdf_title for bracket-format
+    pdf_title = pf.pdf_title
 
     st = os.stat(path)
     abs_path = os.path.abspath(path)
@@ -106,7 +106,7 @@ def pdf_info_from_path(path: str, *, dropbox_root: Optional[str] = None) -> Opti
     return PdfInfo(
         pdf_id=pdf_id,
         pdf_hash=pdf_hash,
-        publication_name=publication_name,
+        pdf_title=pdf_title,
         authors=pf.authors,
         year=pf.year,
         abs_path=abs_path,

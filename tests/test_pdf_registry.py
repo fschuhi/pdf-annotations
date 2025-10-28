@@ -38,7 +38,7 @@ def test_pdf_info_from_path_basic_fields(tmp_path: Path):
     info = pdf_info_from_path(str(p))
     assert info is not None
     assert info.pdf_id == "(Sciortino+Kayser 2021)"
-    assert info.publication_name == "The rubber hand illusion"
+    assert info.pdf_title == "The rubber hand illusion"
     assert info.authors == "Sciortino+Kayser"
     assert info.year == "2021"
     # hash of lowercase id
@@ -58,7 +58,7 @@ def test_pdf_info_with_diacritics_retained(tmp_path: Path):
     assert info is not None
     # Preserve diacritics in id; hash computed from lowercase id
     assert info.pdf_id == "(müller 2018)"
-    assert info.publication_name == "Überlegung"
+    assert info.pdf_title == "Überlegung"
     assert info.pdf_hash == crc32_az7("(müller 2018)")  # function lowercases internally
 
 

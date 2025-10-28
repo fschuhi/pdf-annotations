@@ -32,7 +32,7 @@ gentree:
 
 # Concatenate files listed in files.lst into tmp/filesdump.txt
 filesdump: venv
-	. .venv/bin/activate && mkdir -p tmp && concat-files files.lst > tmp/filesdump.txt
+	. .venv/bin/activate && mkdir -p tmp && python tools/concat_files.py files.lst > tmp/filesdump.txt
 
 discover-pdfs: venv
 	. .venv/bin/activate && python tools/discover_pdfs.py --env tests/fixtures/env/test_pdf_annot.toml --relative-to .

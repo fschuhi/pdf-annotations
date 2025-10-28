@@ -52,7 +52,7 @@ class ParsedFilename:
     path: str
     filename_with_ext: str
     filename: str
-    paper_name: str
+    pdf_title: str
     authors: str
     year: str
 
@@ -112,7 +112,7 @@ def parse_filename(full_path: str) -> ParsedFilename:
     path, filename_with_ext = os.path.split(full_path)
     filename, ext = os.path.splitext(filename_with_ext)
 
-    paper_name = ""
+    pdf_title = ""
     authors = ""
     year = ""
 
@@ -122,19 +122,19 @@ def parse_filename(full_path: str) -> ParsedFilename:
             bracket = m.group("bracket")
             rest = m.group("rest").strip()
             authors, year = _split_bracket(bracket)
-            paper_name = rest
+            pdf_title = rest
     else:
         parts = filename.split(" - ")
         if len(parts) >= 3:
             authors = parts[0].strip()
             year = parts[1].strip()
-            paper_name = " - ".join(p.strip() for p in parts[2:])
+            pdf_title = " - ".join(p.strip() for p in parts[2:])
 
     return ParsedFilename(
         path=path,
         filename_with_ext=filename_with_ext,
         filename=filename_with_ext,  # VBA "full filename w/o path" includes extension
-        paper_name=paper_name,
+        pdf_title=pdf_title,
         authors=authors,
         year=year,
     )

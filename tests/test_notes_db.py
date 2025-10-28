@@ -140,8 +140,8 @@ def test_apply_handles_read_errors_and_write_errors(tmp_path: Path):
     # Craft a plan that will fail reading by pointing to a missing path
     bad_path = vault / "missing.md"
     plans = [
-        NotesDB.UpdatePlan(
-            pdf_id="Err 2020", note_path=str(bad_path), desired_fields={"pdf_title": "X"}, current_fields={}
+        NotesDB.FrontmatterUpdatePlan(
+            pdf_id="Err 2020", note_path=str(bad_path), desired_frontmatter={"pdf_title": "X"}, current_frontmatter={}
         ),
     ]
     summary = db.apply_frontmatter_updates(plans, dry_run=False)
@@ -151,8 +151,8 @@ def test_apply_handles_read_errors_and_write_errors(tmp_path: Path):
     # Now create a plan that cannot write: simulate by making directory read-only
     # On some systems, chmod may not fully prevent replace; we best-effort attempt and accept either path
     plans2 = [
-        NotesDB.UpdatePlan(
-            pdf_id="Err 2020", note_path=str(path), desired_fields={"pdf_title": "X"}, current_fields={}
+        NotesDB.FrontmatterUpdatePlan(
+            pdf_id="Err 2020", note_path=str(path), desired_frontmatter={"pdf_title": "X"}, current_frontmatter={}
         ),
     ]
     old_mode = (vault.stat().st_mode) & 0o777
