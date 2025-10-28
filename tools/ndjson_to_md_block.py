@@ -50,7 +50,7 @@ class Annot:
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Convert streamlined NDJSON to Obsidian annotation markdown block.")
-    p.add_argument("--pdf-id", required=True, help="7-letter document hash to embed in pdf:// links, e.g., DZWIIEZ")
+    p.add_argument("--pdf-id", required=True, help="7-letter document hash to embed in pdf:// links, e.g., VQGPEHE")
     p.add_argument("--in", dest="infile", default="-", help="Input NDJSON file path or '-' for stdin")
     p.add_argument(
         "--info-text",

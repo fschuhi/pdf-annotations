@@ -21,7 +21,7 @@ def test_ndjson_to_md_block_matches_golden():
     env["PYTHONPATH"] = str(ROOT / "src")
 
     proc = subprocess.run(
-        [sys.executable, str(TOOLS), "--pdf-id", "DZWIIEZ", "--in", str(INPUT)],
+        [sys.executable, str(TOOLS), "--pdf-id", "VQGPEHE", "--in", str(INPUT)],
         cwd=str(ROOT),
         env=env,
         stdout=subprocess.PIPE,

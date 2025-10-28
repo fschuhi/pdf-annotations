@@ -36,7 +36,7 @@ def test_plan_create_and_apply_block(tmp_path: Path):
 
         <span class="pdf-annot-info">below the automatically generated annotations from the PDF</span>
 
-        > Quote A [1](pdf://DZWIIEZ?page=1)
+        > Quote A [1](pdf://VQGPEHE?page=1)
         """
     )
 
