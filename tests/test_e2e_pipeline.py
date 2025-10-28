@@ -61,8 +61,10 @@ class TestE2EPipeline(unittest.TestCase):
         # `python streamline_annotations.py -i <raw_file> -o <final_file>`
         streamline_argv = [
             "streamline_annotations.py",
-            "-i", str(actual_raw_ndjson_path),
-            "-o", str(actual_streamlined_ndjson_path)
+            "-i",
+            str(actual_raw_ndjson_path),
+            "-o",
+            str(actual_streamlined_ndjson_path),
         ]
         with patch("sys.argv", streamline_argv):
             return_code = streamline_main()

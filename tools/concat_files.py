@@ -4,6 +4,7 @@ import sys
 
 SEP_FMT = "\n\n# ===== {name} =====\n\n"
 
+
 def concat(list_file: Path, out):
     if not list_file.exists():
         out.write(f"Error: Cannot read file '{list_file}'\n")
@@ -38,6 +39,7 @@ def concat(list_file: Path, out):
     out.write("\n")
     return 0
 
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
@@ -48,6 +50,7 @@ def main(argv=None):
 
     list_file = Path(argv[0])
     return concat(list_file, sys.stdout)
+
 
 if __name__ == "__main__":
     sys.exit(main())

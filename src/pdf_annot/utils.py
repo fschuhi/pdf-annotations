@@ -11,6 +11,7 @@ from typing import List, Optional, Tuple
 # Core hashing utilities
 # -----------------------------------------------------------------------------
 
+
 def crc32_az7(text: str) -> str:
     """
     Generate a 7-character uppercase A–Z fingerprint from input text,
@@ -47,6 +48,7 @@ def hash_text(authors: str) -> str:
 # Filename parsing
 # -----------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class ParsedFilename:
     path: str
@@ -79,13 +81,17 @@ class ParsedFilename:
 # - Bracket format: "(Authors Year[letter]) Rest of title.pdf"
 #   Authors may be "A" or "A+B+C". Year can be "2015" or "2015a".
 # - Dash format: "Authors - 2015[a] - Title.pdf"
-_BRACKET_RE = re.compile(r"""
+_BRACKET_RE = re.compile(
+    r"""
     ^\(
       (?P<bracket>[^)]*)
     \)
     \s*
     (?P<rest>.*)$
-""", re.VERBOSE)
+""",
+    re.VERBOSE,
+)
+
 
 def _split_bracket(bracket: str) -> Tuple[str, str]:
     # Split bracket content into authors and year: last space separates

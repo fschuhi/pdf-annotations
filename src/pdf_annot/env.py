@@ -7,9 +7,7 @@ from typing import Any, Mapping, Optional, Sequence
 try:
     import tomllib  # Python 3.11+
 except Exception as e:  # pragma: no cover
-    raise RuntimeError(
-        "tomllib is required (Python 3.11+). You're on an unsupported interpreter."
-    ) from e
+    raise RuntimeError("tomllib is required (Python 3.11+). You're on an unsupported interpreter.") from e
 
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
@@ -30,9 +28,7 @@ class Paths(BaseModel):
         default_factory=list,
         description="One or more directories containing PDFs to scan.",
     )
-    backup_dir: Optional[Path] = Field(
-        None, description="Optional directory to store backups (e.g., .bak files)."
-    )
+    backup_dir: Optional[Path] = Field(None, description="Optional directory to store backups (e.g., .bak files).")
 
     @field_validator("notes_root", mode="before")
     @classmethod
@@ -73,8 +69,12 @@ class Frontmatter(BaseModel):
 
     title_field: str = Field(default="pdf_title", description="YAML key for PDF title.")
     size_field: str = Field(default="pdf_size", description="YAML key for PDF file size in bytes.")
-    has_annots_field: str = Field(default="has_annotations", description="YAML key for boolean flag: any annotations present.")
-    last_run_field: str = Field(default="last_run_at", description="YAML key for ISO 8601 timestamp of last workflow run.")
+    has_annots_field: str = Field(
+        default="has_annotations", description="YAML key for boolean flag: any annotations present."
+    )
+    last_run_field: str = Field(
+        default="last_run_at", description="YAML key for ISO 8601 timestamp of last workflow run."
+    )
 
 
 class IO(BaseModel):
@@ -83,9 +83,7 @@ class IO(BaseModel):
     """
 
     atomic_writes: bool = Field(default=True, description="Write files atomically where possible.")
-    create_missing_dirs: bool = Field(
-        default=True, description="Create configured directories if they do not exist."
-    )
+    create_missing_dirs: bool = Field(default=True, description="Create configured directories if they do not exist.")
 
 
 class CLI(BaseModel):

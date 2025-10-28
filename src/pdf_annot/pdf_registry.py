@@ -18,17 +18,17 @@ class DuplicatePdfIdError(Exception):
 @dataclass(frozen=True)
 class PdfInfo:
     # Identity and naming
-    pdf_id: str                 # e.g., "(Das 2000b)"
-    pdf_hash: str               # 7-letter hash from lowercase pdf_id
-    pdf_title: str              # filename sans pdf_id and extension
-    authors: str                # "Smith+Doe" (as parsed)
-    year: str                   # "2015a" or "2015" or ""
+    pdf_id: str  # e.g., "(Das 2000b)"
+    pdf_hash: str  # 7-letter hash from lowercase pdf_id
+    pdf_title: str  # filename sans pdf_id and extension
+    authors: str  # "Smith+Doe" (as parsed)
+    year: str  # "2015a" or "2015" or ""
 
     # Paths and filesystem
-    abs_path: str               # absolute path to the PDF (native separators)
+    abs_path: str  # absolute path to the PDF (native separators)
     dropbox_rel_path: Optional[str]  # POSIX-style path relative to dropbox_root, if provided
-    size: int                   # file size in bytes
-    mtime: float                # mtime (epoch seconds)
+    size: int  # file size in bytes
+    mtime: float  # mtime (epoch seconds)
 
     # Original filename with extension (for reference)
     filename_with_ext: str

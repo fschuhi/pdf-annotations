@@ -5,12 +5,17 @@ import os
 import re
 import tempfile
 from dataclasses import dataclass
-from typing import Dict, Iterable, Iterator, List, Mapping, Optional, Tuple
+from typing import Dict, Iterable, Iterator, List, Mapping, Optional, Tuple, Mapping as TypingMapping
 
 from .frontmatter import parse_note, upsert_fields
 from .env import Env
 
 CONTROLLED_MD_RE = re.compile(r"^\((?P<id>.+?)\)\.md$", re.IGNORECASE)
+
+# Annotation block markers
+ANNOT_SEP = '<hr class="pdf-annot-sep">'
+ANNOT_INFO_PREFIX = '<span class="pdf-annot-info">'
+NEWLINE = "\n"
 
 
 class DuplicateNoteIdError(Exception):
@@ -125,7 +130,7 @@ class NotesDB(Mapping[str, NoteInfo]):
     def items(self) -> Iterable[Tuple[str, NoteInfo]]:  # type: ignore[override]
         return self._index.items()
 
-    # Planning and applying updates
+    # Planning and applying frontmatter updates
 
     @dataclass(frozen=True)
     class FrontmatterUpdatePlan:
@@ -136,6 +141,7 @@ class NotesDB(Mapping[str, NoteInfo]):
         note_path: Path to the Markdown file.
         fields: Dict[str, Any] of keys to set/update in YAML front matter.
         """
+
         pdf_id: str
         note_path: str
         desired_frontmatter: Dict[str, object]
@@ -151,6 +157,7 @@ class NotesDB(Mapping[str, NoteInfo]):
         missing_notes: Set[str] pdf_ids present in registry but missing as "(ID).md"
         orphan_notes: Set[str] notes that have no matching pdf_id in registry
         """
+
         plans: List["NotesDB.FrontmatterUpdatePlan"]
         missing_notes: List[str]
         orphan_notes: List[str]
@@ -165,6 +172,7 @@ class NotesDB(Mapping[str, NoteInfo]):
         skipped: List[Path]
         errors: List[tuple[Path, Exception]]
         """
+
         updated: List[str]  # note paths
         unchanged: List[str]
         errors: List[Tuple[str, str]]  # (note_path, error_message)
@@ -179,23 +187,8 @@ class NotesDB(Mapping[str, NoteInfo]):
     ) -> "NotesDB.FrontmatterPlanSummary":
         """
         Compare notes with a PDF registry and propose front-matter changes.
-
-        Args:
-        pdfs: Mapping[str, Any] or Iterable[Any].
-        Each record must expose at least:
-        - pdf_id (normalized identifier, e.g., "Keating 1995")
-        - title_from_filename (or similar title)
-        - size (bytes)
-        Both dict-like (obj["field"]) and attribute-like (obj.field) records are supported.
-        title_field: Name of the front-matter key to store the PDF title (default: "pdf_title").
-        size_field: Name of the front-matter key to store file size in bytes (default: "pdf_size").
-
-        Returns:
-        PlanSummary: with
-        - plans: list[UpdatePlan]
-        - missing_notes: set[str] (pdf_ids without a corresponding note)
-        - orphan_notes: set[str] (notes without a corresponding pdf entry)
         """
+
         # Normalize pdf_db to a dict keyed by lowercased pdf_id
         def norm_key(x: str) -> str:
             return x.lower()
@@ -251,7 +244,14 @@ class NotesDB(Mapping[str, NoteInfo]):
                     would_change = True
                     break
             if would_change:
-                plans.append(NotesDB.FrontmatterUpdatePlan(pdf_id=note.pdf_id, note_path=note.abs_path, desired_frontmatter=desired, current_frontmatter=current))
+                plans.append(
+                    NotesDB.FrontmatterUpdatePlan(
+                        pdf_id=note.pdf_id,
+                        note_path=note.abs_path,
+                        desired_frontmatter=desired,
+                        current_frontmatter=current,
+                    )
+                )
 
         # Orphans: notes with no pdf counterpart
         for pid in self._index.keys():
@@ -271,16 +271,6 @@ class NotesDB(Mapping[str, NoteInfo]):
         Apply a list of UpdatePlan changes to note files.
         * Writes are atomic: content is written to a temp file and moved into place.
         * If dry_run is True, no files are changed; a preview result is returned.
-
-        Args:
-        plans: Iterable[UpdatePlan] produced by plan_frontmatter_updates.
-        dry_run: If True, only simulate changes.
-
-        Returns:
-        ApplySummary with:
-        - updated: list[pathlib.Path] successfully updated (or would be updated in dry-run)
-        - skipped: list[pathlib.Path] with no changes needed
-        - errors: list[tuple[pathlib.Path, Exception]] for failures
         """
         updated: List[str] = []
         unchanged: List[str] = []
@@ -345,3 +335,207 @@ class NotesDB(Mapping[str, NoteInfo]):
 
         return NotesDB.FrontmatterApplySummary(updated=updated, unchanged=unchanged, errors=errors)
 
+    # ------------------------------------------------------------
+    # Annotation block planning and applying
+    # ------------------------------------------------------------
+
+    @dataclass(frozen=True)
+    class AnnotationUpdatePlan:
+        pdf_id: str
+        note_path: str
+        new_block: str  # full block: starts with ANNOT_SEP and includes info span + required spacing
+        action: str  # "create_block" | "update_block" | "unchanged"
+
+    @dataclass(frozen=True)
+    class AnnotationPlanSummary:
+        plans: List["NotesDB.AnnotationUpdatePlan"]
+        missing_notes: List[str]
+
+    @dataclass(frozen=True)
+    class AnnotationApplySummary:
+        updated: List[str]
+        unchanged: List[str]
+        errors: List[Tuple[str, str]]  # (note_path, error_message)
+
+    def plan_annotation_updates(
+        self,
+        blocks_by_pdf_id: TypingMapping[str, str],
+    ) -> "NotesDB.AnnotationPlanSummary":
+        """
+        Decide per-note whether to insert/update/skip the annotation block.
+
+        blocks_by_pdf_id: mapping of pdf_id (any case) -> rendered block string
+        The block must:
+          - start with ANNOT_SEP line
+          - include exactly one blank line after the separator
+          - include '<span class="pdf-annot-info">…</span>' line
+          - include one blank line after the span (as produced by tools/ndjson_to_md_block.py)
+        """
+        plans: List[NotesDB.AnnotationUpdatePlan] = []
+        missing: List[str] = []
+
+        for pid_raw, block in blocks_by_pdf_id.items():
+            pid = pid_raw.lower()
+            note = self._index.get(pid)
+            if not note:
+                missing.append(pid_raw)
+                continue
+
+            try:
+                with open(note.abs_path, "r", encoding="utf-8") as f:
+                    original = f.read()
+            except Exception:
+                # If unreadable, still produce a plan; apply step will report error
+                original = ""
+
+            changed, _ = _body_after_update(original, block)
+            action = "unchanged"
+            if original == "":
+                action = "update_block"
+            else:
+                body = parse_note(original).body
+                if _find_annot_block_start(body) == -1 and changed:
+                    action = "create_block"
+                elif changed:
+                    action = "update_block"
+
+            plans.append(
+                NotesDB.AnnotationUpdatePlan(
+                    pdf_id=note.pdf_id,
+                    note_path=note.abs_path,
+                    new_block=block,
+                    action=action,
+                )
+            )
+
+        return NotesDB.AnnotationPlanSummary(plans=plans, missing_notes=missing)
+
+    def apply_annotation_updates(
+        self,
+        plans: Iterable["NotesDB.AnnotationUpdatePlan"],
+        *,
+        dry_run: bool = False,
+        logger: Optional[object] = None,
+    ) -> "NotesDB.AnnotationApplySummary":
+        updated: List[str] = []
+        unchanged: List[str] = []
+        errors: List[Tuple[str, str]] = []
+
+        for plan in plans:
+            path = plan.note_path
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    original = f.read()
+            except Exception as e:
+                errors.append((path, f"read error: {e}"))
+                if logger:
+                    logger.error(f"Failed to read '{path}': {e}")
+                continue
+
+            changed, new_text = _body_after_update(original, plan.new_block)
+            if not changed:
+                unchanged.append(path)
+                if logger:
+                    logger.info(f"No annotation change for {path}")
+                continue
+
+            if dry_run:
+                updated.append(path)
+                if logger:
+                    logger.info(f"[dry-run] Would update annotations in {path}")
+                continue
+
+            dirpath = os.path.dirname(path)
+            try:
+                fd, tmppath = tempfile.mkstemp(prefix=".tmp-", suffix=".md", dir=dirpath, text=True)
+                try:
+                    with os.fdopen(fd, "w", encoding="utf-8", newline="") as tmpf:
+                        tmpf.write(new_text)
+                        tmpf.flush()
+                        os.fsync(tmpf.fileno())
+                    os.replace(tmppath, path)
+                    dirfd = os.open(dirpath, os.O_DIRECTORY)
+                    try:
+                        os.fsync(dirfd)
+                    finally:
+                        os.close(dirfd)
+                finally:
+                    if os.path.exists(tmppath):
+                        try:
+                            os.remove(tmppath)
+                        except OSError:
+                            pass
+                updated.append(path)
+                if logger:
+                    logger.info(f"Updated annotations in {path}")
+            except Exception as e:
+                errors.append((path, f"write error: {e}"))
+                if logger:
+                    logger.error(f"Failed to write '{path}': {e}")
+
+        return NotesDB.AnnotationApplySummary(updated=updated, unchanged=unchanged, errors=errors)
+
+
+# ------------- helpers (module level) -------------
+
+
+def _ensure_trailing_nl(s: str) -> str:
+    return s if s.endswith("\n") else (s + "\n")
+
+
+def _find_annot_block_start(body: str) -> int:
+    """
+    Return index in body where the annotation block starts (at the '<hr ...>' line),
+    or -1 if not present.
+    """
+    return body.find(ANNOT_SEP)
+
+
+def _normalize_block_spacing(block: str) -> str:
+    """
+    Trust converter output; only normalize final newline.
+    """
+    block = block.rstrip("\n")
+    return _ensure_trailing_nl(block)
+
+
+def _compose_new_note_text(original: str, new_block: str) -> str:
+    """
+    Replace or insert the annotation block region in original with new_block.
+    Preserve YAML frontmatter (raw) and any preface before the separator.
+    """
+    has_fm, head, fm_block_raw, tail = _split_frontmatter_raw(original)
+    if has_fm:
+        fm_region = f"---\n{fm_block_raw}---\n"
+        body = tail
+        prefix = fm_region
+    else:
+        body = original
+        prefix = ""
+
+    start = _find_annot_block_start(body)
+    nb = _normalize_block_spacing(new_block)
+
+    if start == -1:
+        new_body = nb
+    else:
+        new_body = body[:start] + nb
+
+    out = prefix + new_body
+    if not out.endswith("\n"):
+        out += "\n"
+    return out
+
+
+def _body_after_update(original: str, new_block: str) -> tuple[bool, str]:
+    new_text = _compose_new_note_text(original, new_block)
+    return (new_text != original), new_text
+
+
+def _split_frontmatter_raw(text: str) -> tuple[bool, str, str, str]:
+    """
+    Reuse frontmatter._split_front_matter for consistent slicing.
+    """
+    from .frontmatter import _split_front_matter as _split
+
+    return _split(text)

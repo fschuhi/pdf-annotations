@@ -7,9 +7,11 @@ from pdf_annot.streamline_annotations import process_stream
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 
+
 def read_fixture(name: str) -> str:
     with open(os.path.join(FIXTURES_DIR, name), "r", encoding="utf-8") as f:
         return f.read()
+
 
 class TestStreamIntegration(unittest.TestCase):
     def ndjson_to_list(self, s: str) -> List[dict]:
@@ -40,6 +42,7 @@ class TestStreamIntegration(unittest.TestCase):
         # capture stderr by redirecting temporarily
         buf = io.StringIO()
         import sys
+
         old_stderr = sys.stderr
         try:
             sys.stderr = buf

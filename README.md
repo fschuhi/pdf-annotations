@@ -85,7 +85,7 @@ Options:
 
 ### src/pdf_annot/frontmatter.py
 - parse_note(text): parses a Markdown note into front matter (dict) and body.
-- upsert_fields(text, fields): inserts or updates YAML front matter fields; returns (changed: bool, new_text: str). 
+- upsert_fields(text, fields): inserts or updates YAML front matter fields; returns (changed: bool, new_text: str).
 
 ### src/pdf_annot/pdf_registry.py (shape assumed by tests; your implementation may differ)
 - Exposes per-PDF records with at least:

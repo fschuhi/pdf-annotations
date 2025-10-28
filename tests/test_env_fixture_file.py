@@ -1,6 +1,7 @@
 from pathlib import Path
 from pdf_annot.env import load_env
 
+
 def test_load_env_from_fixture_file():
     here = Path(__file__).parent
     cfg = (here / "fixtures" / "env" / "test_pdf_annot.toml").resolve()

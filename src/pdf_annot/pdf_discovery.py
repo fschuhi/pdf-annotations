@@ -6,6 +6,7 @@ from typing import Iterable, Iterator, List
 
 from .env import Env
 
+
 def iter_pdfs_in_dirs(dirs: Iterable[Path]) -> Iterator[Path]:
     """
     Yield all *.pdf files under the given directories (recursive).
@@ -18,6 +19,7 @@ def iter_pdfs_in_dirs(dirs: Iterable[Path]) -> Iterator[Path]:
         for p in d.rglob("*.pdf"):
             if p.is_file():
                 yield p
+
 
 def discover_pdfs(env: Env) -> List[Path]:
     """

@@ -8,3 +8,5 @@ pluggy~=1.6
 iniconfig~=2.3
 pyyaml
 pydantic>=2
+black
+pre-commit

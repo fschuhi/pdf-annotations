@@ -10,6 +10,7 @@ FIXT = ROOT / "tests" / "fixtures"
 INPUT = FIXT / "final_streamlined.ndjson"
 EXPECTED = FIXT / "expected_test1_markdown.md"
 
+
 def test_ndjson_to_md_block_matches_golden():
     assert TOOLS.exists(), f"Missing converter: {TOOLS}"
     assert INPUT.exists(), f"Missing input NDJSON: {INPUT}"

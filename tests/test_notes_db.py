@@ -86,9 +86,7 @@ def test_plan_updates_and_apply_dry_run_then_real(tmp_path: Path, capsys):
 
     # PDFs
     pdfs = {
-        "keating 1995": PdfMock(
-            pdf_id="Keating 1995", title_from_filename="Open Mind, Open Heart", size=1000
-        ),
+        "keating 1995": PdfMock(pdf_id="Keating 1995", title_from_filename="Open Mind, Open Heart", size=1000),
         "das 2000b": PdfMock(pdf_id="Das 2000b", title_from_filename="Some Book", size=2000),
         "missing 2010": PdfMock(pdf_id="Missing 2010", title_from_filename="Ghost", size=1),
     }
@@ -104,9 +102,7 @@ def test_plan_updates_and_apply_dry_run_then_real(tmp_path: Path, capsys):
 
     # Dry run apply
     summary = db.apply_frontmatter_updates(plans, dry_run=True)
-    assert sorted(summary.updated) == sorted(
-        [str(vault / "(Keating 1995).md"), str(vault / "(Das 2000b).md")]
-    )
+    assert sorted(summary.updated) == sorted([str(vault / "(Keating 1995).md"), str(vault / "(Das 2000b).md")])
     assert summary.unchanged == []
     assert summary.errors == []
 

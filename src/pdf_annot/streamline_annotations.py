@@ -8,19 +8,23 @@ from typing import Optional, TextIO, Dict, Any, List
 WS_RE = re.compile(r"\s+")
 HEADING_RE = re.compile(r"^[Hh]([1-6])$")
 
+
 def normalize_text(s: Optional[str]) -> str:
     if s is None:
         return ""
     return WS_RE.sub(" ", str(s)).strip()
 
+
 def is_link(content_norm: str) -> bool:
     return content_norm.lower() == "link"
+
 
 def extract_heading_label(content_norm: str) -> Optional[str]:
     m = HEADING_RE.match(content_norm)
     if not m:
         return None
     return f"H{m.group(1)}"
+
 
 def make_output_obj(
     highlight_text: str,
@@ -40,6 +44,7 @@ def make_output_obj(
         "creationDate": creation_date or "",
         "modDate": mod_date or "",
     }
+
 
 def merge_highlight_with_link(left_text: str, right_text: str) -> str:
     """
@@ -91,6 +96,7 @@ def merge_highlight_with_link(left_text: str, right_text: str) -> str:
 
     return normalize_text(merged)
 
+
 def process_objects(objs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     pending: Optional[Dict[str, Any]] = None
@@ -132,9 +138,7 @@ def process_objects(objs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 if not extracted_text_norm:
                     prev_was_link = True
                     continue
-                pending["highlightText"] = merge_highlight_with_link(
-                    pending["highlightText"], extracted_text_norm
-                )
+                pending["highlightText"] = merge_highlight_with_link(pending["highlightText"], extracted_text_norm)
                 prev_was_link = True
                 continue
 
@@ -174,8 +178,10 @@ def process_objects(objs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     flush()
     return out
 
+
 def compact_json(obj: dict) -> str:
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+
 
 def process_stream(instream: TextIO, outstream: TextIO) -> int:
     pending: Optional[Dict[str, Any]] = None
@@ -228,9 +234,7 @@ def process_stream(instream: TextIO, outstream: TextIO) -> int:
                 if not extracted_text_norm:
                     prev_was_link = True
                     continue
-                pending["highlightText"] = merge_highlight_with_link(
-                    pending["highlightText"], extracted_text_norm
-                )
+                pending["highlightText"] = merge_highlight_with_link(pending["highlightText"], extracted_text_norm)
                 prev_was_link = True
                 continue
 
@@ -270,6 +274,7 @@ def process_stream(instream: TextIO, outstream: TextIO) -> int:
     pending = flush_pending(pending)
     return 0
 
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         description="Compact PDF annotation NDJSON (annotType=8) with proper link merging and buffering."
@@ -308,6 +313,7 @@ def main(argv=None) -> int:
             outstream.close()
 
     return rc
+
 
 if __name__ == "__main__":
     sys.exit(main())

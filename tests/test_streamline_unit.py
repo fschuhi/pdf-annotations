@@ -7,6 +7,7 @@ from pdf_annot.streamline_annotations import (
     process_objects,
 )
 
+
 def make_input(
     *,
     annot_type_first: int = 8,
@@ -29,11 +30,13 @@ def make_input(
         },
     }
 
+
 class TestNormalization(unittest.TestCase):
     def test_normalize_text_whitespace(self):
         self.assertEqual(normalize_text("  a \n b\tc  "), "a b c")
         self.assertEqual(normalize_text(None), "")
         self.assertEqual(normalize_text(""), "")
+
 
 class TestHeadingExtraction(unittest.TestCase):
     def test_heading_cases(self):
@@ -47,6 +50,7 @@ class TestHeadingExtraction(unittest.TestCase):
         self.assertIsNone(extract_heading_label("H7"))
         self.assertIsNone(extract_heading_label("Heading"))
         self.assertIsNone(extract_heading_label(""))
+
 
 class TestLinkLogicWithObjects(unittest.TestCase):
     def run_objs(self, objs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

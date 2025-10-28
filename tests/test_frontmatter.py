@@ -62,6 +62,7 @@ def test_upsert_updates_changed_value_and_preserves_others():
     assert changed is True
     # Reparse to check structure
     from pdf_annot.frontmatter import parse_note
+
     pn = parse_note(new_text)
     assert pn.front_matter["pdf_title"] == "Open Mind, Open Heart"
     assert pn.front_matter["pdf_size"] == 4321

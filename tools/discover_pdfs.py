@@ -14,11 +14,13 @@ if str(SRC) not in sys.path:
 from pdf_annot.env import load_env  # noqa: E402
 from pdf_annot.pdf_discovery import discover_pdfs  # noqa: E402
 
+
 def parse_args(argv=None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Discover PDFs using env.paths.pdf_dirs and print their paths.")
     p.add_argument("--env", dest="env_path", help="Path to TOML env file.")
     p.add_argument("--relative-to", dest="relative_to", help="Print paths relative to this directory.")
     return p.parse_args(argv)
+
 
 def main(argv=None) -> int:
     ns = parse_args(argv)
@@ -38,6 +40,7 @@ def main(argv=None) -> int:
                 pass
         print(rp)
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -2,6 +2,7 @@ from pathlib import Path
 from pdf_annot.env import load_env
 from pdf_annot.notes_db import NotesDB
 
+
 def test_notesdb_from_env_works():
     here = Path(__file__).parent
     cfg = (here / "fixtures" / "env" / "test_pdf_annot.toml").resolve()

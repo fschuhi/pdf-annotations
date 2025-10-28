@@ -36,6 +36,7 @@ PDF_DATE_RE = re.compile(
 
 DEFAULT_INFO_TEXT = "below the automatically generated annotations from the PDF"
 
+
 @dataclass
 class Annot:
     highlightText: str
@@ -45,6 +46,7 @@ class Annot:
     author: str
     creationDate: Optional[str]
     modDate: Optional[str]
+
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Convert streamlined NDJSON to Obsidian annotation markdown block.")
@@ -57,6 +59,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         help='Text to put inside <span class="pdf-annot-info">…</span> (default keeps current behavior).',
     )
     return p.parse_args(argv)
+
 
 def read_ndjson(stream: io.TextIOBase) -> Iterable[Annot]:
     for line_no, line in enumerate(stream, 1):
@@ -76,6 +79,7 @@ def read_ndjson(stream: io.TextIOBase) -> Iterable[Annot]:
             creationDate=obj.get("creationDate"),
             modDate=obj.get("modDate"),
         )
+
 
 def parse_pdf_date(s: Optional[str]) -> Optional[datetime]:
     if not s:
@@ -105,20 +109,24 @@ def parse_pdf_date(s: Optional[str]) -> Optional[datetime]:
         dt = datetime(year, month, day, hour, minute, second, tzinfo=tz)
         return dt.astimezone()
 
+
 def fmt_date_span(mod: Optional[str], cre: Optional[str]) -> str:
     dt = parse_pdf_date(mod) or parse_pdf_date(cre)
     if not dt:
         return ""
     return f'<span class="pdf-annot-date">{dt.strftime("%d.%m.%y %H:%M")}</span>'
 
+
 def flatten_newlines(s: str) -> str:
     return re.sub(r"\s+", " ", s).strip()
+
 
 def split_comment_lines(s: str) -> List[str]:
     s = s.strip()
     if not s:
         return []
     return re.split(r"\r\n|\n|\r", s)
+
 
 def render_block(annots: Iterable[Annot], pdf_id: str, info_text: str = DEFAULT_INFO_TEXT) -> str:
     out: List[str] = []
@@ -167,6 +175,7 @@ def render_block(annots: Iterable[Annot], pdf_id: str, info_text: str = DEFAULT_
 
     return "\n".join(out)
 
+
 def main(argv: Optional[List[str]] = None) -> int:
     ns = parse_args(argv)
     if ns.infile == "-" or ns.infile is None:
@@ -184,6 +193,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     md = render_block(annots, ns.pdf_id, info_text=ns.info_text)
     sys.stdout.write(md + ("\n" if not md.endswith("\n") else ""))
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
