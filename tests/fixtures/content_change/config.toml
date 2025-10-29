@@ -1,6 +1,6 @@
 [paths]
-notes_root = "./tests/fixtures/seeds/vaults/content_change_before"
-pdf_dirs   = ["./tests/fixtures/seeds/pdfs/content_change"]
+notes_root = "./tests/fixtures/content_change/seeds"
+pdf_dirs   = ["./tests/fixtures/content_change/seeds"]
 backup_dir = "./tests/baks"
 
 [frontmatter]

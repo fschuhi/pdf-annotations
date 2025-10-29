@@ -2,14 +2,16 @@ import io
 import os
 import json
 import unittest
+from pathlib import Path
 from typing import List
 from pdf_annot.streamline_annotations import process_stream
 
-FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 
-def read_fixture(name: str) -> str:
-    with open(os.path.join(FIXTURES_DIR, name), "r", encoding="utf-8") as f:
+def read_fixture(relative_path: str) -> str:
+    """Read a fixture file by its path relative to fixtures/"""
+    with open(FIXTURES_DIR / relative_path, "r", encoding="utf-8") as f:
         return f.read()
 
 
@@ -18,8 +20,8 @@ class TestStreamIntegration(unittest.TestCase):
         return [json.loads(line) for line in s.splitlines() if line.strip()]
 
     def test_end_to_end_link_merge(self):
-        inp = read_fixture("input_link_merge.ndjson")
-        expected = read_fixture("expected_link_merge.ndjson")
+        inp = read_fixture("link_merge/input.ndjson")
+        expected = read_fixture("link_merge/expected.ndjson")
         src = io.StringIO(inp)
         dst = io.StringIO()
         rc = process_stream(src, dst)
@@ -27,8 +29,8 @@ class TestStreamIntegration(unittest.TestCase):
         self.assertEqual(dst.getvalue(), expected)
 
     def test_filters_annot_type_and_headers(self):
-        inp = read_fixture("input_filter_and_pages.ndjson")
-        expected = read_fixture("expected_filter_and_pages.ndjson")
+        inp = read_fixture("filter_and_pages/input.ndjson")
+        expected = read_fixture("filter_and_pages/expected.ndjson")
         src = io.StringIO(inp)
         dst = io.StringIO()
         rc = process_stream(src, dst)
@@ -36,7 +38,7 @@ class TestStreamIntegration(unittest.TestCase):
         self.assertEqual(dst.getvalue(), expected)
 
     def test_malformed_json(self):
-        inp = read_fixture("input_malformed.ndjson")
+        inp = read_fixture("malformed/input.ndjson")
         src = io.StringIO(inp)
         dst = io.StringIO()
         # capture stderr by redirecting temporarily
@@ -53,8 +55,8 @@ class TestStreamIntegration(unittest.TestCase):
         self.assertIn("malformed JSON", buf.getvalue())
 
     def test_simple(self):
-        inp = read_fixture("input_simple.ndjson")
-        expected = read_fixture("expected_simple.ndjson")
+        inp = read_fixture("simple/input.ndjson")
+        expected = read_fixture("simple/expected.ndjson")
         src = io.StringIO(inp)
         dst = io.StringIO()
         rc = process_stream(src, dst)
@@ -62,8 +64,8 @@ class TestStreamIntegration(unittest.TestCase):
         self.assertEqual(dst.getvalue(), expected)
 
     def test_consecutive_links(self):
-        inp = read_fixture("input_consecutive_links.ndjson")
-        expected = read_fixture("expected_consecutive_links.ndjson")
+        inp = read_fixture("consecutive_links/input.ndjson")
+        expected = read_fixture("consecutive_links/expected.ndjson")
         src = io.StringIO(inp)
         dst = io.StringIO()
         rc = process_stream(src, dst)
