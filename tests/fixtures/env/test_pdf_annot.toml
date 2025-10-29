@@ -1,7 +1,7 @@
 [paths]
-notes_root = "./tests/fixtures/data/notes"
-pdf_dirs   = ["./tests/fixtures/data/pdfs"]
-backup_dir = "./tests/fixtures/data/baks"
+notes_root = "./tests/fixtures/seeds/vaults/content_change_before"
+pdf_dirs   = ["./tests/fixtures/seeds/pdfs/content_change"]
+backup_dir = "./tests/baks"
 
 [frontmatter]
 title_field = "pdf_title"

@@ -21,10 +21,10 @@ dist/
 
 # local files
 tmp/
+tests/baks/
 files*.lst
 project-tree.txt
 
-# toml
-/pdf_annot.toml
+# toml (users's local copy, leading / indicates ignore "only in root")
+/pdf_annot.example.toml
 /pdf-annotations.toml
-/envs/*.toml

@@ -143,7 +143,7 @@ def load_env(
     source: Optional[Path | str | Mapping[str, Any]] = None,
     profile: Optional[str] = None,
     env_var: str = "PDF_ANNOT_ENV_PATH",
-    default_filenames: tuple[str, ...] = ("pdf_annot.toml", "pdf-annotations.toml"),
+    default_filenames: tuple[str, ...] = ("pdf_annot.example.toml", "pdf-annotations.toml"),
 ) -> Env:
     """
     Load an Env from a TOML file, a mapping, or defaults.

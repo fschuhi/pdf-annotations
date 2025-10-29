@@ -7,6 +7,12 @@ import textwrap
 import pytest
 
 from pdf_annot.env import Env, load_env
+from pdf_annot.notes_db import NotesDB
+
+
+# =============================================================================
+# Unit tests for Env loading and validation
+# =============================================================================
 
 
 def test_load_from_mapping_creates_notes_root(tmp_path: Path):
@@ -28,7 +34,7 @@ def test_load_from_file_flat_and_grouped(tmp_path: Path, monkeypatch: pytest.Mon
         create_missing_dirs = true
         """
     )
-    cfg = tmp_path / "pdf_annot.toml"
+    cfg = tmp_path / "pdf_annot.example.toml"
     cfg.write_text(toml, encoding="utf-8")
 
     env = load_env(cfg)
@@ -99,3 +105,27 @@ def test_backup_dir_created_when_allowed(tmp_path: Path):
     )
     env = load_env(cfg)
     assert env.paths.backup_dir and env.paths.backup_dir.exists()
+
+
+# =============================================================================
+# Fixture-based tests
+# =============================================================================
+
+
+def test_load_env_from_fixture_file():
+    """Test loading from the actual fixture TOML file."""
+    here = Path(__file__).parent
+    cfg = (here / "fixtures" / "env" / "test_pdf_annot.toml").resolve()
+    env = load_env(cfg)
+    assert env.paths.notes_root.exists()
+    assert env.paths.backup_dir and env.paths.backup_dir.exists()
+    assert env.paths.pdf_dirs and all(p.exists() for p in env.paths.pdf_dirs)
+
+
+def test_notesdb_from_env_integration():
+    """Test that NotesDB.from_env() works with a loaded Env."""
+    here = Path(__file__).parent
+    cfg = (here / "fixtures" / "env" / "test_pdf_annot.toml").resolve()
+    env = load_env(cfg)
+    db = NotesDB.from_env(env)
+    assert isinstance(db, NotesDB)
