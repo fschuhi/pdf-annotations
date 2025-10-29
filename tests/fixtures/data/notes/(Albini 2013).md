@@ -16,6 +16,7 @@ Note that there is a `pdf-annot-info` below the `pdf-annot-sep`. When updating t
 <hr class="pdf-annot-sep">
 
 <span class="pdf-annot-info">below the automatically generated annotations from the PDF</span>
+
 ## Introduction—Definition
 
 > They are: hatred, craving and delusion.  <span class="pdf-annot-date">21.10.25 21:20</span>  [1](pdf://VQGPEHE?page=1)
@@ -24,7 +25,6 @@ Note that there is a `pdf-annot-info` below the `pdf-annot-sep`. When updating t
 
 > [!note] <span class="pdf-annot-date">21.10.25 21:27</span>
 > yes
-
 
 > These three mental factors are produced by each individual’s karma immediately upon conception, and are the main producers of the delusional belief in an ego. <span class="pdf-annot-date">21.10.25 21:09</span> [1](pdf://VQGPEHE?page=1)
 
