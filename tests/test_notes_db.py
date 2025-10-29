@@ -44,9 +44,9 @@ def test_build_notes_db_and_detect_duplicates(tmp_path: Path):
     )
     db = NotesDB.build(str(vault))
     assert len(db) == 2
-    assert "das 2000b" in db
-    assert db["keating 1995"].pdf_title == "Open Mind, Open Heart"
-    assert db["keating 1995"].pdf_size == 123
+    assert "(das 2000b)" in db
+    assert db["(keating 1995)"].pdf_title == "Open Mind, Open Heart"
+    assert db["(keating 1995)"].pdf_size == 123
 
     # Duplicate (case-insensitive)
     (vault / "Sub").mkdir()
@@ -86,17 +86,17 @@ def test_plan_updates_and_apply_dry_run_then_real(tmp_path: Path, capsys):
 
     # PDFs
     pdfs = {
-        "keating 1995": PdfMock(pdf_id="Keating 1995", title_from_filename="Open Mind, Open Heart", size=1000),
-        "das 2000b": PdfMock(pdf_id="Das 2000b", title_from_filename="Some Book", size=2000),
-        "missing 2010": PdfMock(pdf_id="Missing 2010", title_from_filename="Ghost", size=1),
+        "(keating 1995)": PdfMock(pdf_id="(Keating 1995)", title_from_filename="Open Mind, Open Heart", size=1000),
+        "(das 2000b)": PdfMock(pdf_id="(Das 2000b)", title_from_filename="Some Book", size=2000),
+        "(missing 2010)": PdfMock(pdf_id="(Missing 2010)", title_from_filename="Ghost", size=1),
     }
 
     plan_summary = db.plan_frontmatter_updates(pdfs)
     plans = plan_summary.plans
     # We expect 2 planned updates (keating title fix, das insert both fields)
     planned_ids = sorted(p.pdf_id for p in plans)
-    assert planned_ids == ["Das 2000b", "Keating 1995"]
-    assert sorted(plan_summary.missing_notes) == ["missing 2010"]
+    assert planned_ids == ["(Das 2000b)", "(Keating 1995)"]
+    assert sorted(plan_summary.missing_notes) == ["(missing 2010)"]
     # No orphans because both notes have matching PDFs in pdfs dict except variants
     assert sorted(plan_summary.orphan_notes) == []
 
@@ -113,8 +113,8 @@ def test_plan_updates_and_apply_dry_run_then_real(tmp_path: Path, capsys):
 
     # Rebuild and ensure front matter updated
     db2 = NotesDB.build(str(vault))
-    k = db2["keating 1995"]
-    d = db2["das 2000b"]
+    k = db2["(keating 1995)"]
+    d = db2["(das 2000b)"]
     assert k.front_matter["pdf_title"] == "Open Mind, Open Heart"
     assert k.front_matter["other"] == "keep"
     assert d.front_matter["pdf_title"] == "Some Book"

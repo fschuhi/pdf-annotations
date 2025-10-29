@@ -42,7 +42,7 @@ class NotesDB(Mapping[str, NoteInfo]):
     """
     Lightweight index of Markdown notes named exactly "(ID).md".
 
-    * ID matching is case-insensitive; keys are normalized (e.g., "keating 1995").
+    * ID matching is case-insensitive; keys are normalized (e.g., "(keating 1995)").
     * Only files whose basename matches r'^.+.+.md$' are included; variants like "(ID) v2.md" are ignored.
     * Stores per-note metadata (path, mtime, size) and parsed front matter.
     * front matter updates only, body updates are not handled yet
@@ -74,7 +74,7 @@ class NotesDB(Mapping[str, NoteInfo]):
                 m = CONTROLLED_MD_RE.match(name)
                 if not m:
                     continue
-                pdf_id_raw = m.group("id")
+                pdf_id_raw = f"({m.group('id')})"
                 pdf_id_norm = pdf_id_raw.lower()
                 abs_path = os.path.join(dirpath, name)
                 try:

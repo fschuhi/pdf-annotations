@@ -41,7 +41,7 @@ def test_plan_create_and_apply_block(tmp_path: Path):
     )
 
     # Plan
-    ps = db.plan_annotation_updates({"Alpha 2020": block})
+    ps = db.plan_annotation_updates({"(Alpha 2020)": block})
     assert len(ps.missing_notes) == 0
     assert len(ps.plans) == 1
     assert ps.plans[0].action in ("create_block", "update_block")
@@ -59,7 +59,7 @@ def test_plan_create_and_apply_block(tmp_path: Path):
 
     # Running again should be idempotent -> unchanged
     db2 = NotesDB.build(str(vault))
-    ps2 = db2.plan_annotation_updates({"Alpha 2020": block})
+    ps2 = db2.plan_annotation_updates({"(Alpha 2020)": block})
     ar3 = db2.apply_annotation_updates(ps2.plans, dry_run=False)
     assert ar3.updated == []
     assert ar3.errors == []
@@ -99,7 +99,7 @@ def test_update_existing_block_preserves_frontmatter_and_prefix(tmp_path: Path):
         """
     )
 
-    ps = db.plan_annotation_updates({"Beta 2019": new_block})
+    ps = db.plan_annotation_updates({"(Beta 2019)": new_block})
     assert len(ps.plans) == 1
     assert ps.plans[0].action == "update_block"
 
@@ -123,6 +123,11 @@ def test_missing_note_is_reported(tmp_path: Path):
     vault.mkdir()
     db = NotesDB.build(str(vault))
     block = '<hr class="pdf-annot-sep">\n\n<span class="pdf-annot-info">below the automatically generated annotations from the PDF</span>\n\n> Q\n'
+
     ps = db.plan_annotation_updates({"Missing 2010": block})
     assert ps.missing_notes == ["Missing 2010"]
+    assert ps.plans == []
+
+    ps = db.plan_annotation_updates({"(Missing 2010)": block})
+    assert ps.missing_notes == ["(Missing 2010)"]
     assert ps.plans == []
