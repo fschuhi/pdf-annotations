@@ -369,7 +369,7 @@ class NotesDB(Mapping[str, NoteInfo]):
           - start with ANNOT_SEP line
           - include exactly one blank line after the separator
           - include '<span class="pdf-annot-info">…</span>' line
-          - include one blank line after the span (as produced by tools/ndjson_to_md_block.py)
+          - include one blank line after the span (as produced by ndjson_to_md_block.render_block())
         """
         plans: List[NotesDB.AnnotationUpdatePlan] = []
         missing: List[str] = []

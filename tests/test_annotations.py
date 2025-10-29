@@ -29,7 +29,7 @@ def test_plan_create_and_apply_block(tmp_path: Path):
     write(note_path, text)
     db = NotesDB.build(str(vault))
 
-    # Rendered block (as produced by tools/ndjson_to_md_block.py)
+    # Rendered block (as produced by render_block())
     block = textwrap.dedent(
         """\
         <hr class="pdf-annot-sep">

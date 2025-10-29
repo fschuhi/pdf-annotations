@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from typing import Iterable, List, Optional
 
-# This module is a library version of the former tools/ndjson_to_md_block.py.
+# Converts streamlined NDJSON annotations to Obsidian-compatible markdown blocks.
 # It exposes pure functions for converting streamlined annotation objects to
 # an Obsidian-friendly markdown block. No CLI code here.
 
