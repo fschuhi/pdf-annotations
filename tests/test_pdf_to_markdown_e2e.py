@@ -13,10 +13,10 @@ from pdf_annot.streamline_annotations import main as streamline_main
 
 # Define fixture paths
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
-TEST1_DIR = FIXTURES_DIR / "test1_extraction"
-INPUT_PDF = TEST1_DIR / "test1.pdf"
-EXPECTED_RAW_NDJSON = TEST1_DIR / "expected_test1_raw.ndjson"
-EXPECTED_STREAMLINED_NDJSON = TEST1_DIR / "expected_test1_streamlined.ndjson"
+TEST1_DIR = FIXTURES_DIR / "pdf_to_markdown_e2e"
+INPUT_PDF = TEST1_DIR / "input.pdf"
+EXPECTED_RAW_NDJSON = TEST1_DIR / "expected_raw.ndjson"
+EXPECTED_STREAMLINED_NDJSON = TEST1_DIR / "expected_streamlined.ndjson"
 
 
 # Helper function to load NDJSON
@@ -48,7 +48,7 @@ class TestE2EPipeline(unittest.TestCase):
 
         # 2. --- Run Extraction Script ---
         # The extract.py script saves output next to the input PDF.
-        # We patch sys.argv to simulate: `python extract.py -p /path/to/temp/test1.pdf`
+        # We patch sys.argv to simulate: `python extract.py -p /path/to/temp/input.pdf`
         # We also patch print() to suppress console output during the test
         extract_argv = ["extract.py", "-p", str(temp_pdf_path)]
         with patch("sys.argv", extract_argv), patch("builtins.print") as mock_print:

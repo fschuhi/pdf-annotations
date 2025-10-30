@@ -10,11 +10,11 @@ test: venv
 
 # Extract annotations using the module directly
 extract: venv
-	. .venv/bin/activate && PYTHONPATH=src python -m pdf_annot.extract -p tests/fixtures/test1.pdf
+	. .venv/bin/activate && PYTHONPATH=src python -m pdf_annot.extract -p tests/fixtures/pdf_to_markdown_e2e/input.pdf
 
 # Streamline annotations using the module directly
 streamline: venv
-	. .venv/bin/activate && PYTHONPATH=src python -m pdf_annot.streamline -i tests/fixtures/test1.ndjson -o /tmp/final_streamlined.ndjson
+	. .venv/bin/activate && PYTHONPATH=src python -m pdf_annot.streamline -i tests/fixtures/pdf_to_markdown_e2e/expected_raw.ndjson -o /tmp/final_streamlined.ndjson
 
 # Clean build/test artifacts and venv
 clean:

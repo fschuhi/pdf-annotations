@@ -6,8 +6,8 @@ from pdf_annot.ndjson_to_md_block import render_block
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXT = ROOT / "tests" / "fixtures"
-INPUT = FIXT / "test1_extraction" / "final_streamlined.ndjson"
-EXPECTED = FIXT / "test1_extraction" / "expected_test1_markdown.md"
+INPUT = FIXT / "pdf_to_markdown_e2e" / "final_streamlined.ndjson"
+EXPECTED = FIXT / "pdf_to_markdown_e2e" / "expected_markdown.md"
 
 
 def test_ndjson_to_md_block_matches_golden():
