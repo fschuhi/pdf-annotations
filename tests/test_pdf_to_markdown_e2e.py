@@ -1,22 +1,23 @@
 import unittest
 import tempfile
 import shutil
-import os
 import json
 from pathlib import Path
 from unittest.mock import patch
 from typing import List
 
-# Import the main functions from your scripts
+# Import the main functions and library functions
 from pdf_annot.extract import main as extract_main
 from pdf_annot.streamline_annotations import main as streamline_main
+from pdf_annot.ndjson_to_md_block import render_block
 
 # Define fixture paths
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
-TEST1_DIR = FIXTURES_DIR / "pdf_to_markdown_e2e"
-INPUT_PDF = TEST1_DIR / "input.pdf"
-EXPECTED_RAW_NDJSON = TEST1_DIR / "expected_raw.ndjson"
-EXPECTED_STREAMLINED_NDJSON = TEST1_DIR / "expected_streamlined.ndjson"
+TEST_DIR = FIXTURES_DIR / "pdf_to_markdown_e2e"
+INPUT_PDF = TEST_DIR / "input.pdf"
+EXPECTED_RAW_NDJSON = TEST_DIR / "expected_raw.ndjson"
+EXPECTED_STREAMLINED_NDJSON = TEST_DIR / "expected_streamlined.ndjson"
+EXPECTED_MARKDOWN = TEST_DIR / "expected_markdown.md"
 
 
 # Helper function to load NDJSON
@@ -25,7 +26,7 @@ def ndjson_to_list(s: str) -> List[dict]:
     return [json.loads(line) for line in s.splitlines() if line.strip()]
 
 
-class TestE2EPipeline(unittest.TestCase):
+class TestPdfToMarkdownE2E(unittest.TestCase):
 
     def setUp(self):
         """Create a temporary directory before each test."""
@@ -36,7 +37,11 @@ class TestE2EPipeline(unittest.TestCase):
         """Remove the temporary directory after each test."""
         shutil.rmtree(self.temp_dir)
 
-    def test_pdf_to_streamlined_pipeline(self):
+    def test_complete_extraction_pipeline(self):
+        """
+        End-to-end test: PDF → raw NDJSON → streamlined NDJSON → markdown.
+        Tests the complete annotation extraction and rendering pipeline.
+        """
         # 1. --- Setup ---
         # Copy the input PDF into the temp directory
         temp_pdf_path = self.temp_path / INPUT_PDF.name
@@ -51,7 +56,7 @@ class TestE2EPipeline(unittest.TestCase):
         # We patch sys.argv to simulate: `python extract.py -p /path/to/temp/input.pdf`
         # We also patch print() to suppress console output during the test
         extract_argv = ["extract.py", "-p", str(temp_pdf_path)]
-        with patch("sys.argv", extract_argv), patch("builtins.print") as mock_print:
+        with patch("sys.argv", extract_argv), patch("builtins.print"):
             extract_main()
 
         # Check that the raw file was actually created
@@ -74,17 +79,29 @@ class TestE2EPipeline(unittest.TestCase):
         self.assertEqual(return_code, 0, "Streamline script exited with non-zero status")
         self.assertTrue(actual_streamlined_ndjson_path.exists(), "Streamlined NDJSON file was not created")
 
-        # 4. --- Compare Results ---
-        # Load all 4 files (2 actual, 2 expected)
-        actual_raw_data = ndjson_to_list(actual_raw_ndjson_path.read_text("utf-8"))
+        # 4. --- Render Markdown ---
+        # Read the streamlined NDJSON and render it to markdown
+        with open(actual_streamlined_ndjson_path, "r", encoding="utf-8") as f:
+            streamlined_objs = [json.loads(line) for line in f if line.strip()]
+
+        actual_markdown = render_block(streamlined_objs, pdf_id_hash="VQGPEHE")
+
+        # 5. --- Load Expected Results ---
         expected_raw_data = ndjson_to_list(EXPECTED_RAW_NDJSON.read_text("utf-8"))
-
-        actual_streamlined_data = ndjson_to_list(actual_streamlined_ndjson_path.read_text("utf-8"))
         expected_streamlined_data = ndjson_to_list(EXPECTED_STREAMLINED_NDJSON.read_text("utf-8"))
+        expected_markdown = EXPECTED_MARKDOWN.read_text("utf-8")
 
-        # 5. --- Assert ---
+        actual_raw_data = ndjson_to_list(actual_raw_ndjson_path.read_text("utf-8"))
+        actual_streamlined_data = ndjson_to_list(actual_streamlined_ndjson_path.read_text("utf-8"))
+
+        # 6. --- Assert All Stages ---
         # Compare the raw extraction
         self.assertEqual(actual_raw_data, expected_raw_data, "Raw extracted data does not match expected")
 
-        # Compare the final streamlined output
+        # Compare the streamlined output
         self.assertEqual(actual_streamlined_data, expected_streamlined_data, "Streamlined data does not match expected")
+
+        # Compare the final markdown output
+        self.assertEqual(
+            actual_markdown.strip(), expected_markdown.strip(), "Rendered markdown does not match expected"
+        )
