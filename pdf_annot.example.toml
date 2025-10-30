@@ -1,30 +1,46 @@
-# Minimal example configuration for pdf-annotations
+# Example configuration for pdf-annotations
+# Copy this to pdf_annot.toml and customize for your setup
 
 [paths]
-# REQUIRED: directory containing your notes named like "(ID).md"
+# REQUIRED: directory containing your notes named like "(Author Year).md"
 notes_root = "~/notes/pdf-annotations"
 
-# OPTIONAL: registry location (file or directory)
-# pdf_registry = "~/docs/registry.csv"
+# OPTIONAL: one or more directories containing PDFs to scan
+# pdf_dirs = ["~/Documents/Papers", "~/Dropbox/Research"]
 
-# OPTIONAL: where to store backups (if/when implemented)
+# OPTIONAL: where to store backups when updating notes
 # backup_dir = "~/notes/.backups"
 
+# OPTIONAL: directory for temporary files during testing/development
+# Useful for test runs to isolate temporary artifacts
+# temp_dir = "~/notes/.tmp"
+
 [frontmatter]
+# Field names to use in note YAML frontmatter
 title_field = "pdf_title"
 size_field  = "pdf_size"
 # has_annots_field = "has_annotations"
 # last_run_field = "last_run_at"
 
 [io]
+# Write files atomically (via temp file + rename) for safety
 atomic_writes = true
+
+# Automatically create missing directories
+# If false, will raise errors for missing paths
 create_missing_dirs = true
 
 [cli]
-# default_env = "dev"  # only used if you add multiple profiles under [envs.<name>]
+# Optional: default profile name if using multiple environments
+# default_env = "dev"
 
-# Example of profiles (optional):
+# Example: Multiple environment profiles
+# Uncomment and customize as needed
 # [envs.dev.paths]
 # notes_root = "~/notes/dev-vault"
+# pdf_dirs = ["~/Documents/Papers-Dev"]
+# temp_dir = "~/notes/.tmp/dev"
+#
 # [envs.prod.paths]
 # notes_root = "/srv/notes/prod"
+# pdf_dirs = ["/srv/documents/papers"]

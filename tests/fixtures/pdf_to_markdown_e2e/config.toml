@@ -1,0 +1,10 @@
+# Configuration for pdf_to_markdown_e2e test
+# All paths point to temp directory where seeds are copied for testing
+
+[paths]
+notes_root = "./tests/tmp/pdf_to_markdown_e2e"
+pdf_dirs = ["./tests/tmp/pdf_to_markdown_e2e"]
+temp_dir = "./tests/tmp/pdf_to_markdown_e2e"
+
+[io]
+create_missing_dirs = true

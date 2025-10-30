@@ -34,7 +34,7 @@ def test_load_from_file_flat_and_grouped(tmp_path: Path, monkeypatch: pytest.Mon
         create_missing_dirs = true
         """
     )
-    cfg = tmp_path / "pdf_annot.example.toml"
+    cfg = tmp_path / "pdf_annot.toml"
     cfg.write_text(toml, encoding="utf-8")
 
     env = load_env(cfg)
@@ -105,6 +105,61 @@ def test_backup_dir_created_when_allowed(tmp_path: Path):
     )
     env = load_env(cfg)
     assert env.paths.backup_dir and env.paths.backup_dir.exists()
+
+
+def test_temp_dir_created_when_allowed(tmp_path: Path):
+    """Test that temp_dir is created when create_missing_dirs is true."""
+    cfg = tmp_path / "env.toml"
+    cfg.write_text(
+        f"""
+        [paths]
+        notes_root = "{str(tmp_path / "vault")}"
+        temp_dir = "{str(tmp_path / "tmp")}"
+        [io]
+        create_missing_dirs = true
+        """,
+        encoding="utf-8",
+    )
+    env = load_env(cfg)
+    assert env.paths.temp_dir and env.paths.temp_dir.exists()
+
+
+def test_temp_dir_missing_raises_error_when_not_allowed(tmp_path: Path):
+    """Test that missing temp_dir raises error when create_missing_dirs is false."""
+    cfg = tmp_path / "env.toml"
+    missing_temp = tmp_path / "missing_tmp"
+    cfg.write_text(
+        f"""
+        [paths]
+        notes_root = "{str(tmp_path / "vault")}"
+        temp_dir = "{str(missing_temp)}"
+        [io]
+        create_missing_dirs = false
+        """,
+        encoding="utf-8",
+    )
+    # notes_root needs to exist first for this test
+    (tmp_path / "vault").mkdir()
+
+    with pytest.raises(ValueError) as exc:
+        load_env(cfg)
+    assert "temp_dir does not exist" in str(exc.value)
+
+
+def test_temp_dir_optional(tmp_path: Path):
+    """Test that temp_dir is optional and can be omitted."""
+    cfg = tmp_path / "env.toml"
+    cfg.write_text(
+        f"""
+        [paths]
+        notes_root = "{str(tmp_path / "vault")}"
+        [io]
+        create_missing_dirs = true
+        """,
+        encoding="utf-8",
+    )
+    env = load_env(cfg)
+    assert env.paths.temp_dir is None
 
 
 # =============================================================================

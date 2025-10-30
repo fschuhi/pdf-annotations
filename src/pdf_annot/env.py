@@ -29,6 +29,7 @@ class Paths(BaseModel):
         description="One or more directories containing PDFs to scan.",
     )
     backup_dir: Optional[Path] = Field(None, description="Optional directory to store backups (e.g., .bak files).")
+    temp_dir: Optional[Path] = Field(None, description="Optional directory for temporary test artifacts.")
 
     @field_validator("notes_root", mode="before")
     @classmethod
@@ -38,6 +39,11 @@ class Paths(BaseModel):
     @field_validator("backup_dir", mode="before")
     @classmethod
     def _norm_backup_dir(cls, v: Any) -> Any:
+        return _expand_path(v)
+
+    @field_validator("temp_dir", mode="before")
+    @classmethod
+    def _norm_temp_dir(cls, v: Any) -> Any:
         return _expand_path(v)
 
     @field_validator("pdf_dirs", mode="before")
@@ -102,7 +108,7 @@ class Env(BaseModel):
     Top-level configuration object passed explicitly to APIs.
 
     Attributes:
-        paths: Filesystem locations (notes_root, pdf_dirs, backup_dir).
+        paths: Filesystem locations (notes_root, pdf_dirs, backup_dir, temp_dir).
         frontmatter: Defaults for YAML front matter field names.
         io: Behavior flags for file I/O.
         cli: CLI defaults (optional).
@@ -131,6 +137,13 @@ class Env(BaseModel):
             else:
                 raise ValueError(f"backup_dir does not exist: {self.paths.backup_dir}")
 
+        # Ensure temp_dir exists if set
+        if self.paths.temp_dir is not None and not self.paths.temp_dir.exists():
+            if self.io.create_missing_dirs:
+                self.paths.temp_dir.mkdir(parents=True, exist_ok=True)
+            else:
+                raise ValueError(f"temp_dir does not exist: {self.paths.temp_dir}")
+
         # pdf_dirs are optional; if provided, they must exist (we do not create them)
         for p in self.paths.pdf_dirs:
             if not p.exists() or not p.is_dir():
@@ -143,7 +156,7 @@ def load_env(
     source: Optional[Path | str | Mapping[str, Any]] = None,
     profile: Optional[str] = None,
     env_var: str = "PDF_ANNOT_ENV_PATH",
-    default_filenames: tuple[str, ...] = ("pdf_annot.example.toml", "pdf-annotations.toml"),
+    default_filenames: tuple[str, ...] = ("pdf_annot.toml", "pdf-annotations.toml"),
 ) -> Env:
     """
     Load an Env from a TOML file, a mapping, or defaults.
@@ -214,6 +227,7 @@ def _build_env_from_data(data: Mapping[str, Any], profile: Optional[str]) -> Env
         "notes_root": ("paths", "notes_root"),
         "pdf_dirs": ("paths", "pdf_dirs"),
         "backup_dir": ("paths", "backup_dir"),
+        "temp_dir": ("paths", "temp_dir"),
         "title_field": ("frontmatter", "title_field"),
         "size_field": ("frontmatter", "size_field"),
         "has_annots_field": ("frontmatter", "has_annots_field"),
