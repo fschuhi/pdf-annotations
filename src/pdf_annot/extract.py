@@ -7,7 +7,6 @@ import numpy as np
 
 from .annotation import Annotation, TEXTUAL_ANNOTS
 
-
 # ===============================================================
 #  Default heuristic parameters
 # ===============================================================
@@ -126,6 +125,36 @@ def extract_annotations(doc: fitz.Document, header_height: float, footer_height:
                 topLeft=(rect.x0, rect.y0),
                 botRight=(rect.x1, rect.y1),
             )
+
+
+# ===============================================================
+#  Library API
+# ===============================================================
+def extract_annotations_to_list(
+    pdf_path: Path,
+    header_height: float = DEFAULT_HEADER_HEIGHT,
+    footer_height: float = DEFAULT_FOOTER_HEIGHT,
+) -> List[dict]:
+    """
+    Extract and sort annotations from PDF, return as list of dicts.
+
+    This is the programmatic library API (vs the CLI main() function).
+    Annotations are sorted by visual reading order: page, then top-to-bottom,
+    then left-to-right.
+
+    Args:
+        pdf_path: Path to the PDF file
+        header_height: Header cutoff in points
+        footer_height: Footer cutoff in points
+
+    Returns:
+        List of annotation dictionaries in visual reading order
+    """
+    doc = fitz.open(pdf_path)
+    annotations = list(extract_annotations(doc, header_height, footer_height))
+    # Sort by visual reading order: page, y (top to bottom), x (left to right)
+    annotations.sort(key=lambda a: (a.pageNum, a.topLeft[1], a.topLeft[0]))
+    return [ann.to_dict() for ann in annotations]
 
 
 # ===============================================================

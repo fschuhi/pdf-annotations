@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import io
 import json
 import argparse
 import re
@@ -183,6 +184,35 @@ def compact_json(obj: dict) -> str:
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
 
 
+def streamline_annotations_list(raw_annotations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Streamline raw annotations using the streamline pipeline.
+
+    This is the programmatic library API that works with lists (vs the CLI
+    that works with streams/files).
+
+    Args:
+        raw_annotations: List of raw annotation dictionaries
+
+    Returns:
+        List of streamlined annotation dictionaries
+    """
+    # Convert to NDJSON format
+    input_ndjson = "\n".join(json.dumps(ann, ensure_ascii=False) for ann in raw_annotations)
+
+    # Process through streamline pipeline
+    src = io.StringIO(input_ndjson)
+    dst = io.StringIO()
+    process_stream(src, dst)
+
+    # Parse back to list
+    streamlined = [json.loads(line) for line in dst.getvalue().splitlines() if line.strip()]
+    return streamlined
+
+
+# ===============================================================
+#  Stream processing (for CLI)
+# ===============================================================
 def process_stream(instream: TextIO, outstream: TextIO) -> int:
     pending: Optional[Dict[str, Any]] = None
     prev_was_link: bool = False

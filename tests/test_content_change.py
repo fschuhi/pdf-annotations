@@ -11,23 +11,17 @@ Tests the complete workflow:
 """
 
 import shutil
-import json
-import re
 from pathlib import Path
 from datetime import datetime
-from typing import List
 import unittest
 
 from pdf_annot.env import load_env
 from pdf_annot.pdf_registry import build_pdf_index, PdfInfo
 from pdf_annot.frontmatter import parse_note, upsert_fields
 from pdf_annot.ndjson_to_md_block import render_block
-from pdf_annot.streamline_annotations import process_stream
-import io
-import fitz
-
-# Import extraction logic
-from pdf_annot.extract import extract_annotations, DEFAULT_HEADER_HEIGHT, DEFAULT_FOOTER_HEIGHT
+from pdf_annot.extract import extract_annotations_to_list
+from pdf_annot.streamline_annotations import streamline_annotations_list
+from pdf_annot.notes import extract_info_text, replace_annotation_block
 
 # Fixture paths
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -39,66 +33,6 @@ GOLDENS_DIR = TEST_DIR / "goldens"
 # Note and PDF identifiers
 NOTE_FILENAME = "(Albini 2013).md"
 PDF_FILENAME = "(Albini 2013) On dealing with destructive emotions.pdf"
-
-
-def extract_annotations_to_list(
-    pdf_path: Path,
-    header_height: float = DEFAULT_HEADER_HEIGHT,
-    footer_height: float = DEFAULT_FOOTER_HEIGHT,
-) -> List[dict]:
-    """
-    Extract and sort annotations from PDF, return as list of dicts.
-    Library function for programmatic use.
-    """
-    doc = fitz.open(pdf_path)
-    annotations = list(extract_annotations(doc, header_height, footer_height))
-    annotations.sort(key=lambda a: (a.pageNum, a.topLeft[1], a.topLeft[0]))
-    return [ann.to_dict() for ann in annotations]
-
-
-def streamline_ndjson(raw_annotations: List[dict]) -> List[dict]:
-    """
-    Streamline raw annotations using the streamline_annotations pipeline.
-    """
-    # Convert to NDJSON format
-    input_ndjson = "\n".join(json.dumps(ann, ensure_ascii=False) for ann in raw_annotations)
-
-    # Process through streamline pipeline
-    src = io.StringIO(input_ndjson)
-    dst = io.StringIO()
-    process_stream(src, dst)
-
-    # Parse back to list
-    streamlined = [json.loads(line) for line in dst.getvalue().splitlines() if line.strip()]
-    return streamlined
-
-
-def extract_info_text(note_text: str) -> str:
-    """
-    Extract the text from <span class="pdf-annot-info">...</span>.
-    Returns the default if not found.
-    """
-    pattern = r'<span class="pdf-annot-info">([^<]+)</span>'
-    match = re.search(pattern, note_text)
-    if match:
-        return match.group(1)
-    return "below the automatically generated annotations from the PDF"
-
-
-def replace_annotation_block(note_text: str, new_block: str) -> str:
-    """
-    Replace everything from the separator onward.
-    new_block should already contain separator + info + annotations.
-    """
-    separator = '<hr class="pdf-annot-sep">'
-
-    if separator not in note_text:
-        # No existing block, append it
-        return note_text + "\n" + new_block
-
-    # Split before separator, replace from separator onward
-    before_sep, _ = note_text.split(separator, 1)
-    return before_sep + new_block
 
 
 class TestContentChange(unittest.TestCase):
@@ -172,7 +106,7 @@ class TestContentChange(unittest.TestCase):
         # =====================================================================
         # 4. Streamline annotations
         # =====================================================================
-        streamlined_annotations = streamline_ndjson(raw_annotations)
+        streamlined_annotations = streamline_annotations_list(raw_annotations)
         self.assertGreater(len(streamlined_annotations), 0, "Should have streamlined annotations")
 
         # =====================================================================
