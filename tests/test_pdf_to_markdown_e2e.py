@@ -1,5 +1,4 @@
 import unittest
-import tempfile
 import shutil
 import json
 from pathlib import Path
@@ -10,10 +9,12 @@ from typing import List
 from pdf_annot.extract import main as extract_main
 from pdf_annot.streamline_annotations import main as streamline_main
 from pdf_annot.ndjson_to_md_block import render_block
+from pdf_annot.env import load_env
 
 # Define fixture paths
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 TEST_DIR = FIXTURES_DIR / "pdf_to_markdown_e2e"
+CONFIG_FILE = TEST_DIR / "config.toml"
 INPUT_PDF = TEST_DIR / "input.pdf"
 EXPECTED_RAW_NDJSON = TEST_DIR / "expected_raw.ndjson"
 EXPECTED_STREAMLINED_NDJSON = TEST_DIR / "expected_streamlined.ndjson"
@@ -29,25 +30,29 @@ def ndjson_to_list(s: str) -> List[dict]:
 class TestPdfToMarkdownE2E(unittest.TestCase):
 
     def setUp(self):
-        """Create a temporary directory before each test."""
-        self.temp_dir = tempfile.mkdtemp()
-        self.temp_path = Path(self.temp_dir)
+        """Load config and setup temp directory from Env."""
+        # Load environment configuration
+        self.env = load_env(CONFIG_FILE)
+        self.temp_path = self.env.paths.temp_dir
+
+        # Copy input PDF from fixtures to temp directory
+        shutil.copy(INPUT_PDF, self.temp_path / INPUT_PDF.name)
 
     def tearDown(self):
-        """Remove the temporary directory after each test."""
-        shutil.rmtree(self.temp_dir)
+        """
+        Intentionally do NOT clean up temp directory.
+        Temp files are useful for debugging and serve as documentation.
+        They are gitignored and can be manually removed if needed.
+        """
+        pass
 
     def test_complete_extraction_pipeline(self):
         """
         End-to-end test: PDF → raw NDJSON → streamlined NDJSON → markdown.
         Tests the complete annotation extraction and rendering pipeline.
         """
-        # 1. --- Setup ---
-        # Copy the input PDF into the temp directory
+        # 1. --- Define paths for generated output files ---
         temp_pdf_path = self.temp_path / INPUT_PDF.name
-        shutil.copy(INPUT_PDF, temp_pdf_path)
-
-        # Define the paths for our *generated* output files
         actual_raw_ndjson_path = self.temp_path / temp_pdf_path.with_suffix(".ndjson").name
         actual_streamlined_ndjson_path = self.temp_path / "final_streamlined.ndjson"
 
