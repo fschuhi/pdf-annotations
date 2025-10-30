@@ -173,7 +173,9 @@ def test_load_env_from_fixture_file():
     cfg = (here / "fixtures" / "content_change" / "config.toml").resolve()
     env = load_env(cfg)
     assert env.paths.notes_root.exists()
-    assert env.paths.backup_dir and env.paths.backup_dir.exists()
+    # backup_dir is optional - only check if configured
+    if env.paths.backup_dir:
+        assert env.paths.backup_dir.exists()
     assert env.paths.pdf_dirs and all(p.exists() for p in env.paths.pdf_dirs)
 
 

@@ -105,12 +105,20 @@ def format_note(front_matter: Dict[str, object], body: str) -> str:
 
 def upsert_fields(text: str, updates: Dict[str, object]) -> Tuple[bool, str]:
     """
-    Upsert pdf-related fields in the note's YAML front matter.
+    Upsert PDF-related fields in the note's YAML front matter.
     - Only modifies the file if any target field changes or is added.
-    - Targets: 'pdf_title' (str), 'pdf_size' (int)
+    - Targets: all PDF-related metadata fields
     Returns (changed, new_text).
     """
-    targets = ("pdf_title", "pdf_size")
+    targets = (
+        "pdf_id",
+        "pdf_title",
+        "pdf_size",
+        "pdf_hash",
+        "has_annotations",
+        "pdf_mtime",
+        "last_run_at",
+    )
 
     parsed = parse_note(text)
     current = dict(parsed.front_matter)

@@ -109,9 +109,82 @@ def test_upsert_keeps_existing_target_if_not_in_updates():
 
 def test_unicode_diacritics_in_title_roundtrip():
     body = "B\n"
-    changed, new_text = upsert_fields(body, {"pdf_title": "Überlegung – Étude", "pdf_size": 7})
+    changed, new_text = upsert_fields(body, {"pdf_title": "Überlegung — Étude", "pdf_size": 7})
     assert changed is True
     pn = parse_note(new_text)
-    assert pn.front_matter["pdf_title"] == "Überlegung – Étude"
+    assert pn.front_matter["pdf_title"] == "Überlegung — Étude"
     assert pn.front_matter["pdf_size"] == 7
     assert pn.body == "B\n"
+
+
+def test_upsert_handles_all_pdf_metadata_fields():
+    """Test that all PDF-related metadata fields are properly updated."""
+    text = textwrap.dedent(
+        """\
+        ---
+        pdf_id: "(Smith 2020)"
+        pdf_title: Old Title
+        pdf_size: 1000
+        other: keep_this
+        ---
+        Body content
+        """
+    )
+
+    updates = {
+        "pdf_id": "(Smith 2020)",  # unchanged
+        "pdf_title": "New Title",  # changed
+        "pdf_size": 2000,  # changed
+        "pdf_hash": "ABC123X",  # new
+        "has_annotations": True,  # new
+        "pdf_mtime": "2025-10-30T20:00:00",  # new
+        "last_run_at": "2025-10-30T20:01:00",  # new
+    }
+
+    changed, new_text = upsert_fields(text, updates)
+    assert changed is True
+
+    pn = parse_note(new_text)
+    assert pn.front_matter["pdf_id"] == "(Smith 2020)"
+    assert pn.front_matter["pdf_title"] == "New Title"
+    assert pn.front_matter["pdf_size"] == 2000
+    assert pn.front_matter["pdf_hash"] == "ABC123X"
+    assert pn.front_matter["has_annotations"] is True
+    assert pn.front_matter["pdf_mtime"] == "2025-10-30T20:00:00"
+    assert pn.front_matter["last_run_at"] == "2025-10-30T20:01:00"
+    # Non-target key preserved
+    assert pn.front_matter["other"] == "keep_this"
+    assert pn.body == "Body content\n"
+
+
+def test_upsert_byte_stable_when_all_fields_unchanged():
+    """Test byte stability when all PDF metadata fields are unchanged."""
+    text = textwrap.dedent(
+        """\
+        ---
+        pdf_id: "(Doe 2021)"
+        pdf_title: Some Title
+        pdf_size: 5000
+        pdf_hash: "XYZ789A"
+        has_annotations: false
+        pdf_mtime: "2025-10-29T10:00:00"
+        last_run_at: "2025-10-29T10:05:00"
+        ---
+        Body
+        """
+    )
+
+    # Submit same values
+    updates = {
+        "pdf_id": "(Doe 2021)",
+        "pdf_title": "Some Title",
+        "pdf_size": 5000,
+        "pdf_hash": "XYZ789A",
+        "has_annotations": False,
+        "pdf_mtime": "2025-10-29T10:00:00",
+        "last_run_at": "2025-10-29T10:05:00",
+    }
+
+    changed, new_text = upsert_fields(text, updates)
+    assert changed is False
+    assert new_text == text

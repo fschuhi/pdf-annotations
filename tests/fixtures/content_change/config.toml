@@ -1,13 +1,7 @@
 [paths]
-notes_root = "./tests/fixtures/content_change/seeds"
-pdf_dirs   = ["./tests/fixtures/content_change/seeds"]
-backup_dir = "./tests/baks"
-
-[frontmatter]
-title_field = "pdf_title"
-size_field  = "pdf_size"
-# has_annots_field = "has_annotations"
-# last_run_field = "last_run_at"
+notes_root = "./tests/tmp/content_change"
+pdf_dirs = ["./tests/tmp/content_change"]
+temp_dir = "./tests/tmp/content_change"
 
 [io]
 create_missing_dirs = true
