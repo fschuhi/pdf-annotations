@@ -12,9 +12,6 @@ from typing import List, Tuple
 # -----------------------------------------------------------------------------
 
 
-import zlib
-
-
 def crc32_az7(text: str) -> str:
     """
     Generate a 7-character uppercase A–Z fingerprint from input text,
