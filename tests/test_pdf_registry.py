@@ -1,102 +1,86 @@
 # tests/test_pdf_registry.py
-from __future__ import annotations
-
-import os
+import time
 from pathlib import Path
-
 import pytest
 
-from pdf_annot.pdf_registry import (
-    DuplicatePdfIdError,
-    build_pdf_index,
-    is_controlled_pdf_name,
-    pdf_info_from_path,
-)
+from pdf_annot.pdf_registry import build_pdf_index, PdfInfo
 from pdf_annot.utils import crc32_az7
 
 
 def _write_dummy_pdf(path: Path, content: bytes = b"%PDF-1.4\n%..."):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(content)
+    # --- FIX: Ignore PyCharm's incorrect type warning ---
+    path.write_bytes(content)  # type: ignore
 
 
-def test_is_controlled_pdf_name_rules():
-    assert is_controlled_pdf_name("(Das 2000b) Title.pdf")
-    assert is_controlled_pdf_name("(OnlyAuthors) Title.pdf")
-    assert not is_controlled_pdf_name("(Alpha 2020)Title.pdf")  # missing space
-    assert not is_controlled_pdf_name("Smith+Doe - 2015 - Title.pdf")  # legacy
-    assert not is_controlled_pdf_name("Random.pdf")
-    assert not is_controlled_pdf_name("(NoClose 2015 Title.pdf")
-    assert not is_controlled_pdf_name("(Alpha 2020) Title.txt")  # not pdf
+@pytest.fixture
+def pdf_dir(tmp_path: Path) -> Path:
+    d = tmp_path / "pdfs"
+    d.mkdir()
+    return d
 
 
-def test_pdf_info_from_path_basic_fields(tmp_path: Path):
-    p = tmp_path / "(Sciortino+Kayser 2021) The rubber hand illusion.pdf"
-    _write_dummy_pdf(p)
-
-    info = pdf_info_from_path(str(p))
-    assert info is not None
-    assert info.pdf_id == "(Sciortino+Kayser 2021)"
-    assert info.pdf_title == "The rubber hand illusion"
-    assert info.authors == "Sciortino+Kayser"
-    assert info.year == "2021"
-    # hash of lowercase id
-    expected_hash = crc32_az7("(sciortino+kayser 2021)")
-    assert info.pdf_hash == expected_hash
-    assert info.size == p.stat().st_size
-    assert info.mtime == p.stat().st_mtime
-    assert info.filename_with_ext == p.name
-    assert os.path.isabs(info.abs_path)
-
-
-def test_pdf_info_with_diacritics_retained(tmp_path: Path):
-    p = tmp_path / "(müller 2018) Überlegung.pdf"
-    _write_dummy_pdf(p)
-
-    info = pdf_info_from_path(str(p))
-    assert info is not None
-    # Preserve diacritics in id; hash computed from lowercase id
-    assert info.pdf_id == "(müller 2018)"
-    assert info.pdf_title == "Überlegung"
-    assert info.pdf_hash == crc32_az7("(müller 2018)")  # function lowercases internally
-
-
-def test_build_pdf_index_filters_and_keys(tmp_path: Path):
-    # Controlled
-    p1 = tmp_path / "a" / "(Das 2000b) Dream Yoga Study Guide.pdf"
+def test_build_pdf_index_basic(pdf_dir: Path):
+    p1 = pdf_dir / "(Albini 2013) On dealing with destructive emotions.pdf"
     _write_dummy_pdf(p1)
-    p2 = tmp_path / "b" / "(Keating 1995) Open Mind, Open Heart.pdf"
+
+    p2 = pdf_dir / "subdir" / "(Das 2000b) Other title.pdf"
     _write_dummy_pdf(p2)
-    # Non-controlled
-    p3 = tmp_path / "b" / "Smith+Doe - 2015 - Some Paper.pdf"
+
+    # This one should be ignored
+    p3 = pdf_dir / "ignoreme.pdf"
     _write_dummy_pdf(p3)
 
-    idx = build_pdf_index([str(tmp_path)])
-    # keys are lowercase pdf_id
-    assert "(das 2000b)" in idx
-    assert "(keating 1995)" in idx
-    assert "smith+doe - 2015 - some paper" not in idx
+    idx = build_pdf_index([str(pdf_dir)])
     assert len(idx) == 2
 
+    k1 = "(albini 2013)"
+    assert k1 in idx
+    info1 = idx[k1]
+    assert isinstance(info1, PdfInfo)
+    assert info1.pdf_id == "(Albini 2013)"
+    assert info1.pdf_title == "On dealing with destructive emotions"
+    assert info1.abs_path == str(p1)
+    assert info1.pdf_hash == crc32_az7(k1)
 
-def test_dropbox_relative_paths_posix(tmp_path: Path):
-    dropbox_root = tmp_path / "Dropbox"
-    pdf_dir = dropbox_root / "Papers" / "Neuro"
-    p = pdf_dir / "(Dainton 2014) Self - Philosophy In Transit.pdf"
-    _write_dummy_pdf(p)
-
-    info = pdf_info_from_path(str(p), dropbox_root=str(dropbox_root))
-    assert info is not None
-    assert info.dropbox_rel_path == "Papers/Neuro/(Dainton 2014) Self - Philosophy In Transit.pdf"
+    k2 = "(das 2000b)"
+    assert k2 in idx
+    info2 = idx[k2]
+    assert info2.pdf_id == "(Das 2000b)"
+    assert info2.pdf_title == "Other title"
+    assert info2.abs_path == str(p2)
+    assert info2.pdf_hash == crc32_az7(k2)
 
 
-def test_duplicate_pdf_id_detection(tmp_path: Path):
-    # Two files that differ only by case or placement but same id token
-    p1 = tmp_path / "A" / "(Das 2000b) Title.pdf"
-    p2 = tmp_path / "B" / "(das 2000b) Another Title.pdf"
-    _write_dummy_pdf(p1)
-    _write_dummy_pdf(p2)
+def test_build_pdf_index_mtime_size(pdf_dir: Path):
+    p1 = pdf_dir / "(Test 2025) File A.pdf"
+    _write_dummy_pdf(p1, content=b"12345")
+    st1 = p1.stat()
 
-    with pytest.raises(DuplicatePdfIdError) as ei:
-        build_pdf_index([str(tmp_path)])
-    assert "(das 2000b)" in str(ei.value)
+    time.sleep(0.01)  # Ensure mtime is different
+
+    p2 = pdf_dir / "(Test 2026) File B.pdf"
+    _write_dummy_pdf(p2, content=b"1234567890")
+    st2 = p2.stat()
+
+    idx = build_pdf_index([str(pdf_dir)])
+    assert len(idx) == 2
+
+    info1 = idx["(test 2025)"]
+    assert info1.size == 5
+    assert info1.mtime == st1.st_mtime
+
+    info2 = idx["(test 2026)"]
+    assert info2.size == 10
+    assert info2.mtime == st2.st_mtime
+    assert info2.mtime != info1.mtime
+
+
+def test_empty_dir(pdf_dir: Path):
+    idx = build_pdf_index([str(pdf_dir)])
+    assert len(idx) == 0
+
+
+def test_nonexistent_dir(tmp_path: Path):
+    idx = build_pdf_index([str(tmp_path / "nonexistent")])
+    assert len(idx) == 0

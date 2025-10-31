@@ -30,6 +30,11 @@ def make_input(
     }
 
 
+# --- FIX: Moved 'run_objs' out of the class and removed 'self' ---
+def run_objs(objs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    return process_objects(objs)
+
+
 class TestNormalization:
     def test_normalize_text_whitespace(self):
         assert normalize_text("  a \n b\tc  ") == "a b c"
@@ -52,16 +57,13 @@ class TestHeadingExtraction:
 
 
 class TestLinkLogicWithObjects:
-    def run_objs(self, objs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        return process_objects(objs)
-
     def test_simple_merge(self):
         objs = [
             make_input(content="note", extracted="A-"),
             make_input(content="link", extracted="B"),
             make_input(content="note", extracted="C"),
         ]
-        out = self.run_objs(objs)
+        out = run_objs(objs)  # Use module-level function
         assert len(out) == 2
         assert out[0]["highlightText"] == "AB"
         assert out[0]["commentText"] == "note"
@@ -74,7 +76,7 @@ class TestLinkLogicWithObjects:
             make_input(content="link", extracted="again"),
             make_input(content="note", extracted="Done"),
         ]
-        out = self.run_objs(objs)
+        out = run_objs(objs)  # Use module-level function
         assert len(out) == 2
         assert out[0]["highlightText"] == "Hello world"
         assert out[1]["highlightText"] == "Done"
@@ -84,7 +86,7 @@ class TestLinkLogicWithObjects:
             make_input(content="link", extracted="Start here"),
             make_input(content="note", extracted="Next"),
         ]
-        out = self.run_objs(objs)
+        out = run_objs(objs)  # Use module-level function
         assert len(out) == 2
         assert out[0]["highlightText"] == "Start here"
         assert out[0]["commentText"] == ""
@@ -96,7 +98,7 @@ class TestLinkLogicWithObjects:
             make_input(content="link", extracted=""),
             make_input(content="note", extracted="Next"),
         ]
-        out = self.run_objs(objs)
+        out = run_objs(objs)  # Use module-level function
         assert out[0]["highlightText"] == "Base"
         assert out[1]["highlightText"] == "Next"
 
@@ -105,7 +107,7 @@ class TestLinkLogicWithObjects:
             make_input(content="h2", extracted="Heading A"),
             make_input(content="note", extracted="Text"),
         ]
-        out = self.run_objs(objs)
+        out = run_objs(objs)  # Use module-level function
         assert out[0]["header"] == "H2"
         assert out[0]["commentText"] == ""
         assert out[1]["commentText"] == "note"
@@ -116,7 +118,7 @@ class TestLinkLogicWithObjects:
             make_input(annot_type_first=8, content="note", extracted="B"),
             make_input(annot_type_first=9, content="note", extracted="C"),
         ]
-        out = self.run_objs(objs)
+        out = run_objs(objs)  # Use module-level function
         assert len(out) == 1
         assert out[0]["highlightText"] == "B"
 
@@ -126,7 +128,7 @@ class TestLinkLogicWithObjects:
             make_input(page_num=1, content="link", extracted=" the sentence."),
             make_input(page_num=1, content="note", extracted="Next"),
         ]
-        out = self.run_objs(objs)
+        out = run_objs(objs)  # Use module-level function
         assert out[0]["highlightText"] == "Part 1 of the sentence."
         assert out[1]["highlightText"] == "Next"
 
@@ -136,7 +138,7 @@ class TestLinkLogicWithObjects:
             make_input(content="link", extracted="  B \n C  "),
             make_input(content="note", extracted="X"),
         ]
-        out = self.run_objs(objs)
+        out = run_objs(objs)  # Use module-level function
         assert out[0]["highlightText"] == "ABC"
 
     def test_is_link_case_insensitive(self):

@@ -67,7 +67,8 @@ def test_parse_filename_missing_pieces():
 
 def test_parse_filename_paths_and_os_splits(tmp_path):
     f = tmp_path / "(Alpha+Beta 2020) Name.pdf"
-    f.write_bytes(b"%PDF-1.4\n%...")
+    # --- FIX: Ignore PyCharm's incorrect type warning ---
+    f.write_bytes(b"%PDF-1.4\n%...")  # type: ignore
     pf = parse_filename(str(f))
     assert pf.path == str(tmp_path)
     assert pf.filename_with_ext == "(Alpha+Beta 2020) Name.pdf"

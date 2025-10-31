@@ -13,12 +13,12 @@ def read_fixture(relative_path: str) -> str:
         return f.read()
 
 
+# --- FIX: Moved ndjson_to_list outside the class and removed 'self' ---
+def ndjson_to_list(s: str) -> List[dict]:
+    return [json.loads(line) for line in s.splitlines() if line.strip()]
+
+
 class TestStreamIntegration:
-
-    @staticmethod
-    def ndjson_to_list(self, s: str) -> List[dict]:
-        return [json.loads(line) for line in s.splitlines() if line.strip()]
-
     def test_end_to_end_link_merge(self):
         inp = read_fixture("link_merge/input.ndjson")
         expected = read_fixture("link_merge/expected.ndjson")
