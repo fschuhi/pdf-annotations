@@ -311,7 +311,7 @@ if fm_changed:
 ```
 tests/
 ├── fixtures/
-│   ├── single_pdf_explicit_assertions/          # E2E test fixture
+│   ├── complete_update_workflow/          # E2E test fixture
 │   │   ├── seeds/              # Initial state
 │   │   │   ├── (Albini 2013).md
 │   │   │   └── (Albini 2013) On dealing....pdf

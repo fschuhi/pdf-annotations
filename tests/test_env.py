@@ -170,7 +170,7 @@ def test_temp_dir_optional(tmp_path: Path):
 def test_load_env_from_fixture_file():
     """Test loading from the actual fixture TOML file."""
     here = Path(__file__).parent
-    cfg = (here / "fixtures" / "single_pdf_explicit_assertions" / "config.toml").resolve()
+    cfg = (here / "fixtures" / "complete_update_workflow" / "config.toml").resolve()
     env = load_env(cfg)
     assert env.paths.notes_root.exists()
     # backup_dir is optional - only check if configured
@@ -182,7 +182,7 @@ def test_load_env_from_fixture_file():
 def test_notesdb_from_env_integration():
     """Test that NotesDB.from_env() works with a loaded Env."""
     here = Path(__file__).parent
-    cfg = (here / "fixtures" / "single_pdf_explicit_assertions" / "config.toml").resolve()
+    cfg = (here / "fixtures" / "complete_update_workflow" / "config.toml").resolve()
     env = load_env(cfg)
     db = NotesDB.from_env(env)
     assert isinstance(db, NotesDB)

@@ -28,7 +28,7 @@ from pdf_annot.notes import extract_info_text, replace_annotation_block, UpdateR
 
 # Fixture paths
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
-TEST_DIR = FIXTURES_DIR / "single_pdf_explicit_assertions"
+TEST_DIR = FIXTURES_DIR / "complete_update_workflow"
 CONFIG_FILE = TEST_DIR / "config.toml"
 SEEDS_DIR = TEST_DIR / "seeds"
 GOLDENS_DIR = TEST_DIR / "goldens"
@@ -204,3 +204,53 @@ class TestSinglePdfExplicitAssertions(unittest.TestCase):
 
         # Compare body (annotation block)
         self.assertEqual(actual_parsed.body.strip(), golden_parsed.body.strip(), "Annotation block should match golden")
+
+    def test_all_pdfs_with_loop(self):
+        """
+        Process all PDFs in the index through the workflow.
+
+        This test uses the same workflow as the explicit test, but loops over
+        all PDFs and makes flexible assertions about the batch results.
+
+        Currently we only have one PDF (Albini 2013), but this structure is
+        ready for multiple PDFs.
+        """
+        current_time_iso = datetime.now().isoformat(timespec="seconds")
+        results = []
+
+        # Process all PDFs in the registry
+        for pdf_id_lower, pdf_info in self.pdf_index.items():
+            # Find corresponding note (case-sensitive filename)
+            note_path = self.temp_path / f"{pdf_info.pdf_id}.md"
+
+            if not note_path.exists():
+                # PDF has no corresponding note - skip for now
+                # (We could track "missing notes" here in the future)
+                continue
+
+            result = self._process_pdf_for_note(pdf_info, note_path, current_time_iso)
+            results.append(result)
+
+        # =====================================================================
+        # Flexible assertions on batch results
+        # =====================================================================
+
+        # All should succeed (no errors)
+        errors = [r for r in results if not r.success]
+        self.assertEqual(len(errors), 0, f"No errors expected, got: {[r.error for r in errors]}")
+
+        # At least one note should have been updated
+        updated = [r for r in results if r.note_updated]
+        self.assertGreater(len(updated), 0, "At least one note should have been updated")
+
+        # Count statistics
+        fm_changed_count = sum(1 for r in results if r.frontmatter_changed)
+        annot_changed_count = sum(1 for r in results if r.annotation_block_changed)
+
+        # For this specific test fixture, we expect:
+        # - Exactly 1 PDF processed (Albini 2013)
+        # - Frontmatter changed (mtime/size differ from seed)
+        # - Annotation block changed
+        self.assertEqual(len(results), 1, "Should process exactly one PDF")
+        self.assertEqual(fm_changed_count, 1, "Albini PDF should trigger frontmatter update")
+        self.assertEqual(annot_changed_count, 1, "Albini PDF should trigger annotation update")
