@@ -197,8 +197,6 @@ class NotesDB(Mapping[str, NoteInfo]):
         Compare notes with a PDF registry and propose front-matter changes.
         """
 
-        # --- FIX: Removed unused 'norm_key' function ---
-
         def get_attr_chain(obj: object, path: Tuple[str, ...]) -> object:
             cur = obj
             for p in path:
@@ -266,7 +264,6 @@ class NotesDB(Mapping[str, NoteInfo]):
 
         return NotesDB.FrontmatterPlanSummary(plans=plans, missing_notes=missing_notes, orphan_notes=orphan_notes)
 
-    # --- FIX: Added @staticmethod ---
     @staticmethod
     def apply_frontmatter_updates(
         plans: Iterable["NotesDB.FrontmatterUpdatePlan"],
@@ -288,7 +285,6 @@ class NotesDB(Mapping[str, NoteInfo]):
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     original = f.read()
-            # --- FIX: Catch specific OSError ---
             except OSError as e:
                 msg = f"Failed to read note '{path}': {e}"
                 if logger:
@@ -309,7 +305,6 @@ class NotesDB(Mapping[str, NoteInfo]):
                     logger.info(f"[dry-run] Would update {path}")
                 continue
 
-            # --- REFACTORED: Use atomic write helper ---
             try:
                 _atomic_write_file(path, new_text)
                 updated.append(path)
@@ -369,10 +364,12 @@ class NotesDB(Mapping[str, NoteInfo]):
                 missing.append(pid_raw)
                 continue
 
+            # --- FIX: Add assertion to help PyCharm's linter ---
+            assert note is not None
+
             try:
                 with open(note.abs_path, "r", encoding="utf-8") as f:
                     original = f.read()
-            # --- FIX: Catch specific OSError ---
             except OSError:
                 # If unreadable, still produce a plan; apply step will report error
                 original = ""
@@ -399,7 +396,6 @@ class NotesDB(Mapping[str, NoteInfo]):
 
         return NotesDB.AnnotationPlanSummary(plans=plans, missing_notes=missing)
 
-    # --- FIX: Added @staticmethod ---
     @staticmethod
     def apply_annotation_updates(
         plans: Iterable["NotesDB.AnnotationUpdatePlan"],
@@ -416,7 +412,6 @@ class NotesDB(Mapping[str, NoteInfo]):
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     original = f.read()
-            # --- FIX: Catch specific OSError ---
             except OSError as e:
                 errors.append((path, f"read error: {e}"))
                 if logger:
@@ -436,7 +431,6 @@ class NotesDB(Mapping[str, NoteInfo]):
                     logger.info(f"[dry-run] Would update annotations in {path}")
                 continue
 
-            # --- REFACTORED: Use atomic write helper ---
             try:
                 _atomic_write_file(path, new_text)
                 updated.append(path)
@@ -453,7 +447,6 @@ class NotesDB(Mapping[str, NoteInfo]):
 # ------------- helpers (module level) -------------
 
 
-# --- NEW: Helper function for atomic writes ---
 def _atomic_write_file(path: str, new_text: str) -> None:
     """
     Atomically write new_text to path.
