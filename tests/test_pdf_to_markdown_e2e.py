@@ -16,6 +16,9 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 PROJECT_ROOT = FIXTURES_DIR.parent.parent
 
 
+DEFAULT_INFO_TEXT = "below the automatically generated annotations from the PDF"
+
+
 # Helper function to load NDJSON
 def ndjson_to_list(s: str) -> List[dict]:
     """Loads a newline-delimited JSON string into a list of dicts."""
@@ -119,7 +122,7 @@ def test_complete_extraction_pipeline(setup_e2e_pipeline: dict):
     with open(actual_streamlined_ndjson_path, "r", encoding="utf-8") as f:
         streamlined_objs = [json.loads(line) for line in f if line.strip()]
 
-    actual_markdown = render_block(streamlined_objs, pdf_id_hash="VQGPEHE")
+    actual_markdown = render_block(streamlined_objs, pdf_id_hash="VQGPEHE", info_text=DEFAULT_INFO_TEXT)
 
     # 6. --- Load Expected Results ---
     expected_raw_data = ndjson_to_list(expected_raw_ndjson_path.read_text("utf-8"))

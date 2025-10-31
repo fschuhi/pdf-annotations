@@ -33,8 +33,6 @@ PDF_DATE_RE = re.compile(
     re.VERBOSE,
 )
 
-DEFAULT_INFO_TEXT = "below the automatically generated annotations from the PDF"
-
 
 @dataclass
 class Annot:
@@ -112,7 +110,7 @@ def split_comment_lines(s: str) -> List[str]:
     return re.split(r"\r\n|\n|\r", s)
 
 
-def render_block(annots: Iterable[dict] | Iterable[Annot], pdf_id_hash: str, info_text: str = DEFAULT_INFO_TEXT) -> str:
+def render_block(annots: Iterable[dict] | Iterable[Annot], pdf_id_hash: str, info_text: str = None) -> str:
     """
     Render an Obsidian annotation block from streamlined annotations.
 
