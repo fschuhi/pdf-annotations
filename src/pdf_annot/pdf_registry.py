@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional
 
-from .utils import crc32_az7, parse_filename, pdf_id_from_filename
+from .utils import crc32_az7, parse_filename
 
 
 class DuplicatePdfIdError(Exception):
