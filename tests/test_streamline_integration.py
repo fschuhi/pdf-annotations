@@ -1,7 +1,5 @@
 import io
-import os
 import json
-import unittest
 from pathlib import Path
 from typing import List
 from pdf_annot.streamline_annotations import process_stream
@@ -16,6 +14,8 @@ def read_fixture(relative_path: str) -> str:
 
 
 class TestStreamIntegration:
+
+    @staticmethod
     def ndjson_to_list(self, s: str) -> List[dict]:
         return [json.loads(line) for line in s.splitlines() if line.strip()]
 

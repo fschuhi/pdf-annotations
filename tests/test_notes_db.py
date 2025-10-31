@@ -1,8 +1,6 @@
 # tests/test_notes_db.py
 from __future__ import annotations
 
-import os
-import stat
 import textwrap
 from dataclasses import dataclass
 from pathlib import Path
@@ -151,7 +149,7 @@ def test_apply_handles_read_errors_and_write_errors(tmp_path: Path):
             pdf_id="Err 2020", note_path=str(path), desired_frontmatter={"pdf_title": "X"}, current_frontmatter={}
         ),
     ]
-    old_mode = (vault.stat().st_mode) & 0o777
+    old_mode = vault.stat().st_mode & 0o777
     try:
         vault.chmod(0o500)
         summary2 = db.apply_frontmatter_updates(plans2, dry_run=False)
