@@ -9,10 +9,11 @@ from typing import List
 from pdf_annot.extract import main as extract_main
 from pdf_annot.streamline_annotations import main as streamline_main
 from pdf_annot.ndjson_to_md_block import render_block
-from pdf_annot.env import load_env
+from pdf_annot.env import load_env, Env, Paths, IO
 
 # Define fixture paths
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
+PROJECT_ROOT = FIXTURES_DIR.parent.parent
 
 
 # Helper function to load NDJSON
@@ -25,63 +26,71 @@ def ndjson_to_list(s: str) -> List[dict]:
 def setup_e2e_pipeline(request):
     """
     A pytest fixture that sets up the E2E test environment.
-    It copies the input PDF to a temp dir and provides paths
-    to the golden (expected) files.
+
+    1. Checks for /tests/fixtures/<name>/config.toml.
+    2. If it exists, loads it. If not, creates a default Env in memory.
+    3. Copies the 'input.pdf' seed into the runtime temp dir.
+    4. Yields the Env and paths to golden files.
     """
     fixture_name = request.param
 
-    # 1. Define paths
-    test_dir = FIXTURES_DIR / fixture_name
-    config_file = test_dir / "config.toml"
-    input_pdf = test_dir / "input.pdf"
+    # 1. Define fixture source paths
+    fixture_source_dir = FIXTURES_DIR / fixture_name
+    config_file = fixture_source_dir / "config.toml"
+    source_input_pdf = fixture_source_dir / "input.pdf"
 
-    # 2. Load environment configuration
-    env = load_env(config_file)
-    temp_path = env.paths.temp_dir
+    # 2. Load or create Env
+    if config_file.exists():
+        env = load_env(config_file)
+    else:
+        # Generate a default Env in memory
+        runtime_temp_dir = PROJECT_ROOT / "tests" / "tmp" / fixture_name
+        paths_config = Paths(notes_root=runtime_temp_dir, pdf_dirs=[runtime_temp_dir], temp_dir=runtime_temp_dir)
+        io_config = IO(create_missing_dirs=True)
+        env = Env(paths=paths_config, io=io_config)
 
-    # Ensure temp dir exists and copy seed PDF
-    temp_path.mkdir(parents=True, exist_ok=True)
-    temp_pdf_path = temp_path / input_pdf.name
-    shutil.copy(input_pdf, temp_pdf_path)
+    assert env.paths.temp_dir is not None, "temp_dir must be set in Env for tests"
 
-    # 3. Yield paths to the test
+    # 3. Setup: Copy seed PDF to runtime temp dir
+    runtime_pdf_path = env.paths.temp_dir / source_input_pdf.name
+    shutil.copy(source_input_pdf, runtime_pdf_path)
+
+    # 4. Yield paths to the test
     yield {
-        "temp_path": temp_path,
-        "temp_pdf_path": temp_pdf_path,
-        "expected_raw": test_dir / "expected_raw.ndjson",
-        "expected_streamlined": test_dir / "expected_streamlined.ndjson",
-        "expected_markdown": test_dir / "expected_markdown.md",
+        "env": env,
+        "runtime_pdf_path": runtime_pdf_path,
+        "expected_raw": fixture_source_dir / "expected_raw.ndjson",
+        "expected_streamlined": fixture_source_dir / "expected_streamlined.ndjson",
+        "expected_markdown": fixture_source_dir / "expected_markdown.md",
     }
 
-    # 4. Teardown (optional)
-    # Intentionally do NOT clean up temp directory.
-    # Temp files are useful for debugging and serve as documentation.
+    # 5. Teardown (optional)
     pass
 
 
 @pytest.mark.parametrize("setup_e2e_pipeline", ["pdf_to_markdown_e2e"], indirect=True)
-def test_complete_extraction_pipeline(setup_e2e_pipeline):
+def test_complete_extraction_pipeline(setup_e2e_pipeline: dict):
     """
     End-to-end test: PDF → raw NDJSON → streamlined NDJSON → markdown.
     Tests the complete annotation extraction and rendering pipeline
     by running the CLI entrypoints.
     """
     # 1. --- Get paths from fixture ---
-    temp_path = setup_e2e_pipeline["temp_path"]
-    temp_pdf_path = setup_e2e_pipeline["temp_pdf_path"]
-    expected_raw_ndjson_path = setup_e2e_pipeline["expected_raw"]
-    expected_streamlined_ndjson_path = setup_e2e_pipeline["expected_streamlined"]
-    expected_markdown_path = setup_e2e_pipeline["expected_markdown"]
+    env: Env = setup_e2e_pipeline["env"]
+    runtime_pdf_path: Path = setup_e2e_pipeline["runtime_pdf_path"]
+    expected_raw_ndjson_path: Path = setup_e2e_pipeline["expected_raw"]
+    expected_streamlined_ndjson_path: Path = setup_e2e_pipeline["expected_streamlined"]
+    expected_markdown_path: Path = setup_e2e_pipeline["expected_markdown"]
 
     # 2. --- Define paths for generated output files ---
-    actual_raw_ndjson_path = temp_path / temp_pdf_path.with_suffix(".ndjson").name
+    # Use the env's temp_dir as the base
+    temp_path = env.paths.temp_dir
+    actual_raw_ndjson_path = temp_path / runtime_pdf_path.with_suffix(".ndjson").name
     actual_streamlined_ndjson_path = temp_path / "final_streamlined.ndjson"
 
     # 3. --- Run Extraction Script ---
-    # The extract.py script saves output next to the input PDF.
     # We patch sys.argv to simulate: `python extract.py -p /path/to/temp/input.pdf`
-    # We also patch print() to suppress console output during the test
-    extract_argv = ["extract.py", "-p", str(temp_pdf_path)]
+    extract_argv = ["extract.py", "-p", str(runtime_pdf_path)]
     with patch("sys.argv", extract_argv), patch("builtins.print"):
         extract_main()
 

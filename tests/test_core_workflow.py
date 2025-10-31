@@ -14,7 +14,7 @@ from pathlib import Path
 from datetime import datetime
 import pytest
 
-from pdf_annot.env import load_env, Env
+from pdf_annot.env import load_env, Env, Paths, IO
 from pdf_annot.pdf_registry import build_pdf_index, PdfInfo
 from pdf_annot.frontmatter import parse_note, upsert_fields
 from pdf_annot.ndjson_to_md_block import render_block
@@ -24,6 +24,7 @@ from pdf_annot.notes import extract_info_text, replace_annotation_block, UpdateR
 
 # Fixture paths
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
+PROJECT_ROOT = FIXTURES_DIR.parent.parent
 
 
 # Helper function
@@ -75,7 +76,6 @@ def _process_pdf_for_note(pdf_info: PdfInfo, note_path: Path, current_time_iso: 
 
         # Extract annotations from PDF
         # pdf_info.abs_path is the correct path from the registry
-        # FIX: Wrap str in Path() to satisfy type checker
         raw_annotations = extract_annotations_to_list(Path(pdf_info.abs_path))
 
         # Streamline annotations
@@ -114,11 +114,13 @@ def setup_workflow(request):
     """
     A pytest fixture that sets up a test environment based on a fixture_name.
 
-    1. Loads the fixture's config.toml to create a validated Env.
-    2. Copies seeds from /tests/fixtures/<name>/seeds into the /tests/tmp/...
-       directory specified by the Env.
-    3. Builds a PDF registry from the runtime directory.
-    4. Yields the Env, PDF index, and path to golden files.
+    1. Checks for /tests/fixtures/<name>/config.toml.
+    2. If it exists, loads it to create a validated Env.
+    3. If it DOES NOT exist, creates a default Env in memory, with all paths
+       pointing to /tests/tmp/<name>.
+    4. Copies seeds from /tests/fixtures/<name>/seeds into the runtime temp dir.
+    5. Builds a PDF registry from the runtime directory.
+    6. Yields the Env, PDF index, and path to golden files.
 
     The 'request.param' must be the name of the fixture directory,
     e.g., "complete_update_workflow".
@@ -132,17 +134,26 @@ def setup_workflow(request):
     source_goldens_dir = fixture_source_dir / "goldens"
 
     # 2. Load Env: This is the source of truth for runtime
-    # It will create the ./tests/tmp/<name> directory
-    env = load_env(config_file)
+    if config_file.exists():
+        # Load Env from the explicit file
+        env = load_env(config_file)
+    else:
+        # Generate a default Env in memory
+        runtime_temp_dir = PROJECT_ROOT / "tests" / "tmp" / fixture_name
 
-    # Runtime paths are now derived from env
-    runtime_temp_dir = env.paths.temp_dir
-    assert runtime_temp_dir is not None, "temp_dir must be set in config.toml for tests"
+        paths_config = Paths(notes_root=runtime_temp_dir, pdf_dirs=[runtime_temp_dir], temp_dir=runtime_temp_dir)
+        io_config = IO(create_missing_dirs=True)  # This is the important default
+
+        # This will create the runtime_temp_dir
+        env = Env(paths=paths_config, io=io_config)
+
+    assert env.paths.temp_dir is not None, "temp_dir must be set in Env for tests"
 
     # 3. Setup: Copy seeds from source to runtime dir
     for seed_file in source_seeds_dir.glob("*"):
         if seed_file.is_file():
-            shutil.copy(seed_file, runtime_temp_dir / seed_file.name)
+            # Use the temp_dir *from the env* as the destination
+            shutil.copy(seed_file, env.paths.temp_dir / seed_file.name)
 
     # 4. Build registry from the runtime PDF dirs specified in the Env
     pdf_index = build_pdf_index([str(p) for p in env.paths.pdf_dirs])
@@ -156,7 +167,6 @@ def setup_workflow(request):
 
     # 6. Teardown (optional)
     # Intentionally do NOT clean up temp directory.
-    # Temp files are useful for debugging and serve as documentation.
     pass
 
 
@@ -167,7 +177,6 @@ def test_complete_update_workflow(setup_workflow: dict):
     This test explicitly verifies the Albini 2013 PDF/note pair with detailed assertions.
     """
     # Get all setup data from the fixture
-    # FIX: Added type hint to setup_workflow to resolve __getitem__ warnings
     env: Env = setup_workflow["env"]
     pdf_index: dict[str, PdfInfo] = setup_workflow["pdf_index"]
     goldens_dir: Path = setup_workflow["goldens_dir"]
@@ -178,7 +187,7 @@ def test_complete_update_workflow(setup_workflow: dict):
 
     # =====================================================================
     # 1. Get PDF info from registry (built in setUp)
-    # =================================S====================================
+    # =====================================================================
     assert len(pdf_index) == 1, "Should find exactly one PDF"
     assert pdf_id_key in pdf_index
     pdf_info: PdfInfo = pdf_index[pdf_id_key]
@@ -242,7 +251,6 @@ def test_all_pdfs_with_loop(setup_workflow: dict):
     ready for multiple PDFs.
     """
     # Get setup data
-    # FIX: Added type hint to setup_workflow to resolve __getitem__ warnings
     env: Env = setup_workflow["env"]
     pdf_index: dict[str, PdfInfo] = setup_workflow["pdf_index"]
 
@@ -256,7 +264,6 @@ def test_all_pdfs_with_loop(setup_workflow: dict):
 
         if not note_path.exists():
             # PDF has no corresponding note - skip for now
-            # (We could track "missing notes" here in the future)
             continue
 
         result = _process_pdf_for_note(pdf_info, note_path, current_time_iso)
