@@ -5,7 +5,9 @@ import os
 import re
 import tempfile
 from dataclasses import dataclass
-from typing import Dict, Iterable, Iterator, List, Mapping, Optional, Tuple, Mapping as TypingMapping
+
+# --- FIX: Import Protocol ---
+from typing import Dict, Iterable, Iterator, List, Mapping, Optional, Tuple, Mapping as TypingMapping, Protocol
 
 from .frontmatter import parse_note, upsert_fields
 from .env import Env
@@ -16,6 +18,15 @@ CONTROLLED_MD_RE = re.compile(r"^\((?P<id>.+?)\)\.md$", re.IGNORECASE)
 ANNOT_SEP = '<hr class="pdf-annot-sep">'
 ANNOT_INFO_PREFIX = '<span class="pdf-annot-info">'
 NEWLINE = "\n"
+
+
+# --- FIX: Define a Protocol for the logger ---
+class ProvidesLogging(Protocol):
+    """A duck type for an object that has info() and error() methods."""
+
+    def info(self, msg: str) -> None: ...
+
+    def error(self, msg: str) -> None: ...
 
 
 class DuplicateNoteIdError(Exception):
@@ -265,7 +276,8 @@ class NotesDB(Mapping[str, NoteInfo]):
         plans: Iterable["NotesDB.FrontmatterUpdatePlan"],
         *,
         dry_run: bool = False,
-        logger: Optional[object] = None,
+        # --- FIX: Use the Protocol for better type hinting ---
+        logger: Optional[ProvidesLogging] = None,
     ) -> "NotesDB.FrontmatterApplySummary":
         """
         Apply a list of UpdatePlan changes to note files.
@@ -415,7 +427,8 @@ class NotesDB(Mapping[str, NoteInfo]):
         plans: Iterable["NotesDB.AnnotationUpdatePlan"],
         *,
         dry_run: bool = False,
-        logger: Optional[object] = None,
+        # --- FIX: Use the Protocol for better type hinting ---
+        logger: Optional[ProvidesLogging] = None,
     ) -> "NotesDB.AnnotationApplySummary":
         updated: List[str] = []
         unchanged: List[str] = []

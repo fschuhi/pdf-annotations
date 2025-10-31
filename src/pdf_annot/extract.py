@@ -1,7 +1,7 @@
 import argparse
 import json
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 import fitz
 import numpy as np
 
@@ -19,6 +19,22 @@ COLUMN_GAP_THRESHOLD = 100  # x gap (points) to detect separate columns
 # ===============================================================
 #  Column detector
 # ===============================================================
+
+
+# --- NEW: Helper function to de-duplicate logic ---
+def _split_rects_by_max_gap(
+    rects: List[fitz.Rect], x_positions: List[int], gaps: np.ndarray
+) -> Tuple[List[fitz.Rect], List[fitz.Rect]]:
+    """
+    Finds the largest gap in x_positions and splits the rects list based on it.
+    """
+    max_gap_idx = int(np.argmax(gaps))
+    split_x = (x_positions[max_gap_idx] + x_positions[max_gap_idx + 1]) / 2
+    left = [r for r in rects if r.x0 < split_x]
+    right = [r for r in rects if r.x0 >= split_x]
+    return left, right
+
+
 def detect_columns(rects: List[fitz.Rect], x_gap_threshold: float = COLUMN_GAP_THRESHOLD):
     """
     Detect columns by looking for large X gaps between rect groups.
@@ -34,19 +50,16 @@ def detect_columns(rects: List[fitz.Rect], x_gap_threshold: float = COLUMN_GAP_T
 
     gaps = np.diff(x_positions)
     if any(gap > x_gap_threshold for gap in gaps):
-        max_gap_idx = int(np.argmax(gaps))
-        split_x = (x_positions[max_gap_idx] + x_positions[max_gap_idx + 1]) / 2
-        left = [r for r in rects_sorted if r.x0 < split_x]
-        right = [r for r in rects_sorted if r.x0 >= split_x]
+        # --- REFACTORED: Use helper ---
+        left, right = _split_rects_by_max_gap(rects_sorted, x_positions, gaps)
+
         # Try detecting 3 columns by splitting again if needed
         if len(right) > 1:
             right_xs = sorted({int(r.x0) for r in right})
             right_gaps = np.diff(right_xs)
             if any(gap > x_gap_threshold for gap in right_gaps):
-                mid_gap_idx = int(np.argmax(right_gaps))
-                split_mid = (right_xs[mid_gap_idx] + right_xs[mid_gap_idx + 1]) / 2
-                mid = [r for r in right if r.x0 < split_mid]
-                far_right = [r for r in right if r.x0 >= split_mid]
+                # --- REFACTORED: Use helper ---
+                mid, far_right = _split_rects_by_max_gap(right, right_xs, right_gaps)
                 return [left, mid, far_right]
         return [left, right]
     else:
@@ -103,7 +116,8 @@ def extract_annotations(doc: fitz.Document, header_height: float, footer_height:
     Yield Annotation objects for all textual annotations in the document.
     For highlights, also include extracted text in info['extractedText'].
     """
-    for i, page in enumerate(doc):
+    # --- FIX: Ignore PyCharm linter warning. fitz.Document is iterable. ---
+    for i, page in enumerate(doc):  # type: ignore
         for annot in page.annots(types=TEXTUAL_ANNOTS):
             if not annot:
                 continue
@@ -125,6 +139,15 @@ def extract_annotations(doc: fitz.Document, header_height: float, footer_height:
                 topLeft=(rect.x0, rect.y0),
                 botRight=(rect.x1, rect.y1),
             )
+
+
+# --- Internal helper to de-duplicate extraction and sorting ---
+def _extract_and_sort_annots(doc: fitz.Document, header_height: float, footer_height: float) -> List[Annotation]:
+    """Extracts and sorts annotations by visual reading order."""
+    annotations = list(extract_annotations(doc, header_height, footer_height))
+    # Sort by visual reading order: page, y (top to bottom), x (left to right)
+    annotations.sort(key=lambda a: (a.pageNum, a.topLeft[1], a.topLeft[0]))
+    return annotations
 
 
 # ===============================================================
@@ -151,9 +174,7 @@ def extract_annotations_to_list(
         List of annotation dictionaries in visual reading order
     """
     doc = fitz.open(pdf_path)
-    annotations = list(extract_annotations(doc, header_height, footer_height))
-    # Sort by visual reading order: page, y (top to bottom), x (left to right)
-    annotations.sort(key=lambda a: (a.pageNum, a.topLeft[1], a.topLeft[0]))
+    annotations = _extract_and_sort_annots(doc, header_height, footer_height)
     return [ann.to_dict() for ann in annotations]
 
 
@@ -188,11 +209,7 @@ def main():
 
     doc = fitz.open(pdf_path)
 
-    # Collect all annotations first
-    annotations = list(extract_annotations(doc, args.header_height, args.footer_height))
-
-    # Sort by visual reading order: page, y (top to bottom), x (left to right)
-    annotations.sort(key=lambda a: (a.pageNum, a.topLeft[1], a.topLeft[0]))
+    annotations = _extract_and_sort_annots(doc, args.header_height, args.footer_height)
 
     # Write sorted annotations to JSON (NDJSON style)
     with output_path.open("w", encoding="utf-8") as f:

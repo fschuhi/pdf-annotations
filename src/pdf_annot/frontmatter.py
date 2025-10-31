@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import io
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Tuple
 
 import yaml
 
@@ -67,7 +67,7 @@ def parse_note(text: str) -> ParsedNote:
             elif not isinstance(data, dict):
                 # If the YAML front matter is not a mapping, treat as empty mapping
                 data = {}
-        except Exception:
+        except yaml.YAMLError:
             # On YAML parse error, treat as if no FM to be conservative
             return ParsedNote(front_matter={}, body=text, has_fm=False, _head="", _fm_block="", _tail=text)
         return ParsedNote(front_matter=data, body=tail, has_fm=True, _head=head, _fm_block=fm_block, _tail=tail)

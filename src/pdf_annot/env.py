@@ -269,5 +269,6 @@ def _build_env_from_data(data: Mapping[str, Any], profile: Optional[str]) -> Env
             cli=CLI(**grouped["cli"]),
             annotations=Annotations(**grouped["annotations"]),  # --- NEW ---
         )
-    except ValidationError as e:
-        raise ValueError(f"Invalid configuration: {e}") from e
+    # --- FIX: Renamed 'e' to 've' to avoid shadowing ---
+    except ValidationError as ve:
+        raise ValueError(f"Invalid configuration: {ve}") from ve

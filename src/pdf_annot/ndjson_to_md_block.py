@@ -134,12 +134,13 @@ def render_block(annots: Iterable[dict] | Iterable[Annot], pdf_id_hash: str, inf
     else:
         ann_seq = list(annots)  # type: ignore[assignment]
 
-    out: List[str] = []
-    out.append('<hr class="pdf-annot-sep">')
-    out.append("")
-    # --- CHANGE: Render info_text directly. No defaults. ---
-    out.append(f'<span class="pdf-annot-info">{info_text}</span>')
-    out.append("")
+    # --- FIX: Replaced multi-step init with a list literal ---
+    out: List[str] = [
+        '<hr class="pdf-annot-sep">',
+        "",
+        f'<span class="pdf-annot-info">{info_text}</span>',
+        "",
+    ]
 
     for a in ann_seq:
         header = getattr(a, "header", "") or ""
