@@ -1,22 +1,17 @@
 """
-End-to-end test for single PDF explicit assertions scenario.
-Tests the complete workflow for a single known PDF:
+End-to-end test for the PDF-to-note update workflow.
+Tests the complete workflow:
 1. Detect PDF changes (mtime/size) via frontmatter comparison
 2. Extract annotations from PDF
 3. Streamline annotations
 4. Render markdown annotation block (preserving custom info text)
 5. Update note atomically (frontmatter + annotation block)
 6. Verify result matches golden
-
-This test makes explicit assertions about the specific PDF and note,
-verifying exact behavior.
-For looped/batch processing, see other tests.
 """
 
 import shutil
 from pathlib import Path
 from datetime import datetime
-import unittest
 import pytest
 
 from pdf_annot.env import load_env
@@ -168,10 +163,6 @@ def test_complete_update_workflow(setup_workflow):
     End-to-end test: Detect change → extract → streamline → update note → verify.
     This test explicitly verifies the Albini 2013 PDF/note pair with detailed assertions.
     """
-    # We can still use unittest.TestCase() to get access to assert methods
-    assertions = unittest.TestCase()
-    assertions.maxDiff = None  # Show full diff for debugging
-
     # Get all setup data from the fixture
     pdf_index = setup_workflow["pdf_index"]
     temp_path = setup_workflow["temp_path"]
@@ -184,9 +175,8 @@ def test_complete_update_workflow(setup_workflow):
     # =====================================================================
     # 1. Get PDF info from registry (built in setUp)
     # =====================================================================
-    assertions.assertEqual(len(pdf_index), 1, "Should find exactly one PDF")
-
-    assertions.assertIn(pdf_id_key, pdf_index)
+    assert len(pdf_index) == 1, "Should find exactly one PDF"
+    assert pdf_id_key in pdf_index
     pdf_info: PdfInfo = pdf_index[pdf_id_key]
 
     # =====================================================================
@@ -200,16 +190,16 @@ def test_complete_update_workflow(setup_workflow):
     # =====================================================================
     # 3. Assert workflow result
     # =====================================================================
-    assertions.assertTrue(result.success, f"Workflow should succeed without errors: {result.error}")
-    assertions.assertTrue(result.frontmatter_changed, "Frontmatter should have changed (mtime/size differ)")
-    assertions.assertTrue(result.annotation_block_changed, "Annotation block should have changed")
-    assertions.assertTrue(result.note_updated, "Note should have been updated")
+    assert result.success, f"Workflow should succeed without errors: {result.error}"
+    assert result.frontmatter_changed, "Frontmatter should have changed (mtime/size differ)"
+    assert result.annotation_block_changed, "Annotation block should have changed"
+    assert result.note_updated, "Note should have been updated"
 
     # =====================================================================
     # 4. Verify against golden file
     # =====================================================================
     golden_path = goldens_dir / note_filename
-    assertions.assertTrue(golden_path.exists(), f"Golden file not found: {golden_path}")
+    assert golden_path.exists(), f"Golden file not found: {golden_path}"
     golden_text = golden_path.read_text(encoding="utf-8")
 
     # Replace placeholder in golden with actual timestamp
@@ -222,22 +212,18 @@ def test_complete_update_workflow(setup_workflow):
 
     # Compare frontmatter fields
     for key in ["pdf_id", "pdf_title", "pdf_size", "pdf_hash", "has_annotations"]:
-        assertions.assertEqual(
-            actual_parsed.front_matter.get(key),
-            golden_parsed.front_matter.get(key),
-            f"Frontmatter field {key} should match golden",
-        )
+        assert actual_parsed.front_matter.get(key) == golden_parsed.front_matter.get(
+            key
+        ), f"Frontmatter field {key} should match golden"
 
     # pdf_mtime should exist
-    assertions.assertIsNotNone(actual_parsed.front_matter.get("pdf_mtime"))
+    assert actual_parsed.front_matter.get("pdf_mtime") is not None
 
     # last_run_at should be the timestamp we set
-    assertions.assertEqual(actual_parsed.front_matter.get("last_run_at"), current_time_iso)
+    assert actual_parsed.front_matter.get("last_run_at") == current_time_iso
 
     # Compare body (annotation block)
-    assertions.assertEqual(
-        actual_parsed.body.strip(), golden_parsed.body.strip(), "Annotation block should match golden"
-    )
+    assert actual_parsed.body.strip() == golden_parsed.body.strip(), "Annotation block should match golden"
 
 
 @pytest.mark.parametrize("setup_workflow", ["all_pdfs_with_loop"], indirect=True)
@@ -249,8 +235,6 @@ def test_all_pdfs_with_loop(setup_workflow):
     Currently we only have one PDF (Albini 2013), but this structure is
     ready for multiple PDFs.
     """
-    assertions = unittest.TestCase()
-
     # Get setup data
     pdf_index = setup_workflow["pdf_index"]
     temp_path = setup_workflow["temp_path"]
@@ -277,11 +261,11 @@ def test_all_pdfs_with_loop(setup_workflow):
 
     # All should succeed (no errors)
     errors = [r for r in results if not r.success]
-    assertions.assertEqual(len(errors), 0, f"No errors expected, got: {[r.error for r in errors]}")
+    assert not errors, f"No errors expected, got: {[r.error for r in errors]}"
 
     # At least one note should have been updated
     updated = [r for r in results if r.note_updated]
-    assertions.assertGreater(len(updated), 0, "At least one note should have been updated")
+    assert len(updated) > 0, "At least one note should have been updated"
 
     # Count statistics
     fm_changed_count = sum(1 for r in results if r.frontmatter_changed)
@@ -291,6 +275,6 @@ def test_all_pdfs_with_loop(setup_workflow):
     # - Exactly 1 PDF processed (Albini 2013)
     # - Frontmatter changed (mtime/size differ from seed)
     # - Annotation block changed
-    assertions.assertEqual(len(results), 1, "Should process exactly one PDF")
-    assertions.assertEqual(fm_changed_count, 1, "Albini PDF should trigger frontmatter update")
-    assertions.assertEqual(annot_changed_count, 1, "Albini PDF should trigger annotation update")
+    assert len(results) == 1, "Should process exactly one PDF"
+    assert fm_changed_count == 1, "Albini PDF should trigger frontmatter update"
+    assert annot_changed_count == 1, "Albini PDF should trigger annotation update"
