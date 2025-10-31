@@ -95,7 +95,7 @@ def test_backup_dir_created_when_allowed(tmp_path: Path):
     cfg = tmp_path / "env.toml"
     cfg.write_text(
         f"""
-        [paths]
+         [paths]
         notes_root = "{str(tmp_path / "vault")}"
         backup_dir = "{str(tmp_path / "baks")}"
         [io]
@@ -163,26 +163,59 @@ def test_temp_dir_optional(tmp_path: Path):
 
 
 # =============================================================================
-# Fixture-based tests
+# Fixture-based tests (now self-contained with tmp_path)
 # =============================================================================
 
 
-def test_load_env_from_fixture_file():
-    """Test loading from the actual fixture TOML file."""
-    here = Path(__file__).parent
-    cfg = (here / "fixtures" / "complete_update_workflow" / "config.toml").resolve()
+def test_load_env_from_tmp_file(tmp_path: Path):
+    """Test loading from a TOML file created in tmp_path."""
+    # We need to create the dirs the config *points* to,
+    # but not the dirs it's *meant to create*.
+    vault = tmp_path / "vault"
+    pdfs = tmp_path / "pdfs"
+    baks = tmp_path / "baks"  # This one will be created by load_env
+
+    # We only need to pre-create dirs that load_env validates
+    vault.mkdir()
+    pdfs.mkdir()
+
+    cfg = tmp_path / "test_config.toml"
+    cfg.write_text(
+        f"""
+    [paths]
+    notes_root = "{vault}"
+    pdf_dirs = ["{pdfs}"]
+    backup_dir = "{baks}"
+    [io]
+    create_missing_dirs = true
+    """
+    )
+
     env = load_env(cfg)
     assert env.paths.notes_root.exists()
-    # backup_dir is optional - only check if configured
-    if env.paths.backup_dir:
-        assert env.paths.backup_dir.exists()
+    assert env.paths.backup_dir.exists()  # baks is created by load_env
     assert env.paths.pdf_dirs and all(p.exists() for p in env.paths.pdf_dirs)
 
 
-def test_notesdb_from_env_integration():
+def test_notesdb_from_env_integration(tmp_path: Path):
     """Test that NotesDB.from_env() works with a loaded Env."""
-    here = Path(__file__).parent
-    cfg = (here / "fixtures" / "complete_update_workflow" / "config.toml").resolve()
+    vault = tmp_path / "vault"
+    # We don't need to create vault; load_env will do it.
+
+    cfg = tmp_path / "test_config.toml"
+    cfg.write_text(
+        f"""
+    [paths]
+    notes_root = "{vault}"
+    [io]
+    create_missing_dirs = true
+    """
+    )
+
     env = load_env(cfg)
+    # env.paths.notes_root should exist now
+    assert env.paths.notes_root.exists()
+
     db = NotesDB.from_env(env)
     assert isinstance(db, NotesDB)
+    assert db.root == str(vault.resolve())
