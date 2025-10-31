@@ -11,6 +11,9 @@ except Exception as e:  # pragma: no cover
 
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
+# --- NEW: Define the default here ---
+DEFAULT_INFO_TEXT = "below the automatically generated annotations from the PDF"
+
 
 def _expand_path(value: Any) -> Optional[Path]:
     if value is None or value == "":
@@ -103,6 +106,17 @@ class CLI(BaseModel):
     )
 
 
+# --- NEW: Annotation settings model ---
+class Annotations(BaseModel):
+    """
+    Settings related to annotation processing and rendering.
+    """
+
+    default_info_text: str = Field(
+        default=DEFAULT_INFO_TEXT, description="Default text for the info span in new notes."
+    )
+
+
 class Env(BaseModel):
     """
     Top-level configuration object passed explicitly to APIs.
@@ -112,12 +126,15 @@ class Env(BaseModel):
         frontmatter: Defaults for YAML front matter field names.
         io: Behavior flags for file I/O.
         cli: CLI defaults (optional).
+        annotations: Annotation rendering settings.
     """
 
     paths: Paths
     frontmatter: Frontmatter = Field(default_factory=Frontmatter)
     io: IO = Field(default_factory=IO)
     cli: CLI = Field(default_factory=CLI)
+    # --- NEW: Add annotations to Env ---
+    annotations: Annotations = Field(default_factory=Annotations)
 
     model_config = {"frozen": True}  # make it effectively immutable after creation
 
@@ -215,6 +232,7 @@ def _build_env_from_data(data: Mapping[str, Any], profile: Optional[str]) -> Env
         "frontmatter": {},
         "io": {},
         "cli": {},
+        "annotations": {},  # --- NEW ---
     }
 
     # Copy grouped keys if present
@@ -235,6 +253,7 @@ def _build_env_from_data(data: Mapping[str, Any], profile: Optional[str]) -> Env
         "atomic_writes": ("io", "atomic_writes"),
         "create_missing_dirs": ("io", "create_missing_dirs"),
         "default_env": ("cli", "default_env"),
+        "default_info_text": ("annotations", "default_info_text"),  # --- NEW ---
     }
 
     for k, v in data.items():
@@ -248,6 +267,7 @@ def _build_env_from_data(data: Mapping[str, Any], profile: Optional[str]) -> Env
             frontmatter=Frontmatter(**grouped["frontmatter"]),
             io=IO(**grouped["io"]),
             cli=CLI(**grouped["cli"]),
+            annotations=Annotations(**grouped["annotations"]),  # --- NEW ---
         )
     except ValidationError as e:
         raise ValueError(f"Invalid configuration: {e}") from e

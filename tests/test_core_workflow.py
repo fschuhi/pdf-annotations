@@ -27,11 +27,11 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 PROJECT_ROOT = FIXTURES_DIR.parent.parent
 
 
-DEFAULT_INFO_TEXT = "below the automatically generated annotations from the PDF"
+# --- REMOVED: DEFAULT_INFO_TEXT constant ---
 
 
 # Helper function
-def _process_pdf_for_note(pdf_info: PdfInfo, note_path: Path, current_time_iso: str) -> UpdateResult:
+def _process_pdf_for_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_iso: str) -> UpdateResult:
     """
     Process a single PDF-note pair through the complete workflow.
     Steps:
@@ -45,6 +45,7 @@ def _process_pdf_for_note(pdf_info: PdfInfo, note_path: Path, current_time_iso: 
 
     Args:
 
+        env: The loaded configuration environment.
         pdf_info: PDF metadata from registry
         note_path: Path to the note file (in the runtime temp dir)
         current_time_iso: ISO timestamp for last_run_at
@@ -59,8 +60,8 @@ def _process_pdf_for_note(pdf_info: PdfInfo, note_path: Path, current_time_iso: 
             existing_info_text = extract_info_text(note_text)
         except FileNotFoundError:
             note_text = ""  # Start with an empty note
-            # --- FIX: Set to None so render_block uses its default ---
-            existing_info_text = DEFAULT_INFO_TEXT
+            # --- FIX: Get default text from the env ---
+            existing_info_text = env.annotations.default_info_text
 
         # 2. Build PDF-related updates
         pdf_mtime_iso = datetime.fromtimestamp(pdf_info.mtime).isoformat(timespec="seconds")
@@ -103,6 +104,7 @@ def _process_pdf_for_note(pdf_info: PdfInfo, note_path: Path, current_time_iso: 
         streamlined_annotations = streamline_annotations_list(raw_annotations)
 
         # 7. Render markdown annotation block with preserved info text
+        # --- FIX: Pass existing_info_text (which is now never None) ---
         annotation_block = render_block(
             streamlined_annotations, pdf_id_hash=pdf_info.pdf_hash, info_text=existing_info_text
         )
@@ -227,7 +229,7 @@ def test_complete_update_workflow(setup_workflow: dict):
     current_time_iso = datetime.now().isoformat(timespec="seconds")
 
     # Pass only what's needed
-    result = _process_pdf_for_note(pdf_info, note_path, current_time_iso)
+    result = _process_pdf_for_note(env, pdf_info, note_path, current_time_iso)
 
     # =====================================================================
     # 3. Assert workflow result
@@ -266,7 +268,7 @@ def test_all_pdfs_with_loop(setup_workflow: dict):
         note_path = env.paths.notes_root / f"{pdf_info.pdf_id}.md"
 
         # Note: _process_pdf_for_note will handle if note_path doesn't exist
-        result = _process_pdf_for_note(pdf_info, note_path, current_time_iso)
+        result = _process_pdf_for_note(env, pdf_info, note_path, current_time_iso)
         results.append(result)
 
     # =====================================================================
@@ -309,7 +311,7 @@ def test_workflow_pdf_unchanged(setup_workflow: dict):
     original_mtime = note_path.stat().st_mtime
 
     # 2. Process through workflow
-    result = _process_pdf_for_note(pdf_info, note_path, current_time_iso)
+    result = _process_pdf_for_note(env, pdf_info, note_path, current_time_iso)
 
     # 3. Get new mtime
     new_mtime = note_path.stat().st_mtime
@@ -345,7 +347,7 @@ def test_workflow_new_pdfs(setup_workflow: dict):
         note_path = env.paths.notes_root / f"{pdf_info.pdf_id}.md"
         assert not note_path.exists(), f"Seed note {note_path.name} should not exist"
 
-        result = _process_pdf_for_note(pdf_info, note_path, current_time_iso)
+        result = _process_pdf_for_note(env, pdf_info, note_path, current_time_iso)
         results[pdf_id_lower] = (result, note_path)
 
     # --- Assertions for (Albini 2013) ---
@@ -390,7 +392,7 @@ def test_workflow_manual_edits(setup_workflow: dict):
     # Process all PDFs
     for pdf_id_lower, pdf_info in pdf_index.items():
         note_path = env.paths.notes_root / f"{pdf_info.pdf_id}.md"
-        result = _process_pdf_for_note(pdf_info, note_path, current_time_iso)
+        result = _process_pdf_for_note(env, pdf_info, note_path, current_time_iso)
         results[pdf_id_lower] = (result, note_path)
 
     # --- Assertions for (Albini 2013) [Unchanged] ---

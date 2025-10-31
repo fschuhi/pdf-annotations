@@ -110,7 +110,7 @@ def split_comment_lines(s: str) -> List[str]:
     return re.split(r"\r\n|\n|\r", s)
 
 
-def render_block(annots: Iterable[dict] | Iterable[Annot], pdf_id_hash: str, info_text: str = None) -> str:
+def render_block(annots: Iterable[dict] | Iterable[Annot], pdf_id_hash: str, info_text: str) -> str:
     """
     Render an Obsidian annotation block from streamlined annotations.
 
@@ -118,7 +118,7 @@ def render_block(annots: Iterable[dict] | Iterable[Annot], pdf_id_hash: str, inf
       - annots: either iterable of dicts with the streamlined schema or Annot objects.
       - pdf_id_hash: 7-letter hash used in pdf:// links (e.g., VQGPEHE).
       - info_text: the text placed inside <span class="pdf-annot-info">…</span>
-                   Keep default to preserve exact formatting used in tests.
+                   The caller is responsible for providing a valid string.
 
     Output:
       - A markdown string starting with:
@@ -137,6 +137,7 @@ def render_block(annots: Iterable[dict] | Iterable[Annot], pdf_id_hash: str, inf
     out: List[str] = []
     out.append('<hr class="pdf-annot-sep">')
     out.append("")
+    # --- CHANGE: Render info_text directly. No defaults. ---
     out.append(f'<span class="pdf-annot-info">{info_text}</span>')
     out.append("")
 
