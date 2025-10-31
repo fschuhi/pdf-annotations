@@ -1,7 +1,0 @@
-[paths]
-notes_root = "./tests/tmp/content_change"
-pdf_dirs = ["./tests/tmp/content_change"]
-temp_dir = "./tests/tmp/content_change"
-
-[io]
-create_missing_dirs = true

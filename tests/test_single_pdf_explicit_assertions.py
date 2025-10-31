@@ -1,5 +1,5 @@
 """
-End-to-end test for content_change scenario.
+End-to-end test for single_pdf_explicit_assertions scenario.
 
 Tests the complete workflow:
 1. Detect PDF changes (mtime/size) via frontmatter comparison
@@ -25,7 +25,7 @@ from pdf_annot.notes import extract_info_text, replace_annotation_block
 
 # Fixture paths
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
-TEST_DIR = FIXTURES_DIR / "content_change"
+TEST_DIR = FIXTURES_DIR / "single_pdf_explicit_assertions"
 CONFIG_FILE = TEST_DIR / "config.toml"
 SEEDS_DIR = TEST_DIR / "seeds"
 GOLDENS_DIR = TEST_DIR / "goldens"

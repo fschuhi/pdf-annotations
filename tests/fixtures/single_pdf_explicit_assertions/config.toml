@@ -1,0 +1,7 @@
+[paths]
+notes_root = "./tests/tmp/single_pdf_explicit_assertions"
+pdf_dirs = ["./tests/tmp/single_pdf_explicit_assertions"]
+temp_dir = "./tests/tmp/single_pdf_explicit_assertions"
+
+[io]
+create_missing_dirs = true
