@@ -15,7 +15,7 @@ def read_fixture(relative_path: str) -> str:
         return f.read()
 
 
-class TestStreamIntegration(unittest.TestCase):
+class TestStreamIntegration:
     def ndjson_to_list(self, s: str) -> List[dict]:
         return [json.loads(line) for line in s.splitlines() if line.strip()]
 
@@ -25,8 +25,8 @@ class TestStreamIntegration(unittest.TestCase):
         src = io.StringIO(inp)
         dst = io.StringIO()
         rc = process_stream(src, dst)
-        self.assertEqual(rc, 0)
-        self.assertEqual(dst.getvalue(), expected)
+        assert rc == 0
+        assert dst.getvalue() == expected
 
     def test_filters_annot_type_and_headers(self):
         inp = read_fixture("filter_and_pages/input.ndjson")
@@ -34,8 +34,8 @@ class TestStreamIntegration(unittest.TestCase):
         src = io.StringIO(inp)
         dst = io.StringIO()
         rc = process_stream(src, dst)
-        self.assertEqual(rc, 0)
-        self.assertEqual(dst.getvalue(), expected)
+        assert rc == 0
+        assert dst.getvalue() == expected
 
     def test_malformed_json(self):
         inp = read_fixture("malformed/input.ndjson")
@@ -51,8 +51,8 @@ class TestStreamIntegration(unittest.TestCase):
             rc = process_stream(src, dst)
         finally:
             sys.stderr = old_stderr
-        self.assertNotEqual(rc, 0)
-        self.assertIn("malformed JSON", buf.getvalue())
+        assert rc != 0
+        assert "malformed JSON" in buf.getvalue()
 
     def test_simple(self):
         inp = read_fixture("simple/input.ndjson")
@@ -60,8 +60,8 @@ class TestStreamIntegration(unittest.TestCase):
         src = io.StringIO(inp)
         dst = io.StringIO()
         rc = process_stream(src, dst)
-        self.assertEqual(rc, 0)
-        self.assertEqual(dst.getvalue(), expected)
+        assert rc == 0
+        assert dst.getvalue() == expected
 
     def test_consecutive_links(self):
         inp = read_fixture("consecutive_links/input.ndjson")
@@ -69,5 +69,5 @@ class TestStreamIntegration(unittest.TestCase):
         src = io.StringIO(inp)
         dst = io.StringIO()
         rc = process_stream(src, dst)
-        self.assertEqual(rc, 0)
-        self.assertEqual(dst.getvalue(), expected)
+        assert rc == 0
+        assert dst.getvalue() == expected

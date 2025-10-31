@@ -48,7 +48,7 @@ When a PDF's annotations change, the workflow automatically:
 4. **Renders markdown** annotation blocks
 5. **Updates notes atomically** (frontmatter + annotation block)
 
-This workflow is tested end-to-end in `tests/test_single_pdf_explicit_assertions.py`.
+This workflow is tested end-to-end in `tests/test_core_workflow.py`.
 
 ### Library modules
 
@@ -320,7 +320,7 @@ tests/
 │   │   └── config.toml         # Test configuration
 │   └── pdf_to_markdown_e2e/    # Another E2E fixture
 ├── tmp/                        # Generated during tests (gitignored)
-├── test_single_pdf_explicit_assertions.py      # E2E workflow test
+├── test_core_workflow.py      # E2E workflow test
 ├── test_frontmatter.py         # Frontmatter unit tests
 ├── test_notes_db.py            # NotesDB unit tests
 └── ...
@@ -330,7 +330,7 @@ tests/
 ```bash
 pytest -q                        # Quick run
 pytest -v                        # Verbose
-pytest tests/test_single_pdf_explicit_assertions.py  # Single test
+pytest tests/test_core_workflow.py  # explicit single-pdf test, and loop with single pdf
 ```
 
 ### Key test patterns
