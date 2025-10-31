@@ -5,8 +5,6 @@ import os
 import re
 import tempfile
 from dataclasses import dataclass
-
-# --- FIX: Import Protocol ---
 from typing import Dict, Iterable, Iterator, List, Mapping, Optional, Tuple, Mapping as TypingMapping, Protocol
 
 from .frontmatter import parse_note, upsert_fields
@@ -20,7 +18,6 @@ ANNOT_INFO_PREFIX = '<span class="pdf-annot-info">'
 NEWLINE = "\n"
 
 
-# --- FIX: Define a Protocol for the logger ---
 class ProvidesLogging(Protocol):
     """A duck type for an object that has info() and error() methods."""
 
@@ -200,9 +197,7 @@ class NotesDB(Mapping[str, NoteInfo]):
         Compare notes with a PDF registry and propose front-matter changes.
         """
 
-        # Normalize pdf_db to a dict keyed by lowercased pdf_id
-        def norm_key(x: str) -> str:
-            return x.lower()
+        # --- FIX: Removed unused 'norm_key' function ---
 
         def get_attr_chain(obj: object, path: Tuple[str, ...]) -> object:
             cur = obj
@@ -271,12 +266,12 @@ class NotesDB(Mapping[str, NoteInfo]):
 
         return NotesDB.FrontmatterPlanSummary(plans=plans, missing_notes=missing_notes, orphan_notes=orphan_notes)
 
+    # --- FIX: Added @staticmethod ---
+    @staticmethod
     def apply_frontmatter_updates(
-        self,
         plans: Iterable["NotesDB.FrontmatterUpdatePlan"],
         *,
         dry_run: bool = False,
-        # --- FIX: Use the Protocol for better type hinting ---
         logger: Optional[ProvidesLogging] = None,
     ) -> "NotesDB.FrontmatterApplySummary":
         """
@@ -293,7 +288,8 @@ class NotesDB(Mapping[str, NoteInfo]):
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     original = f.read()
-            except Exception as e:
+            # --- FIX: Catch specific OSError ---
+            except OSError as e:
                 msg = f"Failed to read note '{path}': {e}"
                 if logger:
                     logger.error(msg)
@@ -313,29 +309,9 @@ class NotesDB(Mapping[str, NoteInfo]):
                     logger.info(f"[dry-run] Would update {path}")
                 continue
 
-            # Atomic write: write to temp in same dir, fsync, replace
-            dirpath = os.path.dirname(path)
+            # --- REFACTORED: Use atomic write helper ---
             try:
-                fd, tmppath = tempfile.mkstemp(prefix=".tmp-", suffix=".md", dir=dirpath, text=True)
-                try:
-                    with os.fdopen(fd, "w", encoding="utf-8", newline="") as tmpf:
-                        tmpf.write(new_text)
-                        tmpf.flush()
-                        os.fsync(tmpf.fileno())
-                    # Also fsync the directory to persist the rename on some filesystems
-                    os.replace(tmppath, path)
-                    dirfd = os.open(dirpath, os.O_DIRECTORY)
-                    try:
-                        os.fsync(dirfd)
-                    finally:
-                        os.close(dirfd)
-                finally:
-                    # If replace succeeded, tmppath is gone; if failed, try to remove
-                    if os.path.exists(tmppath):
-                        try:
-                            os.remove(tmppath)
-                        except OSError:
-                            pass
+                _atomic_write_file(path, new_text)
                 updated.append(path)
                 if logger:
                     logger.info(f"Updated {path}")
@@ -396,7 +372,8 @@ class NotesDB(Mapping[str, NoteInfo]):
             try:
                 with open(note.abs_path, "r", encoding="utf-8") as f:
                     original = f.read()
-            except Exception:
+            # --- FIX: Catch specific OSError ---
+            except OSError:
                 # If unreadable, still produce a plan; apply step will report error
                 original = ""
 
@@ -422,12 +399,12 @@ class NotesDB(Mapping[str, NoteInfo]):
 
         return NotesDB.AnnotationPlanSummary(plans=plans, missing_notes=missing)
 
+    # --- FIX: Added @staticmethod ---
+    @staticmethod
     def apply_annotation_updates(
-        self,
         plans: Iterable["NotesDB.AnnotationUpdatePlan"],
         *,
         dry_run: bool = False,
-        # --- FIX: Use the Protocol for better type hinting ---
         logger: Optional[ProvidesLogging] = None,
     ) -> "NotesDB.AnnotationApplySummary":
         updated: List[str] = []
@@ -439,7 +416,8 @@ class NotesDB(Mapping[str, NoteInfo]):
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     original = f.read()
-            except Exception as e:
+            # --- FIX: Catch specific OSError ---
+            except OSError as e:
                 errors.append((path, f"read error: {e}"))
                 if logger:
                     logger.error(f"Failed to read '{path}': {e}")
@@ -458,26 +436,9 @@ class NotesDB(Mapping[str, NoteInfo]):
                     logger.info(f"[dry-run] Would update annotations in {path}")
                 continue
 
-            dirpath = os.path.dirname(path)
+            # --- REFACTORED: Use atomic write helper ---
             try:
-                fd, tmppath = tempfile.mkstemp(prefix=".tmp-", suffix=".md", dir=dirpath, text=True)
-                try:
-                    with os.fdopen(fd, "w", encoding="utf-8", newline="") as tmpf:
-                        tmpf.write(new_text)
-                        tmpf.flush()
-                        os.fsync(tmpf.fileno())
-                    os.replace(tmppath, path)
-                    dirfd = os.open(dirpath, os.O_DIRECTORY)
-                    try:
-                        os.fsync(dirfd)
-                    finally:
-                        os.close(dirfd)
-                finally:
-                    if os.path.exists(tmppath):
-                        try:
-                            os.remove(tmppath)
-                        except OSError:
-                            pass
+                _atomic_write_file(path, new_text)
                 updated.append(path)
                 if logger:
                     logger.info(f"Updated annotations in {path}")
@@ -490,6 +451,35 @@ class NotesDB(Mapping[str, NoteInfo]):
 
 
 # ------------- helpers (module level) -------------
+
+
+# --- NEW: Helper function for atomic writes ---
+def _atomic_write_file(path: str, new_text: str) -> None:
+    """
+    Atomically write new_text to path.
+    Writes to temp file in same dir, fsyncs, and replaces.
+    """
+    dirpath = os.path.dirname(path)
+    fd, tmppath = tempfile.mkstemp(prefix=".tmp-", suffix=".md", dir=dirpath, text=True)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as tmpf:
+            tmpf.write(new_text)
+            tmpf.flush()
+            os.fsync(tmpf.fileno())
+        # Also fsync the directory to persist the rename on some filesystems
+        os.replace(tmppath, path)
+        dirfd = os.open(dirpath, os.O_DIRECTORY)
+        try:
+            os.fsync(dirfd)
+        finally:
+            os.close(dirfd)
+    finally:
+        # If replace succeeded, tmppath is gone; if failed, try to remove
+        if os.path.exists(tmppath):
+            try:
+                os.remove(tmppath)
+            except OSError:
+                pass
 
 
 def _ensure_trailing_nl(s: str) -> str:
