@@ -1,4 +1,3 @@
-import unittest
 from typing import Dict, Any, List
 from pdf_annot.streamline_annotations import (
     normalize_text,
@@ -31,28 +30,28 @@ def make_input(
     }
 
 
-class TestNormalization(unittest.TestCase):
+class TestNormalization:
     def test_normalize_text_whitespace(self):
-        self.assertEqual(normalize_text("  a \n b\tc  "), "a b c")
-        self.assertEqual(normalize_text(None), "")
-        self.assertEqual(normalize_text(""), "")
+        assert normalize_text("  a \n b\tc  ") == "a b c"
+        assert normalize_text(None) == ""
+        assert normalize_text("") == ""
 
 
-class TestHeadingExtraction(unittest.TestCase):
+class TestHeadingExtraction:
     def test_heading_cases(self):
         for s in ["H1", "h2", "H3", "h4", "H5", "h6"]:
             label = extract_heading_label(s)
-            self.assertIsNotNone(label)
-            self.assertTrue(label[0] == "H")
-            self.assertTrue(label[1] in "123456")
+            assert label is not None
+            assert label[0] == "H"
+            assert label[1] in "123456"
 
     def test_non_heading(self):
-        self.assertIsNone(extract_heading_label("H7"))
-        self.assertIsNone(extract_heading_label("Heading"))
-        self.assertIsNone(extract_heading_label(""))
+        assert extract_heading_label("H7") is None
+        assert extract_heading_label("Heading") is None
+        assert extract_heading_label("") is None
 
 
-class TestLinkLogicWithObjects(unittest.TestCase):
+class TestLinkLogicWithObjects:
     def run_objs(self, objs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         return process_objects(objs)
 
@@ -63,10 +62,10 @@ class TestLinkLogicWithObjects(unittest.TestCase):
             make_input(content="note", extracted="C"),
         ]
         out = self.run_objs(objs)
-        self.assertEqual(len(out), 2)
-        self.assertEqual(out[0]["highlightText"], "AB")
-        self.assertEqual(out[0]["commentText"], "note")
-        self.assertEqual(out[1]["highlightText"], "C")
+        assert len(out) == 2
+        assert out[0]["highlightText"] == "AB"
+        assert out[0]["commentText"] == "note"
+        assert out[1]["highlightText"] == "C"
 
     def test_consecutive_links_ignored(self):
         objs = [
@@ -76,9 +75,9 @@ class TestLinkLogicWithObjects(unittest.TestCase):
             make_input(content="note", extracted="Done"),
         ]
         out = self.run_objs(objs)
-        self.assertEqual(len(out), 2)
-        self.assertEqual(out[0]["highlightText"], "Hello world")
-        self.assertEqual(out[1]["highlightText"], "Done")
+        assert len(out) == 2
+        assert out[0]["highlightText"] == "Hello world"
+        assert out[1]["highlightText"] == "Done"
 
     def test_link_without_pending_creates_record(self):
         objs = [
@@ -86,10 +85,10 @@ class TestLinkLogicWithObjects(unittest.TestCase):
             make_input(content="note", extracted="Next"),
         ]
         out = self.run_objs(objs)
-        self.assertEqual(len(out), 2)
-        self.assertEqual(out[0]["highlightText"], "Start here")
-        self.assertEqual(out[0]["commentText"], "")
-        self.assertEqual(out[0]["header"], "")
+        assert len(out) == 2
+        assert out[0]["highlightText"] == "Start here"
+        assert out[0]["commentText"] == ""
+        assert out[0]["header"] == ""
 
     def test_link_with_empty_text_when_pending_does_not_change(self):
         objs = [
@@ -98,8 +97,8 @@ class TestLinkLogicWithObjects(unittest.TestCase):
             make_input(content="note", extracted="Next"),
         ]
         out = self.run_objs(objs)
-        self.assertEqual(out[0]["highlightText"], "Base")
-        self.assertEqual(out[1]["highlightText"], "Next")
+        assert out[0]["highlightText"] == "Base"
+        assert out[1]["highlightText"] == "Next"
 
     def test_header_sets_comment_empty(self):
         objs = [
@@ -107,9 +106,9 @@ class TestLinkLogicWithObjects(unittest.TestCase):
             make_input(content="note", extracted="Text"),
         ]
         out = self.run_objs(objs)
-        self.assertEqual(out[0]["header"], "H2")
-        self.assertEqual(out[0]["commentText"], "")
-        self.assertEqual(out[1]["commentText"], "note")
+        assert out[0]["header"] == "H2"
+        assert out[0]["commentText"] == ""
+        assert out[1]["commentText"] == "note"
 
     def test_filter_keeps_only_annot_type_8(self):
         objs = [
@@ -118,8 +117,8 @@ class TestLinkLogicWithObjects(unittest.TestCase):
             make_input(annot_type_first=9, content="note", extracted="C"),
         ]
         out = self.run_objs(objs)
-        self.assertEqual(len(out), 1)
-        self.assertEqual(out[0]["highlightText"], "B")
+        assert len(out) == 1
+        assert out[0]["highlightText"] == "B"
 
     def test_merge_across_pages(self):
         objs = [
@@ -128,8 +127,8 @@ class TestLinkLogicWithObjects(unittest.TestCase):
             make_input(page_num=1, content="note", extracted="Next"),
         ]
         out = self.run_objs(objs)
-        self.assertEqual(out[0]["highlightText"], "Part 1 of the sentence.")
-        self.assertEqual(out[1]["highlightText"], "Next")
+        assert out[0]["highlightText"] == "Part 1 of the sentence."
+        assert out[1]["highlightText"] == "Next"
 
     def test_dash_space_removed_and_whitespace_collapsed_after_merge(self):
         objs = [
@@ -138,9 +137,9 @@ class TestLinkLogicWithObjects(unittest.TestCase):
             make_input(content="note", extracted="X"),
         ]
         out = self.run_objs(objs)
-        self.assertEqual(out[0]["highlightText"], "ABC")
+        assert out[0]["highlightText"] == "ABC"
 
     def test_is_link_case_insensitive(self):
         for s in ["link", "Link", "LINK", "lInK"]:
-            self.assertTrue(is_link(s))
-        self.assertFalse(is_link("links"))
+            assert is_link(s)
+        assert not is_link("links")
