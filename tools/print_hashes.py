@@ -12,8 +12,15 @@ from pdf_annot.utils import crc32_az7  # noqa: E402
 
 
 def main():
-    samples = ["", "a", "A", "hello", "authors", "doe+roe", "müller", "(smith 2015)"]
-    for s in samples:
+    args = sys.argv[1:]
+
+    if not args or args[0] in ("-h", "--help"):
+        print("Usage: python tools/print_hashes.py <string_to_hash_1> [<string_to_hash_2> ...]")
+        print("\nPrints the 7-character A-Z hash for each input string.")
+        print('Example: python tools/print_hashes.py "(Albini 2013)" "(Balbini 2014)"')
+        return
+
+    for s in args:
         print(f"{s!r} -> {crc32_az7(s)}")
 
 

@@ -16,6 +16,9 @@ dist/
 # OS files
 .DS_Store
 
+# Total Commander
+Thumbs.db
+
 # PyCharm
 .idea/
 
