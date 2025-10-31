@@ -8,6 +8,30 @@ that goes beyond frontmatter manipulation.
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional
+
+
+@dataclass
+class UpdateResult:
+    """
+    Result of processing a single PDF-note pair.
+
+    Captures what changed during the update workflow so tests and workflows
+    can make assertions or decisions based on the outcome.
+    """
+
+    note_path: Path
+    frontmatter_changed: bool
+    annotation_block_changed: bool
+    note_updated: bool
+    error: Optional[str] = None
+
+    @property
+    def success(self) -> bool:
+        """True if processing completed without errors."""
+        return self.error is None
 
 
 def extract_info_text(note_text: str) -> str:
