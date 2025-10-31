@@ -14,7 +14,7 @@ from pathlib import Path
 from datetime import datetime
 import pytest
 
-from pdf_annot.env import load_env
+from pdf_annot.env import load_env, Env
 from pdf_annot.pdf_registry import build_pdf_index, PdfInfo
 from pdf_annot.frontmatter import parse_note, upsert_fields
 from pdf_annot.ndjson_to_md_block import render_block
@@ -26,8 +26,8 @@ from pdf_annot.notes import extract_info_text, replace_annotation_block, UpdateR
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 
-# Helper function (migrated from BaseWorkflowTest._process_pdf_for_note)
-def _process_pdf_for_note(pdf_info: PdfInfo, note_path: Path, current_time_iso: str, temp_path: Path) -> UpdateResult:
+# Helper function
+def _process_pdf_for_note(pdf_info: PdfInfo, note_path: Path, current_time_iso: str) -> UpdateResult:
     """
     Process a single PDF-note pair through the complete workflow.
     Steps:
@@ -42,9 +42,8 @@ def _process_pdf_for_note(pdf_info: PdfInfo, note_path: Path, current_time_iso: 
     Args:
 
         pdf_info: PDF metadata from registry
-        note_path: Path to the note file
+        note_path: Path to the note file (in the runtime temp dir)
         current_time_iso: ISO timestamp for last_run_at
-        temp_path: Path to the temporary directory holding test files
 
     Returns:
         UpdateResult with details about what changed
@@ -75,8 +74,9 @@ def _process_pdf_for_note(pdf_info: PdfInfo, note_path: Path, current_time_iso: 
             )
 
         # Extract annotations from PDF
-        pdf_path = temp_path / pdf_info.filename_with_ext
-        raw_annotations = extract_annotations_to_list(pdf_path)
+        # pdf_info.abs_path is the correct path from the registry
+        # FIX: Wrap str in Path() to satisfy type checker
+        raw_annotations = extract_annotations_to_list(Path(pdf_info.abs_path))
 
         # Streamline annotations
         streamlined_annotations = streamline_annotations_list(raw_annotations)
@@ -113,42 +113,45 @@ def _process_pdf_for_note(pdf_info: PdfInfo, note_path: Path, current_time_iso: 
 def setup_workflow(request):
     """
     A pytest fixture that sets up a test environment based on a fixture_name.
-    It yields a dictionary containing paths and the PDF index.
+
+    1. Loads the fixture's config.toml to create a validated Env.
+    2. Copies seeds from /tests/fixtures/<name>/seeds into the /tests/tmp/...
+       directory specified by the Env.
+    3. Builds a PDF registry from the runtime directory.
+    4. Yields the Env, PDF index, and path to golden files.
 
     The 'request.param' must be the name of the fixture directory,
     e.g., "complete_update_workflow".
     """
     fixture_name = request.param
 
-    # 1. Define paths dynamically
-    test_dir = FIXTURES_DIR / fixture_name
-    config_file = test_dir / "config.toml"
-    seeds_dir = test_dir / "seeds"
-    goldens_dir = test_dir / "goldens"
+    # 1. Define fixture source paths
+    fixture_source_dir = FIXTURES_DIR / fixture_name
+    config_file = fixture_source_dir / "config.toml"
+    source_seeds_dir = fixture_source_dir / "seeds"
+    source_goldens_dir = fixture_source_dir / "goldens"
 
-    # 2. Load environment configuration
+    # 2. Load Env: This is the source of truth for runtime
+    # It will create the ./tests/tmp/<name> directory
     env = load_env(config_file)
-    temp_path = env.paths.temp_dir
 
-    # Ensure temp/seed dirs exist
-    temp_path.mkdir(parents=True, exist_ok=True)
-    if not seeds_dir.exists():
-        raise FileNotFoundError(f"Seeds directory not found: {seeds_dir}")
+    # Runtime paths are now derived from env
+    runtime_temp_dir = env.paths.temp_dir
+    assert runtime_temp_dir is not None, "temp_dir must be set in config.toml for tests"
 
-    # 3. Copy ALL seed files to temp
-    for seed_file in seeds_dir.glob("*"):
+    # 3. Setup: Copy seeds from source to runtime dir
+    for seed_file in source_seeds_dir.glob("*"):
         if seed_file.is_file():
-            shutil.copy(seed_file, temp_path / seed_file.name)
+            shutil.copy(seed_file, runtime_temp_dir / seed_file.name)
 
-    # 4. Build PDF registry
-    pdf_index = build_pdf_index([str(temp_path)])
+    # 4. Build registry from the runtime PDF dirs specified in the Env
+    pdf_index = build_pdf_index([str(p) for p in env.paths.pdf_dirs])
 
-    # 5. Yield control back to the test
-    # The test runs here
+    # 5. Yield the runtime Env and source goldens
     yield {
+        "env": env,
         "pdf_index": pdf_index,
-        "temp_path": temp_path,
-        "goldens_dir": goldens_dir,
+        "goldens_dir": source_goldens_dir,
     }
 
     # 6. Teardown (optional)
@@ -158,15 +161,16 @@ def setup_workflow(request):
 
 
 @pytest.mark.parametrize("setup_workflow", ["complete_update_workflow"], indirect=True)
-def test_complete_update_workflow(setup_workflow):
+def test_complete_update_workflow(setup_workflow: dict):
     """
     End-to-end test: Detect change → extract → streamline → update note → verify.
     This test explicitly verifies the Albini 2013 PDF/note pair with detailed assertions.
     """
     # Get all setup data from the fixture
-    pdf_index = setup_workflow["pdf_index"]
-    temp_path = setup_workflow["temp_path"]
-    goldens_dir = setup_workflow["goldens_dir"]
+    # FIX: Added type hint to setup_workflow to resolve __getitem__ warnings
+    env: Env = setup_workflow["env"]
+    pdf_index: dict[str, PdfInfo] = setup_workflow["pdf_index"]
+    goldens_dir: Path = setup_workflow["goldens_dir"]
 
     # These are specific to this test case
     note_filename = "(Albini 2013).md"
@@ -174,7 +178,7 @@ def test_complete_update_workflow(setup_workflow):
 
     # =====================================================================
     # 1. Get PDF info from registry (built in setUp)
-    # =====================================================================
+    # =================================S====================================
     assert len(pdf_index) == 1, "Should find exactly one PDF"
     assert pdf_id_key in pdf_index
     pdf_info: PdfInfo = pdf_index[pdf_id_key]
@@ -182,10 +186,12 @@ def test_complete_update_workflow(setup_workflow):
     # =====================================================================
     # 2. Process through workflow
     # =====================================================================
-    note_path = temp_path / note_filename
+    # Construct runtime note_path using the env
+    note_path = env.paths.notes_root / note_filename
     current_time_iso = datetime.now().isoformat(timespec="seconds")
 
-    result = _process_pdf_for_note(pdf_info, note_path, current_time_iso, temp_path)
+    # Pass only what's needed
+    result = _process_pdf_for_note(pdf_info, note_path, current_time_iso)
 
     # =====================================================================
     # 3. Assert workflow result
@@ -227,7 +233,7 @@ def test_complete_update_workflow(setup_workflow):
 
 
 @pytest.mark.parametrize("setup_workflow", ["all_pdfs_with_loop"], indirect=True)
-def test_all_pdfs_with_loop(setup_workflow):
+def test_all_pdfs_with_loop(setup_workflow: dict):
     """
     Process all PDFs in the index through the workflow.
     This test uses the same workflow as the explicit test, but loops over
@@ -236,23 +242,24 @@ def test_all_pdfs_with_loop(setup_workflow):
     ready for multiple PDFs.
     """
     # Get setup data
-    pdf_index = setup_workflow["pdf_index"]
-    temp_path = setup_workflow["temp_path"]
+    # FIX: Added type hint to setup_workflow to resolve __getitem__ warnings
+    env: Env = setup_workflow["env"]
+    pdf_index: dict[str, PdfInfo] = setup_workflow["pdf_index"]
 
     current_time_iso = datetime.now().isoformat(timespec="seconds")
     results = []
 
     # Process all PDFs in the registry
     for pdf_id_lower, pdf_info in pdf_index.items():
-        # Find corresponding note (case-sensitive filename)
-        note_path = temp_path / f"{pdf_info.pdf_id}.md"
+        # Find corresponding note using the env
+        note_path = env.paths.notes_root / f"{pdf_info.pdf_id}.md"
 
         if not note_path.exists():
             # PDF has no corresponding note - skip for now
             # (We could track "missing notes" here in the future)
             continue
 
-        result = _process_pdf_for_note(pdf_info, note_path, current_time_iso, temp_path)
+        result = _process_pdf_for_note(pdf_info, note_path, current_time_iso)
         results.append(result)
 
     # =====================================================================
