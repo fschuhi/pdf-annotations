@@ -27,9 +27,6 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 PROJECT_ROOT = FIXTURES_DIR.parent.parent
 
 
-# --- REMOVED: DEFAULT_INFO_TEXT constant ---
-
-
 # Helper function
 def _process_pdf_for_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_iso: str) -> UpdateResult:
     """
@@ -60,7 +57,6 @@ def _process_pdf_for_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_
             existing_info_text = extract_info_text(note_text)
         except FileNotFoundError:
             note_text = ""  # Start with an empty note
-            # --- FIX: Get default text from the env ---
             existing_info_text = env.annotations.default_info_text
 
         # 2. Build PDF-related updates
@@ -104,7 +100,6 @@ def _process_pdf_for_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_
         streamlined_annotations = streamline_annotations_list(raw_annotations)
 
         # 7. Render markdown annotation block with preserved info text
-        # --- FIX: Pass existing_info_text (which is now never None) ---
         annotation_block = render_block(
             streamlined_annotations, pdf_id_hash=pdf_info.pdf_hash, info_text=existing_info_text
         )
@@ -164,7 +159,10 @@ def setup_workflow(request):
         env = load_env(config_file)
     else:
         # Generate a default Env in memory
-        paths_config = Paths(notes_root=runtime_temp_dir, pdf_dirs=[runtime_temp_dir], temp_dir=runtime_temp_dir)
+        # --- FIX: Explicitly set backup_dir=None to satisfy linter ---
+        paths_config = Paths(
+            notes_root=runtime_temp_dir, pdf_dirs=[runtime_temp_dir], temp_dir=runtime_temp_dir, backup_dir=None
+        )
         io_config = IO(create_missing_dirs=True)  # This is the important default
 
         # This will create the runtime_temp_dir

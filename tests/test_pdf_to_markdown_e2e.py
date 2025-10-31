@@ -16,9 +16,6 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 PROJECT_ROOT = FIXTURES_DIR.parent.parent
 
 
-DEFAULT_INFO_TEXT = "below the automatically generated annotations from the PDF"
-
-
 # Helper function to load NDJSON
 def ndjson_to_list(s: str) -> List[dict]:
     """Loads a newline-delimited JSON string into a list of dicts."""
@@ -48,7 +45,10 @@ def setup_e2e_pipeline(request):
     else:
         # Generate a default Env in memory
         runtime_temp_dir = PROJECT_ROOT / "tests" / "tmp" / fixture_name
-        paths_config = Paths(notes_root=runtime_temp_dir, pdf_dirs=[runtime_temp_dir], temp_dir=runtime_temp_dir)
+        # --- FIX: Explicitly set backup_dir=None to satisfy linter ---
+        paths_config = Paths(
+            notes_root=runtime_temp_dir, pdf_dirs=[runtime_temp_dir], temp_dir=runtime_temp_dir, backup_dir=None
+        )
         io_config = IO(create_missing_dirs=True)
         env = Env(paths=paths_config, io=io_config)
 
@@ -56,7 +56,8 @@ def setup_e2e_pipeline(request):
 
     # 3. Setup: Copy seed PDF to runtime temp dir
     runtime_pdf_path = env.paths.temp_dir / source_input_pdf.name
-    shutil.copy(source_input_pdf, runtime_pdf_path)
+    # --- FIX: Use copy2 to preserve mtime ---
+    shutil.copy2(source_input_pdf, runtime_pdf_path)
 
     # 4. Yield paths to the test
     yield {
@@ -122,7 +123,9 @@ def test_complete_extraction_pipeline(setup_e2e_pipeline: dict):
     with open(actual_streamlined_ndjson_path, "r", encoding="utf-8") as f:
         streamlined_objs = [json.loads(line) for line in f if line.strip()]
 
-    actual_markdown = render_block(streamlined_objs, pdf_id_hash="VQGPEHE", info_text=DEFAULT_INFO_TEXT)
+    # Get default text from the env
+    default_info_text = env.annotations.default_info_text
+    actual_markdown = render_block(streamlined_objs, pdf_id_hash="VQGPEHE", info_text=default_info_text)
 
     # 6. --- Load Expected Results ---
     expected_raw_data = ndjson_to_list(expected_raw_ndjson_path.read_text("utf-8"))
