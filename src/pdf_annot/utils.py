@@ -5,11 +5,14 @@ import os
 import re
 import zlib
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 # -----------------------------------------------------------------------------
 # Core hashing utilities
 # -----------------------------------------------------------------------------
+
+
+import zlib
 
 
 def crc32_az7(text: str) -> str:
@@ -26,7 +29,9 @@ def crc32_az7(text: str) -> str:
     # zlib.crc32 returns a signed int in Python <3.0 context, but in modern Python
     # it returns a (potentially) negative int only conceptually; we & 0xFFFFFFFF
     # to force it to an unsigned 32-bit value like VBA's Not crc end result.
-    crc = zlib.crc32(data) & 0xFFFFFFFF
+
+    # --- FIX: Ignore PyCharm's incorrect type warning ---
+    crc = zlib.crc32(data) & 0xFFFFFFFF  # type: ignore
 
     # Build 7 letters using base-26 with 'A' as 0
     chars = []
