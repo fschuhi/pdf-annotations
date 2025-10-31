@@ -2,7 +2,7 @@
 from pathlib import Path
 import sys
 
-SEP_FMT = "\n\n# ===== {name} =====\n\n"
+SEP_FMT = "\n\n======= {name} =======\n\n"
 
 
 def concat(list_file: Path, out):
