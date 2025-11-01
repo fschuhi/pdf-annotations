@@ -13,7 +13,7 @@ call .venv\Scripts\activate.bat
 
 REM Start the server
 echo Starting PDF URL Handler Server...
-python server.py
+python windows_pdf_server.py
 
 REM Keep window open if there's an error
 pause
