@@ -10,8 +10,8 @@ from .annotation import Annotation, TEXTUAL_ANNOTS
 # ===============================================================
 #  Default heuristic parameters
 # ===============================================================
-DEFAULT_HEADER_HEIGHT = 60.0  # points: ignore annotations above this y value
-DEFAULT_FOOTER_HEIGHT = 50.0  # points: ignore annotations below this y value
+DEFAULT_HEADER_HEIGHT = 50.0  # points: ignore annotations above this y value
+DEFAULT_FOOTER_HEIGHT = 40.0  # points: ignore annotations below this y value
 FULLWIDTH_RATIO = 0.80  # rect.width / page.width threshold for "single block"
 COLUMN_GAP_THRESHOLD = 100  # x gap (points) to detect separate columns
 

@@ -134,7 +134,6 @@ def render_block(annots: Iterable[dict] | Iterable[Annot], pdf_id_hash: str, inf
     else:
         ann_seq = list(annots)  # type: ignore[assignment]
 
-    # --- FIX: Replaced multi-step init with a list literal ---
     out: List[str] = [
         '<hr class="pdf-annot-sep">',
         "",
@@ -156,7 +155,9 @@ def render_block(annots: Iterable[dict] | Iterable[Annot], pdf_id_hash: str, inf
 
         date_span = fmt_date_span(getattr(a, "modDate", None), getattr(a, "creationDate", None))
         page = int(getattr(a, "pageNum", 0)) + 1
-        link = f"[1](pdf://{pdf_id_hash}?page={page})"
+
+        # --- FIX: Use the 'page' variable for the link text ---
+        link = f"[{page}](pdf://{pdf_id_hash}?page={page})"
 
         hl_text = flatten_newlines(getattr(a, "highlightText", ""))
         if date_span:

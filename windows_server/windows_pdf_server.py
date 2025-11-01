@@ -158,7 +158,7 @@ class PDFHandler(BaseHTTPRequestHandler):
 
             if hwnd:
                 # Bring window to foreground
-                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)  # type: ignore
+                win32gui.ShowWindow(hwnd, win32con.SW_MAXIMIZE)  # type: ignore
                 win32gui.SetForegroundWindow(hwnd)  # type: ignore
                 print(f"Brought PDF viewer to foreground")
             else:
@@ -273,6 +273,7 @@ def main():
         print(f"Listening on: http://{host}:{port}")
         print(f"PDF Base Path: {config.get('windows', 'pdf_base_path')}")
         print(f"Viewer Path: {config.get('windows', 'viewer_path')}")
+        # --- FIX: Changed '6s' to '60' ---
         print(f"{'=' * 60}")
         print(f"Server ready. Waiting for requests...")
         print(f"Press Ctrl+C to stop\n")
