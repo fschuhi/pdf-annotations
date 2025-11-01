@@ -15,7 +15,7 @@ Toolkit to extract and streamline PDF highlight annotations using PyMuPDF, with 
 ## Quick start (macOS/Linux)
 Prerequisites: Python 3.11+
 
-```bash
+'''bash
 # 1) Clone and enter the project
 git clone https://github.com/fschuhi/pdf-annotations
 cd pdf-annotations
@@ -41,7 +41,7 @@ cp pdf_annot.example.toml pdf_annot.toml # Use the example config
 # This will find pdf_annot.toml by default
 # (Note: The default pdf_annot.toml points to ./sandbox)
 pdf-annot-sync
-```
+'''
 
 ## Architecture overview
 
@@ -66,16 +66,16 @@ This workflow is tested end-to-end by library tests in `tests/test_core_workflow
 #### `src/pdf_annot/env.py`
 Configuration management via TOML files.
 
-```python
+'''python
 from pdf_annot.env import load_env
 
 env = load_env("pdf_annot.toml")
 # env.paths.notes_root, env.paths.pdf_dirs
 # env.annotations.default_info_text
-```
+'''
 
 **Configuration structure:**
-```toml
+'''toml
 [paths]
 notes_root = "./vault"
 pdf_dirs = ["./pdfs"]
@@ -88,13 +88,13 @@ default_info_text = "below the automatically generated annotations from the PDF"
 [frontmatter]
 title_field = "pdf_title"
 # ...
-```
+'''
 
 #### `src/pdf_annot/sync.py`
 The core workflow logic and `main` CLI entry point.
 
 **Library API:**
-```python
+'''python
 from pdf_annot.sync import sync_pdf_to_note
 
 # This is the core "god function"
@@ -104,12 +104,12 @@ result: UpdateResult = sync_pdf_to_note(
     note_path,
     current_time_iso
 )
-```
+'''
 
 **CLI:**
-```bash
+'''bash
 pdf-annot-sync -c my_config.toml
-```
+'''
 
 #### `src/pdf_annot/extract.py`
 PDF annotation extraction with header/footer awareness and column detection.
@@ -132,7 +132,7 @@ Post-processes raw annotations: keeps highlights, merges link annotations, extra
 #### `src/pdf_annot/frontmatter.py`
 YAML frontmatter parsing and manipulation for Markdown notes.
 
-```python
+'''python
 from pdf_annot.frontmatter import parse_note, upsert_fields
 
 # Parse
@@ -141,12 +141,12 @@ parsed = parse_note(note_text)
 
 # Update (returns (changed: bool, new_text: str))
 changed, updated_text = upsert_fields(note_text, {"pdf_title": "New"})
-```
+'''
 
 #### `src/pdf_annot/notes.py`
 Note-level operations for working with annotation blocks.
 
-```python
+'''python
 from pdf_annot.notes import extract_info_text, replace_annotation_block
 
 # Extract custom info text (preserves user edits)
@@ -154,12 +154,12 @@ info_text = extract_info_text(note_text)
 
 # Replace annotation block
 updated_note = replace_annotation_block(note_text, new_annotation_block)
-```
+'''
 
 #### `src/pdf_annot/ndjson_to_md_block.py`
 Renders streamlined annotations as Obsidian-compatible markdown.
 
-```python
+'''python
 from pdf_annot.ndjson_to_md_block import render_block
 
 markdown = render_block(
@@ -167,33 +167,33 @@ markdown = render_block(
     pdf_id_hash="VQGPEHE",
     info_text="Custom info text" # Caller must provide this
 )
-```
+'''
 
 #### `src/pdf_annot/notes_db.py`
 Mapping-like index of Markdown notes with case-insensitive lookups.
 
-```python
+'''python
 from pdf_annot.notes_db import NotesDB
 
 notes = NotesDB.from_env(env)
 note_info = notes["(keating 1995)"] # case-insensitive
-```
+'''
 
 #### `src/pdf_annot/pdf_registry.py`
 PDF discovery and metadata indexing.
 
-```python
+'''python
 from pdf_annot.pdf_registry import build_pdf_index
 
 pdf_index = build_pdf_index(env.paths.pdf_dirs)
 pdf_info = pdf_index["(smith 2020)"] # case-insensitive
-```
+'''
 
 ## Complete workflow example
 
 The `src/pdf_annot/sync.py` file contains the `main()` function which implements the complete workflow. This is a simplified version of that loop:
 
-```python
+'''python
 from datetime import datetime
 from pdf_annot.env import load_env
 from pdf_annot.pdf_registry import build_pdf_index
@@ -227,12 +227,12 @@ for pdf_id_lower, pdf_info in pdf_index.items():
         print(f"Skipped: {note_path.name}")
     else:
         print(f"Error: {note_path.name}: {result.error}")
-```
+'''
 
 ## Testing
 
 ### Test structure
-```
+'''
 tests/
 ├── fixtures/
 │   ├── workflow_manual_edits/  # E2E test fixture
@@ -248,10 +248,10 @@ tests/
 ├── test_sync_cli.py            # E2E test for the *CLI*
 ├── test_frontmatter.py         # Frontmatter unit tests
 └── ...
-```
+'''
 
 ### Running tests
-```bash
+'''bash
 # Set up the environment (if first time)
 make setup
 
@@ -260,13 +260,13 @@ make test
 
 # Run a specific test file
 pytest -q tests/test_core_workflow.py
-```
+'''
 
 ## Command-line tools
 
 ### `pdf-annot-sync`
 Main workflow tool. Finds all PDFs and syncs them with notes.
-```bash
+'''bash
 # Run using config in current directory
 pdf-annot-sync
 
@@ -275,23 +275,23 @@ pdf-annot-sync -c /path/to/my_config.toml
 
 # Preview changes without writing files (TODO)
 pdf-annot-sync --dry-run
-```
+'''
 
 ### `pdf-annot-extract`
-```bash
+'''bash
 pdf-annot-extract -p document.pdf [--header-height 60] [--footer-height 50]
-```
+'''
 Creates `document.ndjson` with raw annotations next to the PDF.
 
 ### `pdf-annot-streamline`
-```bash
+'''bash
 pdf-annot-streamline -i raw.ndjson -o streamlined.ndjson
-```
+'''
 Processes raw annotations into streamlined format.
 
 ### `tools/`
 Developer utilities.
-```bash
+'''bash
 # Get the 7-char hash for a PDF ID
 make hash ARGS="(Albini 2013)"
 # > ID: '(Albini 2013)' -> VQGPEHE
@@ -299,11 +299,11 @@ make hash ARGS="(Albini 2013)"
 # Get hash from a filename
 make hash ARGS="(Albini 2013) Some Title.pdf"
 # > File: '(Albini 2013) Some Title.pdf' -> ID: '(Albini 2013)' -> VQGPEHE
-```
+'''
 
 ## Project layout
 (See `project-tree.txt` for full layout)
-```
+'''
 pdf-annotations/
 ├── src/pdf_annot/              # Library code
 │   ├── env.py                  # Configuration
@@ -320,16 +320,21 @@ pdf-annotations/
 │   └── test_sync_cli.py        # <-- NEW: CLI E2E test
 ├── tools/                      # Dev utilities
 │   └── print_hashes.py
+├── windows_server/             # <-- NEW: Windows PDF link handler
+│   ├── windows_pdf_server.py
+│   ├── start_pdf_server.bat
+│   ├── pdf_server.ini
+│   └── README.md
 ├── Makefile                    # Project commands
 ├── requirements.txt            # Dependencies
 ├── pyproject.toml              # Package metadata
 └── README.md                   # This file
-```
+'''
 
 ## Development
 
 ### Setting up development environment
-```bash
+'''bash
 # Create venv, install deps, and install project in editable mode
 make setup
 
@@ -338,7 +343,7 @@ source .venv/bin/activate
 
 # Run tests
 make test
-```
+'''
 
 ### Troubleshooting
 
@@ -346,14 +351,22 @@ make test
 The `Makefile` targets (e.g., `make run`, `make test`) automatically set `PYTHONPATH=src` to ensure modules are found.
 
 **Clean rebuild:**
-```bash
+'''bash
 # This removes venv, caches, and built files
 make clean
 # This rebuilds everything
 make setup
-```
+'''
 
 ## Key concepts
+
+### PDF URL Click Handler (Windows)
+
+This project generates hash-based `pdf://` links (e.g., `pdf://VQGPEHE?page=1`). To make these clickable, a helper application is required.
+
+This repository includes a `windows_server/` directory containing a Python-based server designed to run on a Windows VM (via Parallels). It intercepts these `pdf://` URLs from macOS/Obsidian and opens the correct PDF to the correct page in a native Windows PDF viewer.
+
+**For full setup and usage instructions, see the `windows_server/README.md` file.**
 
 ### PDF ID and hash
 - **pdf_id**: Normalized identifier like "(Das 2000b)" extracted from filename
@@ -366,7 +379,7 @@ PDFs must follow naming convention: `(Author Year) Title.pdf`
 - pdf_title: "On dealing with destructive emotions"
 
 ### Note structure
-```markdown
+'''markdown
 ---
 pdf_id: "(Albini 2013)"
 pdf_title: "On dealing with destructive emotions"
@@ -383,7 +396,7 @@ last_run_at: "2025-10-30T20:01:00"
 ## Section Header
 
 > Highlight <span class="pdf-annot-date">21.10.25 21:20</span> [1](pdf://VQGPEHE?page=1)
-```
+'''
 
 ### Annotation ordering
 Annotations are sorted by visual reading order:
