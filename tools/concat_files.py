@@ -13,8 +13,9 @@ def concat(list_file: Path, out):
     try:
         # utf-8-sig handles potential BOMs (common on Windows-edited files)
         lines = list_file.read_text(encoding="utf-8-sig").splitlines()
-    except Exception:
-        out.write(f"Error: Cannot read file '{list_file}'\n")
+    # --- FIX: Catch specific errors ---
+    except (OSError, UnicodeDecodeError) as e:
+        out.write(f"Error: Cannot read file '{list_file}': {e}\n")
         return 1
 
     for raw in lines:
@@ -29,8 +30,9 @@ def concat(list_file: Path, out):
         if p.exists() and p.is_file():
             try:
                 out.write(p.read_text(encoding="utf-8"))
-            except Exception:
-                out.write(f"Error: Cannot read file '{name}'\n")
+            # --- FIX: Catch specific errors ---
+            except (OSError, UnicodeDecodeError) as e:
+                out.write(f"Error: Cannot read file '{name}': {e}\n")
         else:
             out.write(f"Error: Cannot read file '{name}'\n")
         out.write("\n")

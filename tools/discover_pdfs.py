@@ -36,7 +36,8 @@ def main(argv=None) -> int:
             try:
                 print(rp.relative_to(base))
                 continue
-            except Exception:
+            # --- FIX: Catch the specific error ---
+            except ValueError:
                 pass
         print(rp)
     return 0

@@ -1,24 +1,71 @@
-.PHONY: venv test extract streamline clean showtree gentree filesdump discover-pdfs
+# --- Variables ---
+VENV_DIR = .venv
+VENV_ACTIVATE = $(VENV_DIR)/bin/activate
+ACTIVATE = . $(VENV_ACTIVATE)
+PIP = $(ACTIVATE) && pip
+# RUN_WITH_PATH sets PYTHONPATH to find the 'src' directory
+RUN_WITH_PATH = $(ACTIVATE) && PYTHONPATH=src
+# The sentinel file to check if setup is complete
+SETUP_STAMP = $(VENV_DIR)/.setup_stamp
 
-# Create local venv (idempotent)
-venv:
-	python3 -m venv .venv
+# --- Phony targets (commands that don't produce files) ---
+.PHONY: all setup test run extract streamline clean showtree gentree filesdump discover-pdfs
 
-# Run tests (no package install needed)
-test: venv
-	. .venv/bin/activate && PYTHONPATH=src pytest -q
+# Default target runs 'setup'
+all: setup
 
-# Extract annotations using the module directly
-extract: venv
-	. .venv/bin/activate && PYTHONPATH=src python -m pdf_annot.extract -p tests/fixtures/pdf_to_markdown_e2e/input.pdf
+# --- FIX: Target is now the 'activate' file itself ---
+# This recipe will only run if the 'activate' file does not exist.
+$(VENV_ACTIVATE):
+	python3 -m venv $(VENV_DIR)
 
-# Streamline annotations using the module directly
-streamline: venv
-	. .venv/bin/activate && PYTHONPATH=src python -m pdf_annot.streamline -i tests/fixtures/pdf_to_markdown_e2e/expected_raw.ndjson -o /tmp/final_streamlined.ndjson
+# --- FIX: Smart 'setup' target ---
+# This target now depends on the venv *existing* (via the activate file)
+# and our config files. It will only run if the stamp file is missing,
+# or if requirements.txt or pyproject.toml have been modified.
+$(SETUP_STAMP): $(VENV_ACTIVATE) requirements.txt pyproject.toml
+	@echo "--- Installing dependencies ---"
+	$(PIP) install -r requirements.txt
+	@echo "--- Installing project in editable mode ---"
+	$(PIP) install -e .
+	@echo "--- Setup complete ---"
+	@touch $(SETUP_STAMP)
+
+# 'setup' is a friendly alias for the stamp file
+setup: $(SETUP_STAMP)
+
+# --- Lightweight 'run' target ---
+# Depends on setup being complete.
+# Runs the main sync module directly via python -m.
+# Pass arguments like: make run ARGS="-c myconfig.toml"
+run: $(SETUP_STAMP)
+	$(RUN_WITH_PATH) python -m pdf_annot.sync $(ARGS)
+
+# Run tests
+test: $(SETUP_STAMP)
+	$(RUN_WITH_PATH) pytest -q
+
+# Extract annotations
+extract: $(SETUP_STAMP)
+	$(RUN_WITH_PATH) python -m pdf_annot.extract -p tests/fixtures/pdf_to_markdown_e2e/input.pdf
+
+# Streamline annotations
+streamline: $(SETUP_STAMP)
+	$(RUN_WITH_PATH) python -m pdf_annot.streamline_annotations -i tests/fixtures/pdf_to_markdown_e2e/expected_raw.ndjson -o /tmp/final_streamlined.ndjson
+
+# Discover PDFs
+discover-pdfs: $(SETUP_STAMP)
+	$(RUN_WITH_PATH) python tools/discover_pdfs.py --env tests/fixtures/env/test_pdf_annot.toml --relative-to .
+
+# Concatenate files
+filesdump: $(SETUP_STAMP)
+	$(RUN_WITH_PATH) python tools/concat_files.py files.lst > tmp/filesdump.txt
+
+# --- Utility targets ---
 
 # Clean build/test artifacts and venv
 clean:
-	rm -rf .venv .pytest_cache
+	rm -rf $(VENV_DIR) .pytest_cache tmp
 	find . -name "__pycache__" -type d -prune -exec rm -rf {} +
 	find . -name "*.egg-info" -type d -prune -exec rm -rf {} +
 
@@ -29,10 +76,3 @@ showtree:
 # Save a tree snapshot
 gentree:
 	tree -I ".venv|__pycache__|.idea|.pytest-cache|*egg-info|tmp" > project-tree.txt
-
-# Concatenate files listed in files.lst into tmp/filesdump.txt
-filesdump: venv
-	. .venv/bin/activate && mkdir -p tmp && python tools/concat_files.py files.lst > tmp/filesdump.txt
-
-discover-pdfs: venv
-	. .venv/bin/activate && python tools/discover_pdfs.py --env tests/fixtures/env/test_pdf_annot.toml --relative-to .

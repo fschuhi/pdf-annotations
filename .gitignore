@@ -23,6 +23,7 @@ Thumbs.db
 .idea/
 
 # local files
+sandbox/
 tmp/
 tests/baks/
 tests/tmp/
