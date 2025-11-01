@@ -3,12 +3,13 @@
 Toolkit to extract and streamline PDF highlight annotations using PyMuPDF, with utilities to automatically keep Obsidian note frontmatter and annotation blocks in sync with your PDFs.
 
 ## Features
+- **New:** Main CLI (`pdf-annot-sync`) to automatically sync all PDFs to notes.
 - Extract annotations from PDFs into newline-delimited JSON (NDJSON)
 - Streamline annotations: merge adjacent "link" notes with hyphenation handling, extract headings
 - Maintain a lightweight NotesDB over Markdown notes named like `(Author Year).md`
 - Automatically update note frontmatter (pdf_title, pdf_size, pdf_mtime, etc.) when PDFs change
 - Automatically update annotation blocks in notes when PDF annotations change
-- Safe, atomic writes with optional dry-run preview
+- Safe, atomic writes with optional dry-run preview (planned)
 - Comprehensive end-to-end testing with fixtures
 
 ## Quick start (macOS/Linux)
@@ -19,36 +20,46 @@ Prerequisites: Python 3.11+
 git clone https://github.com/fschuhi/pdf-annotations
 cd pdf-annotations
 
-# 2) Create and activate a virtual environment
-python3 -m venv .venv
+# 2) Run the setup
+# This creates a .venv, installs dependencies, and installs the project.
+make setup
+
+# 3) Activate the virtual environment
 source .venv/bin/activate
 
-# 3) Install dependencies
-pip install -r requirements.txt
-
-# For development, install in editable mode:
-pip install -e .
-
 # 4) Run tests
-pytest -q
+make test
 
-# 5) Use the CLIs
-pdf-annot-extract -p tests/fixtures/test1.pdf
-pdf-annot-streamline -i tests/fixtures/test1.ndjson -o /tmp/streamlined.ndjson
+# 5) Create a sandbox to run the main sync command
+mkdir -p sandbox/notes
+mkdir -p sandbox/pdfs
+cp tests/fixtures/workflow_manual_edits/seeds/* ./sandbox/pdfs/
+cp tests/fixtures/workflow_manual_edits/seeds/*.md ./sandbox/notes/
+cp pdf_annot.example.toml pdf_annot.toml # Use the example config
+
+# 6) Run the main sync workflow
+# This will find pdf_annot.toml by default
+# (Note: The default pdf_annot.toml points to ./sandbox)
+pdf-annot-sync
 ```
 
 ## Architecture overview
 
-### Core workflow: PDF → Note synchronization
+### Core workflow: `pdf-annot-sync`
 
-When a PDF's annotations change, the workflow automatically:
-1. **Detects changes** by comparing PDF mtime/size with note frontmatter
-2. **Extracts annotations** from the PDF using PyMuPDF
-3. **Streamlines** them (merges links, handles hyphenation)
-4. **Renders markdown** annotation blocks
-5. **Updates notes atomically** (frontmatter + annotation block)
+The main entry point is `pdf-annot-sync`, defined in `src/pdf_annot/sync.py`.
+When run, it automatically:
+1.  **Loads configuration** (e.g., `pdf_annot.toml`) to get `pdf_dirs` and `notes_root`.
+2.  **Builds registries** for all PDFs (`PdfRegistry`) and all notes (`NotesDB`).
+3.  **Loops over every PDF** and compares it to its corresponding note.
+4.  **Detects changes** by comparing PDF mtime/size with note frontmatter.
+5.  **Calls `sync_pdf_to_note`** for any new or changed PDFs. This function:
+    * Extracts annotations from the PDF.
+    * Streamlines them (merges links, handles hyphenation).
+    * Renders the markdown annotation block.
+    * Updates the note atomically (frontmatter + annotation block).
 
-This workflow is tested end-to-end in `tests/test_core_workflow.py`.
+This workflow is tested end-to-end by library tests in `tests/test_core_workflow.py` and by a full CLI test in `tests/test_sync_cli.py`.
 
 ### Library modules
 
@@ -59,9 +70,8 @@ Configuration management via TOML files.
 from pdf_annot.env import load_env
 
 env = load_env("pdf_annot.toml")
-# env.paths.notes_root, env.paths.pdf_dirs, env.paths.backup_dir, env.paths.temp_dir
-# env.frontmatter.title_field, size_field, has_annots_field, last_run_field
-# env.io.atomic_writes, create_missing_dirs
+# env.paths.notes_root, env.paths.pdf_dirs
+# env.annotations.default_info_text
 ```
 
 **Configuration structure:**
@@ -72,83 +82,66 @@ pdf_dirs = ["./pdfs"]
 backup_dir = "./backups"  # optional
 temp_dir = "./tmp"        # optional (for tests)
 
+[annotations]
+default_info_text = "below the automatically generated annotations from the PDF"
+
 [frontmatter]
 title_field = "pdf_title"
-size_field = "pdf_size"
-has_annots_field = "has_annotations"
-last_run_field = "last_run_at"
+# ...
+```
 
-[io]
-atomic_writes = true
-create_missing_dirs = true
+#### `src/pdf_annot/sync.py`
+The core workflow logic and `main` CLI entry point.
+
+**Library API:**
+```python
+from pdf_annot.sync import sync_pdf_to_note
+
+# This is the core "god function"
+result: UpdateResult = sync_pdf_to_note(
+    env,
+    pdf_info,
+    note_path,
+    current_time_iso
+)
+```
+
+**CLI:**
+```bash
+pdf-annot-sync -c my_config.toml
 ```
 
 #### `src/pdf_annot/extract.py`
 PDF annotation extraction with header/footer awareness and column detection.
 
 **Library API:**
-```python
-from pdf_annot.extract import extract_annotations_to_list
-
-# Returns sorted list of annotation dicts in visual reading order
-annotations = extract_annotations_to_list(
-    pdf_path,
-    header_height=60.0,  # skip annotations in header
-    footer_height=50.0   # skip annotations in footer
-)
-```
+`annotations = extract_annotations_to_list(pdf_path)`
 
 **CLI:**
-```bash
-pdf-annot-extract -p document.pdf --header-height 60 --footer-height 50
-# Creates document.ndjson with raw annotations
-```
+`pdf-annot-extract -p document.pdf`
 
 #### `src/pdf_annot/streamline_annotations.py`
 Post-processes raw annotations: keeps highlights, merges link annotations, extracts headings.
 
 **Library API:**
-```python
-from pdf_annot.streamline_annotations import streamline_annotations_list
-
-streamlined = streamline_annotations_list(raw_annotations)
-```
+`streamlined = streamline_annotations_list(raw_annotations)`
 
 **CLI:**
-```bash
-pdf-annot-streamline -i raw.ndjson -o streamlined.ndjson
-```
-
-**Key features:**
-- Merges "link" annotations into previous highlights
-- Handles hyphenated line breaks intelligently
-- Extracts H1-H6 headers from comment text
-- Outputs compact NDJSON
+`pdf-annot-streamline -i raw.ndjson -o streamlined.ndjson`
 
 #### `src/pdf_annot/frontmatter.py`
 YAML frontmatter parsing and manipulation for Markdown notes.
 
 ```python
-from pdf_annot.frontmatter import parse_note, upsert_fields, format_note
+from pdf_annot.frontmatter import parse_note, upsert_fields
 
 # Parse
 parsed = parse_note(note_text)
-# parsed.front_matter (dict), parsed.body (str), parsed.has_fm (bool)
+# parsed.front_matter (dict), parsed.body (str)
 
 # Update (returns (changed: bool, new_text: str))
-changed, updated_text = upsert_fields(note_text, {
-    "pdf_title": "New Title",
-    "pdf_size": 123456,
-    "pdf_mtime": "2025-10-30T20:00:00",
-    "has_annotations": True,
-    "last_run_at": "2025-10-30T20:01:00"
-})
-
-# Format (create note from scratch)
-note_text = format_note({"key": "value"}, "Body content")
+changed, updated_text = upsert_fields(note_text, {"pdf_title": "New"})
 ```
-
-**Supported fields:** `pdf_id`, `pdf_title`, `pdf_size`, `pdf_hash`, `has_annotations`, `pdf_mtime`, `last_run_at`
 
 #### `src/pdf_annot/notes.py`
 Note-level operations for working with annotation blocks.
@@ -158,14 +151,10 @@ from pdf_annot.notes import extract_info_text, replace_annotation_block
 
 # Extract custom info text (preserves user edits)
 info_text = extract_info_text(note_text)
-# Returns text from <span class="pdf-annot-info">...</span>
 
 # Replace annotation block
 updated_note = replace_annotation_block(note_text, new_annotation_block)
-# Replaces everything from <hr class="pdf-annot-sep"> onward
 ```
-
-**Key feature:** Preserves custom info text that users may have edited, rather than overwriting with defaults.
 
 #### `src/pdf_annot/ndjson_to_md_block.py`
 Renders streamlined annotations as Obsidian-compatible markdown.
@@ -175,23 +164,9 @@ from pdf_annot.ndjson_to_md_block import render_block
 
 markdown = render_block(
     streamlined_annotations,
-    pdf_id_hash="VQGPEHE",  # 7-letter hash for pdf:// links
-    info_text="Custom info text"  # Optional, defaults provided
+    pdf_id_hash="VQGPEHE",
+    info_text="Custom info text" # Caller must provide this
 )
-```
-
-**Output structure:**
-```markdown
-<hr class="pdf-annot-sep">
-
-<span class="pdf-annot-info">below the automatically generated annotations from the PDF</span>
-
-## Section Header
-
-> Highlighted text <span class="pdf-annot-date">21.10.25 21:20</span> [1](pdf://VQGPEHE?page=1)
-
-> [!note] <span class="pdf-annot-date">21.10.25 21:20</span>
-> Comment text here
 ```
 
 #### `src/pdf_annot/notes_db.py`
@@ -200,109 +175,58 @@ Mapping-like index of Markdown notes with case-insensitive lookups.
 ```python
 from pdf_annot.notes_db import NotesDB
 
-# Build from directory
-notes = NotesDB.build("/path/to/vault")
-
-# Or from env
 notes = NotesDB.from_env(env)
-
-# Access notes (case-insensitive)
-note_info = notes["keating 1995"]  # -> NoteInfo object
-
-# Plan frontmatter updates
-plan_summary = notes.plan_frontmatter_updates(pdf_registry)
-# Returns: plans, missing_notes, orphan_notes
-
-# Apply updates
-result = notes.apply_frontmatter_updates(plans, dry_run=True)  # Preview
-result = notes.apply_frontmatter_updates(plans, dry_run=False) # Apply
+note_info = notes["(keating 1995)"] # case-insensitive
 ```
-
-**Key features:**
-- Only includes notes named exactly `(ID).md`
-- Case-insensitive ID lookups
-- Raises `DuplicateNoteIdError` if multiple notes have same ID
-- Planning utilities to compare notes with PDF registry
-- Atomic writes with dry-run support
 
 #### `src/pdf_annot/pdf_registry.py`
 PDF discovery and metadata indexing.
 
 ```python
-from pdf_annot.pdf_registry import build_pdf_index, PdfInfo
+from pdf_annot.pdf_registry import build_pdf_index
 
-# Build index from directories
-pdf_index = build_pdf_index(["/path/to/pdfs"])
-
-# Access by lowercase pdf_id
-pdf_info: PdfInfo = pdf_index["(smith 2020)"]
-# pdf_info.pdf_id, .pdf_hash, .pdf_title, .size, .mtime, .abs_path
-```
-
-**PdfInfo fields:**
-- `pdf_id`: e.g., "(Das 2000b)"
-- `pdf_hash`: 7-letter hash for pdf:// links
-- `pdf_title`: filename without id and extension
-- `size`: file size in bytes
-- `mtime`: modification time (epoch seconds)
-- `abs_path`: absolute path to PDF
-
-#### `src/pdf_annot/pdf_discovery.py`
-Lightweight PDF discovery utilities.
-
-```python
-from pdf_annot.pdf_discovery import discover_pdfs
-
-pdfs = discover_pdfs(env)  # Returns List[Path]
+pdf_index = build_pdf_index(env.paths.pdf_dirs)
+pdf_info = pdf_index["(smith 2020)"] # case-insensitive
 ```
 
 ## Complete workflow example
+
+The `src/pdf_annot/sync.py` file contains the `main()` function which implements the complete workflow. This is a simplified version of that loop:
 
 ```python
 from datetime import datetime
 from pdf_annot.env import load_env
 from pdf_annot.pdf_registry import build_pdf_index
-from pdf_annot.frontmatter import parse_note, upsert_fields
-from pdf_annot.extract import extract_annotations_to_list
-from pdf_annot.streamline_annotations import streamline_annotations_list
-from pdf_annot.ndjson_to_md_block import render_block
-from pdf_annot.notes import extract_info_text, replace_annotation_block
+from pdf_annot.notes_db import NotesDB
+from pdf_annot.sync import sync_pdf_to_note
 
 # 1. Setup
 env = load_env("pdf_annot.toml")
-pdf_index = build_pdf_index(["/path/to/pdfs"])
+pdf_index = build_pdf_index(env.paths.pdf_dirs)
+notes_db = NotesDB.from_env(env)
+current_time_iso = datetime.now().isoformat(timespec="seconds")
 
-# 2. Get PDF and note
-pdf_info = pdf_index["(albini 2013)"]
-note_path = env.paths.notes_root / "(Albini 2013).md"
-note_text = note_path.read_text()
+# 2. Loop over all found PDFs
+for pdf_id_lower, pdf_info in pdf_index.items():
 
-# 3. Check if update needed
-parsed = parse_note(note_text)
-pdf_mtime_iso = datetime.fromtimestamp(pdf_info.mtime).isoformat(timespec='seconds')
+    # 3. Find the matching note (or create a path for a new one)
+    note_info = notes_db.get(pdf_id_lower)
+    if note_info:
+        note_path = Path(note_info.abs_path)
+    else:
+        note_path = env.paths.notes_root / f"{pdf_info.pdf_id}.md"
 
-updates = {
-    "pdf_title": pdf_info.pdf_title,
-    "pdf_size": pdf_info.size,
-    "pdf_mtime": pdf_mtime_iso,
-    "has_annotations": True,
-    "last_run_at": datetime.now().isoformat(timespec='seconds')
-}
+    # 4. Run the sync logic for this pair
+    # This function handles checking mtime, extraction, rendering,
+    # and atomically updating the file.
+    result = sync_pdf_to_note(env, pdf_info, note_path, current_time_iso)
 
-fm_changed, updated_fm_text = upsert_fields(note_text, updates)
-
-if fm_changed:
-    # 4. Extract and streamline annotations
-    raw_annotations = extract_annotations_to_list(pdf_info.abs_path)
-    streamlined = streamline_annotations_list(raw_annotations)
-
-    # 5. Render markdown (preserving custom info text)
-    info_text = extract_info_text(note_text)
-    annotation_block = render_block(streamlined, pdf_info.pdf_hash, info_text)
-
-    # 6. Update note atomically
-    updated_note = replace_annotation_block(updated_fm_text, annotation_block)
-    note_path.write_text(updated_note)
+    if result.note_updated:
+        print(f"Updated: {note_path.name}")
+    elif result.success:
+        print(f"Skipped: {note_path.name}")
+    else:
+        print(f"Error: {note_path.name}: {result.error}")
 ```
 
 ## Testing
@@ -311,124 +235,122 @@ if fm_changed:
 ```
 tests/
 ├── fixtures/
-│   ├── complete_update_workflow/          # E2E test fixture
+│   ├── workflow_manual_edits/  # E2E test fixture
 │   │   ├── seeds/              # Initial state
 │   │   │   ├── (Albini 2013).md
 │   │   │   └── (Albini 2013) On dealing....pdf
 │   │   ├── goldens/            # Expected output
 │   │   │   └── (Albini 2013).md
-│   │   └── config.toml         # Test configuration
-│   └── pdf_to_markdown_e2e/    # Another E2E fixture
+│   │   └── config.toml         # Test-specific config
+│   └── ... (many other fixtures)
 ├── tmp/                        # Generated during tests (gitignored)
-├── test_core_workflow.py      # E2E workflow test
+├── test_core_workflow.py       # E2E test for the *library*
+├── test_sync_cli.py            # E2E test for the *CLI*
 ├── test_frontmatter.py         # Frontmatter unit tests
-├── test_notes_db.py            # NotesDB unit tests
 └── ...
 ```
 
 ### Running tests
 ```bash
-pytest -q                        # Quick run
-pytest -v                        # Verbose
-pytest tests/test_core_workflow.py  # explicit single-pdf test, and loop with single pdf
+# Set up the environment (if first time)
+make setup
+
+# Run all tests
+make test
+
+# Run a specific test file
+pytest -q tests/test_core_workflow.py
 ```
-
-### Key test patterns
-
-**E2E test workflow:**
-1. Copy seeds → temp directory
-2. Load env, build registries
-3. Run complete workflow
-4. Compare output with golden files
-5. Leave temp files for debugging (gitignored)
-
-**Fixture organization:**
-- `seeds/`: Initial state (before workflow)
-- `goldens/`: Expected state (after workflow)
-- `config.toml`: Test-specific configuration pointing to temp dirs
 
 ## Command-line tools
 
-### pdf-annot-extract
+### `pdf-annot-sync`
+Main workflow tool. Finds all PDFs and syncs them with notes.
+```bash
+# Run using config in current directory
+pdf-annot-sync
+
+# Run with a specific config
+pdf-annot-sync -c /path/to/my_config.toml
+
+# Preview changes without writing files (TODO)
+pdf-annot-sync --dry-run
+```
+
+### `pdf-annot-extract`
 ```bash
 pdf-annot-extract -p document.pdf [--header-height 60] [--footer-height 50]
 ```
 Creates `document.ndjson` with raw annotations next to the PDF.
 
-### pdf-annot-streamline
+### `pdf-annot-streamline`
 ```bash
 pdf-annot-streamline -i raw.ndjson -o streamlined.ndjson
 ```
 Processes raw annotations into streamlined format.
 
-### tools/discover_pdfs.py
+### `tools/`
+Developer utilities.
 ```bash
-python tools/discover_pdfs.py --env pdf_annot.toml --relative-to .
+# Get the 7-char hash for a PDF ID
+make hash ARGS="(Albini 2013)"
+# > ID: '(Albini 2013)' -> VQGPEHE
+
+# Get hash from a filename
+make hash ARGS="(Albini 2013) Some Title.pdf"
+# > File: '(Albini 2013) Some Title.pdf' -> ID: '(Albini 2013)' -> VQGPEHE
 ```
-Lists all discovered PDFs (useful for debugging).
 
 ## Project layout
+(See `project-tree.txt` for full layout)
 ```
 pdf-annotations/
 ├── src/pdf_annot/              # Library code
 │   ├── env.py                  # Configuration
+│   ├── sync.py                 # <-- NEW: Main sync logic
 │   ├── extract.py              # PDF extraction
 │   ├── streamline_annotations.py  # Streamlining
 │   ├── frontmatter.py          # YAML manipulation
 │   ├── notes.py                # Note operations
 │   ├── ndjson_to_md_block.py   # Markdown rendering
 │   ├── notes_db.py             # Note indexing
-│   ├── pdf_registry.py         # PDF indexing
-│   └── pdf_discovery.py        # PDF discovery
+│   └── pdf_registry.py         # PDF indexing
 ├── tests/                      # Test suite
+│   ├── test_core_workflow.py   # Library E2E test
+│   └── test_sync_cli.py        # <-- NEW: CLI E2E test
 ├── tools/                      # Dev utilities
+│   └── print_hashes.py
+├── Makefile                    # Project commands
 ├── requirements.txt            # Dependencies
-├── pyproject.toml             # Package metadata
-└── README.md                  # This file
+├── pyproject.toml              # Package metadata
+└── README.md                   # This file
 ```
 
 ## Development
 
 ### Setting up development environment
 ```bash
-# Create venv
-python3 -m venv .venv
+# Create venv, install deps, and install project in editable mode
+make setup
+
+# Activate the venv
 source .venv/bin/activate
 
-# Install with dev dependencies
-pip install -r requirements.txt
-pip install -e .
-
 # Run tests
-pytest -q
+make test
 ```
 
 ### Troubleshooting
 
 **Import issues during development:**
-```bash
-# Set PYTHONPATH for direct script execution
-PYTHONPATH=src python -c "import pdf_annot; print(pdf_annot.__file__)"
-```
+The `Makefile` targets (e.g., `make run`, `make test`) automatically set `PYTHONPATH=src` to ensure modules are found.
 
 **Clean rebuild:**
 ```bash
-rm -rf .venv .pytest_cache
-find . -name "__pycache__" -type d -prune -exec rm -rf {} +
-find . -name "*.egg-info" -type d -prune -exec rm -rf {} +
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-pip install -e .
-```
-
-**Verify installation:**
-```bash
-python - <<'PY'
-import sys, fitz, pdf_annot
-print("PyMuPDF:", fitz.__version__)
-print("Package:", pdf_annot.__file__)
-print("Python:", sys.executable)
-PY
+# This removes venv, caches, and built files
+make clean
+# This rebuilds everything
+make setup
 ```
 
 ## Key concepts
@@ -469,19 +391,16 @@ Annotations are sorted by visual reading order:
 2. Y-coordinate (top to bottom)
 3. X-coordinate (left to right)
 
-This ensures consistent, readable output regardless of PDF internal ordering.
-
 ### Info text preservation
 The `<span class="pdf-annot-info">...</span>` text can be customized by users. The workflow preserves this custom text rather than overwriting with defaults.
 
 ## Future enhancements
-- Additional edge case tests (missing frontmatter, manual edits between blocks)
-- Batch processing CLI for multiple PDFs
-- Web interface for viewing/managing annotations
-- Integration with Obsidian plugins
+- Implement `--dry-run` logic
+- Additional edge case tests (missing frontmatter)
+- Refactor `streamline_annotations.py` to remove duplicate logic
 
 ## License
 [Your license here]
 
 ## Contributing
-Pull requests welcome! Please ensure tests pass before submitting.
+Pull requests welcome! Please ensure tests pass (`make test`) before submitting.

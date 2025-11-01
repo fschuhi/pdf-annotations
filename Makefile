@@ -9,7 +9,7 @@ RUN_WITH_PATH = $(ACTIVATE) && PYTHONPATH=src
 SETUP_STAMP = $(VENV_DIR)/.setup_stamp
 
 # --- Phony targets (commands that don't produce files) ---
-.PHONY: all setup test run extract streamline clean showtree gentree filesdump discover-pdfs
+.PHONY: all setup test run extract streamline clean showtree gentree filesdump discover-pdfs hash
 
 # Default target runs 'setup'
 all: setup
@@ -41,6 +41,12 @@ setup: $(SETUP_STAMP)
 run: $(SETUP_STAMP)
 	$(RUN_WITH_PATH) python -m pdf_annot.sync $(ARGS)
 
+# --- NEW: 'hash' target ---
+# Runs the print_hashes.py tool
+# Pass arguments like: make hash ARGS="(Albini 2013) Title.pdf"
+hash: $(SETUP_STAMP)
+	$(RUN_WITH_PATH) python tools/print_hashes.py $(ARGS)
+
 # Run tests
 test: $(SETUP_STAMP)
 	$(RUN_WITH_PATH) pytest -q
@@ -71,8 +77,8 @@ clean:
 
 # Show project tree (excluding common noise)
 showtree:
-	tree -I ".venv|__pycache__|.idea|.pytest-cache|*egg-info|tmp"
+	tree -I ".venv|__pycache__|.idea|.pytest_cache|*egg-info|tmp"
 
 # Save a tree snapshot
 gentree:
-	tree -I ".venv|__pycache__|.idea|.pytest-cache|*egg-info|tmp" > project-tree.txt
+	tree -I ".venv|__pycache__|.idea|.pytest_cache|*egg-info|tmp" > project-tree.txt
