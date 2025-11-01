@@ -1,11 +1,11 @@
 ---
-pdf_id: "(Albini 2013)"
-pdf_title: "On dealing with destructive emotions"
+pdf_id: (Albini 2013)
+pdf_title: On dealing with destructive emotions
 pdf_size: 91354
-pdf_hash: "VQGPEHE"
+pdf_hash: VQGPEHE
 has_annotations: true
-pdf_mtime: "2025-10-21T21:37:00"
-last_run_at: "LAST_RUN_AT"
+pdf_mtime: '2025-10-21T21:37:00_
+last_run_at: LAST_RUN_AT
 ---
 <hr class="pdf-annot-sep">
 

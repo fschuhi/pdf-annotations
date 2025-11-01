@@ -1,11 +1,11 @@
 ---
-pdf_id: "(Calbini 2015)"
-pdf_title: "On disregarding destructive emotions"
+pdf_id: (Calbini 2015)
+pdf_title: On disregarding destructive emotions
 pdf_size: 91354
-pdf_hash: "ESWKWIF"
+pdf_hash: ESWKWIF
 has_annotations: true
 pdf_mtime: '2025-10-23T22:30:40'
-last_run_at: "LAST_RUN_AT"
+last_run_at: LAST_RUN_AT
 ---
 
 This is manually added text, including an empty line after the frontmatter separator and before the pdf-annot-sep.
