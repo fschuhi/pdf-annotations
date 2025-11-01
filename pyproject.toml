@@ -6,6 +6,13 @@ build-backend = "setuptools.build_meta"
 name = "pdf_annot"
 version = "0.1.0"
 
+# --- NEW: Add this section to create CLI commands ---
+[project.scripts]
+pdf-annot-extract = "pdf_annot.extract:main"
+pdf-annot-streamline = "pdf_annot.streamline_annotations:main"
+pdf-annot-sync = "pdf_annot.sync:main"
+# --------------------------------------------------
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

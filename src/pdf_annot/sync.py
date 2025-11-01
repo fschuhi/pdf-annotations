@@ -1,11 +1,14 @@
 # src/pdf_annot/sync.py
 from __future__ import annotations
 
+import sys
+import argparse
 from pathlib import Path
 from datetime import datetime
 
-from pdf_annot.env import Env
-from pdf_annot.pdf_registry import PdfInfo
+from pdf_annot.env import load_env, Env
+from pdf_annot.pdf_registry import build_pdf_index, PdfInfo
+from pdf_annot.notes_db import NotesDB
 from pdf_annot.frontmatter import upsert_fields
 from pdf_annot.ndjson_to_md_block import render_block
 from pdf_annot.extract import extract_annotations_to_list
@@ -93,6 +96,7 @@ def sync_pdf_to_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_
         updated_note_text = replace_annotation_block(text_with_updated_fm, annotation_block)
 
         # 9. Write updated note atomically
+        # TODO: This logic should respect dry_run
         note_path.write_text(updated_note_text, encoding="utf-8")
 
         return UpdateResult(
@@ -110,3 +114,78 @@ def sync_pdf_to_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_
             note_updated=False,
             error=str(e),
         )
+
+
+def main() -> int:
+    """
+    Main CLI entry point for the PDF-to-Note sync workflow.
+    """
+    parser = argparse.ArgumentParser(description="Sync PDF annotations and metadata to Markdown notes.")
+    parser.add_argument("-c", "--config", help="Path to the TOML config file (e.g., pdf_annot.toml).")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Run without writing any files, just print what would change."
+    )
+    args = parser.parse_args()
+
+    try:
+        # 1. Setup: Load Env, Build PDF Registry and NotesDB
+        print(f"Loading configuration from: {args.config or 'default'}")
+        env = load_env(source=args.config)
+
+        print(f"Scanning for PDFs in: {env.paths.pdf_dirs}")
+        pdf_index = build_pdf_index([str(p) for p in env.paths.pdf_dirs])
+
+        print(f"Scanning for notes in: {env.paths.notes_root}")
+        notes_db = NotesDB.from_env(env)
+
+        print(f"Found {len(pdf_index)} PDFs and {len(notes_db)} notes. Starting sync...")
+        print("-" * 30)
+
+        # 2. Loop: Iterate over all PDFs and sync
+        current_time_iso = datetime.now().isoformat(timespec="seconds")
+        stats = {"updated": 0, "skipped": 0, "errors": 0}
+
+        for pdf_id_lower, pdf_info in pdf_index.items():
+            note_info = notes_db.get(pdf_id_lower)
+
+            if note_info:
+                note_path = Path(note_info.abs_path)
+            else:
+                # Note doesn't exist; create a new path for it
+                note_path = env.paths.notes_root / f"{pdf_info.pdf_id}.md"
+
+            # This is where the core logic happens
+            result = sync_pdf_to_note(env, pdf_info, note_path, current_time_iso)
+
+            # 3. Report: Log the result for this file
+            if not result.success:
+                print(f"❌ ERROR: Failed to sync {pdf_info.filename_with_ext}:\n  {result.error}")
+                stats["errors"] += 1
+            elif result.note_updated:
+                print(f"✅ UPDATED: {note_path.name}")
+                stats["updated"] += 1
+            else:
+                # No error and not updated means skipped
+                print(f"➖ SKIPPED: {note_path.name} (already up-to-date)")
+                stats["skipped"] += 1
+
+        # 4. Summary
+        print("-" * 30)
+        print("Sync complete.")
+        print(f"  Updated: {stats['updated']}")
+        print(f"  Skipped: {stats['skipped']}")
+        print(f"  Errors:  {stats['errors']}")
+        print("-" * 30)
+
+        return 1 if stats["errors"] > 0 else 0
+
+    except FileNotFoundError as e:
+        print(f"❌ CONFIG ERROR: {e}", file=sys.stderr)
+        return 1
+    except Exception as e:
+        print(f"❌ FATAL ERROR: An unexpected error occurred: {e}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
