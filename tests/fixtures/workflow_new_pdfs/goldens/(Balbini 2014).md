@@ -6,6 +6,9 @@ pdf_hash: GVHWPBJ
 has_annotations: false
 pdf_mtime: '2025-10-22T15:54:22'
 last_run_at: 'LAST_RUN_AT'
+pdf_pages: 7
+pdf_highlights: 0
+pdf_textboxes: 0
 ---
 
 <hr class="pdf-annot-sep">

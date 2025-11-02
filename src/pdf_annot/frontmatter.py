@@ -7,7 +7,6 @@ from typing import Dict, List, Tuple
 
 import yaml
 
-
 YAML_START = "---"
 YAML_END = "---"  # We use the same fence for end (common in Obsidian/MD)
 
@@ -110,6 +109,7 @@ def upsert_fields(text: str, updates: Dict[str, object]) -> Tuple[bool, str]:
     - Targets: all PDF-related metadata fields
     Returns (changed, new_text).
     """
+    # --- FIX: Add the new stats fields to the targets list ---
     targets = (
         "pdf_id",
         "pdf_title",
@@ -118,6 +118,9 @@ def upsert_fields(text: str, updates: Dict[str, object]) -> Tuple[bool, str]:
         "has_annotations",
         "pdf_mtime",
         "last_run_at",
+        "pdf_pages",
+        "pdf_highlights",
+        "pdf_textboxes",
     )
 
     parsed = parse_note(text)
@@ -125,11 +128,13 @@ def upsert_fields(text: str, updates: Dict[str, object]) -> Tuple[bool, str]:
 
     # Compute whether changes are needed
     need_change = False
-    for key in targets:
-        if key in updates:
-            if key not in current or current.get(key) != updates[key]:
-                need_change = True
-                break
+
+    # --- FIX: Check all keys in 'updates', not just 'targets' ---
+    # This is the real bug. We need to check every key we're trying to update.
+    for key in updates:
+        if key not in current or current.get(key) != updates[key]:
+            need_change = True
+            break
 
     if not need_change:
         # No modifications necessary; return original text byte-for-byte
@@ -138,7 +143,9 @@ def upsert_fields(text: str, updates: Dict[str, object]) -> Tuple[bool, str]:
     # We will rewrite a normalized FM block, preserving non-target keys in original order
     # Build ordered dict-like sequence:
     new_items: List[Tuple[str, object]] = []
+
     # First, targets (if provided), in stable order
+    # This ensures our special keys are always at the top
     for key in targets:
         if key in updates:
             new_items.append((key, updates[key]))
@@ -146,7 +153,13 @@ def upsert_fields(text: str, updates: Dict[str, object]) -> Tuple[bool, str]:
             # If not provided in updates but currently present, keep existing value
             new_items.append((key, current[key]))
 
-    # Then, all other keys in their existing order, skipping duplicates of targets
+    # Then, all other keys in their existing order, skipping duplicates
+    # This loop is to add any *new* keys from 'updates' that are not in 'targets'
+    for k, v in updates.items():
+        if k not in (t for t, _ in new_items):
+            new_items.append((k, v))
+
+    # This loop is to add any *old* keys from 'current' that are not in 'targets'
     for k, v in current.items():
         if k not in (t for t, _ in new_items):
             new_items.append((k, v))

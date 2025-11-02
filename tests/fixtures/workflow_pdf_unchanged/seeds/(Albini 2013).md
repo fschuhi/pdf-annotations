@@ -6,6 +6,9 @@ pdf_hash: VQGPEHE
 has_annotations: true
 pdf_mtime: '2025-10-21T21:20:40'
 last_run_at: '2025-10-31T14:31:58'
+pdf_pages: 7
+pdf_highlights: 6
+pdf_textboxes: 0
 ---
 <hr class="pdf-annot-sep">
 

@@ -47,6 +47,11 @@ def sync_pdf_to_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_
             note_text = ""  # Start with an empty note
             existing_info_text = env.annotations.default_info_text
 
+        # --- FIX: Extract both annotations AND stats ---
+        # 4. Extract annotations and stats *before* checking for changes
+        raw_annotations_list, pdf_stats = extract_annotations_to_list(Path(pdf_info.abs_path))
+        has_annotations = bool(raw_annotations_list)
+
         # 2. Build PDF-related updates
         pdf_mtime_iso = datetime.fromtimestamp(pdf_info.mtime).isoformat(timespec="seconds")
 
@@ -55,10 +60,14 @@ def sync_pdf_to_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_
             "pdf_title": pdf_info.pdf_title,
             "pdf_size": pdf_info.size,
             "pdf_mtime": pdf_mtime_iso,
+            # --- NEW: Add the new stats fields ---
+            "pdf_pages": pdf_stats.get("pdf_pages"),
+            "pdf_highlights": pdf_stats.get("pdf_highlights"),
+            "pdf_textboxes": pdf_stats.get("pdf_textboxes"),
         }
 
-        # 3. Check ONLY if PDF-related fields have changed
-        # We pass only these fields to upsert_fields to check for a trigger
+        # 3. Check if any PDF-related fields have changed
+        # This will now trigger for all old notes that are missing the new fields
         fm_changed, text_with_pdf_fm = upsert_fields(note_text, pdf_updates)
 
         if not fm_changed:
@@ -67,13 +76,9 @@ def sync_pdf_to_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_
                 note_path=note_path, frontmatter_changed=False, annotation_block_changed=False, note_updated=False
             )
 
-        # 4. OK, changes detected! Now extract annotations and build full updates.
-        raw_annotations = extract_annotations_to_list(Path(pdf_info.abs_path))
-        has_annotations = bool(raw_annotations)
-
-        # Build the *full* set of updates, including last_run_at
+        # 4. Build the *full* set of updates, including last_run_at
         full_updates = {
-            **pdf_updates,  # pdf_title, pdf_size, pdf_mtime
+            **pdf_updates,  # pdf_title, size, mtime, pages, highlights, textboxes
             "pdf_id": pdf_info.pdf_id,
             "pdf_hash": pdf_info.pdf_hash,
             "has_annotations": has_annotations,
@@ -81,11 +86,11 @@ def sync_pdf_to_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_
         }
 
         # 5. Apply full updates to the note text
-        # (We use note_text here, not text_with_pdf_fm, to start fresh)
         _, text_with_updated_fm = upsert_fields(note_text, full_updates)
 
         # 6. Streamline annotations
-        streamlined_annotations = streamline_annotations_list(raw_annotations)
+        # --- FIX: Pass the list, not the tuple ---
+        streamlined_annotations = streamline_annotations_list(raw_annotations_list)
 
         # 7. Render markdown annotation block with preserved info text
         annotation_block = render_block(

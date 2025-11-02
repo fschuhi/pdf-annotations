@@ -6,6 +6,9 @@ pdf_hash: ESWKWIF
 has_annotations: true
 pdf_mtime: '2025-10-23T10:10:10'
 last_run_at: '2025-10-23T15:00:00'
+pdf_pages: 7
+pdf_highlights: 2
+pdf_textboxes: 0
 ---
 
 This is manually added text, including an empty line after the frontmatter separator and before the pdf-annot-sep.

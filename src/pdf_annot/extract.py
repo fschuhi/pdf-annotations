@@ -1,7 +1,7 @@
 import argparse
 import json
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 import fitz
 import numpy as np
 
@@ -10,8 +10,8 @@ from .annotation import Annotation, TEXTUAL_ANNOTS
 # ===============================================================
 #  Default heuristic parameters
 # ===============================================================
-DEFAULT_HEADER_HEIGHT = 50.0  # points: ignore annotations above this y value
-DEFAULT_FOOTER_HEIGHT = 40.0  # points: ignore annotations below this y value
+DEFAULT_HEADER_HEIGHT = 60.0  # points: ignore annotations above this y value
+DEFAULT_FOOTER_HEIGHT = 50.0  # points: ignore annotations below this y value
 FULLWIDTH_RATIO = 0.80  # rect.width / page.width threshold for "single block"
 COLUMN_GAP_THRESHOLD = 100  # x gap (points) to detect separate columns
 
@@ -21,7 +21,6 @@ COLUMN_GAP_THRESHOLD = 100  # x gap (points) to detect separate columns
 # ===============================================================
 
 
-# --- NEW: Helper function to de-duplicate logic ---
 def _split_rects_by_max_gap(
     rects: List[fitz.Rect], x_positions: List[int], gaps: np.ndarray
 ) -> Tuple[List[fitz.Rect], List[fitz.Rect]]:
@@ -50,7 +49,6 @@ def detect_columns(rects: List[fitz.Rect], x_gap_threshold: float = COLUMN_GAP_T
 
     gaps = np.diff(x_positions)
     if any(gap > x_gap_threshold for gap in gaps):
-        # --- REFACTORED: Use helper ---
         left, right = _split_rects_by_max_gap(rects_sorted, x_positions, gaps)
 
         # Try detecting 3 columns by splitting again if needed
@@ -58,7 +56,6 @@ def detect_columns(rects: List[fitz.Rect], x_gap_threshold: float = COLUMN_GAP_T
             right_xs = sorted({int(r.x0) for r in right})
             right_gaps = np.diff(right_xs)
             if any(gap > x_gap_threshold for gap in right_gaps):
-                # --- REFACTORED: Use helper ---
                 mid, far_right = _split_rects_by_max_gap(right, right_xs, right_gaps)
                 return [left, mid, far_right]
         return [left, right]
@@ -116,7 +113,6 @@ def extract_annotations(doc: fitz.Document, header_height: float, footer_height:
     Yield Annotation objects for all textual annotations in the document.
     For highlights, also include extracted text in info['extractedText'].
     """
-    # --- FIX: Ignore PyCharm linter warning. fitz.Document is iterable. ---
     for i, page in enumerate(doc):  # type: ignore
         for annot in page.annots(types=TEXTUAL_ANNOTS):
             if not annot:
@@ -141,7 +137,6 @@ def extract_annotations(doc: fitz.Document, header_height: float, footer_height:
             )
 
 
-# --- Internal helper to de-duplicate extraction and sorting ---
 def _extract_and_sort_annots(doc: fitz.Document, header_height: float, footer_height: float) -> List[Annotation]:
     """Extracts and sorts annotations by visual reading order."""
     annotations = list(extract_annotations(doc, header_height, footer_height))
@@ -157,13 +152,10 @@ def extract_annotations_to_list(
     pdf_path: Path,
     header_height: float = DEFAULT_HEADER_HEIGHT,
     footer_height: float = DEFAULT_FOOTER_HEIGHT,
-) -> List[dict]:
+) -> Tuple[List[dict], Dict[str, int]]:
     """
-    Extract and sort annotations from PDF, return as list of dicts.
-
-    This is the programmatic library API (vs the CLI main() function).
-    Annotations are sorted by visual reading order: page, then top-to-bottom,
-    then left-to-right.
+    Extract and sort annotations from PDF, return as list of dicts
+    AND a dictionary of PDF stats.
 
     Args:
         pdf_path: Path to the PDF file
@@ -171,11 +163,34 @@ def extract_annotations_to_list(
         footer_height: Footer cutoff in points
 
     Returns:
-        List of annotation dictionaries in visual reading order
+        Tuple of (annotation_dicts, pdf_stats)
+        - annotation_dicts: List of annotation dictionaries in visual reading order
+        - pdf_stats: Dict with {'pdf_pages', 'pdf_highlights', 'pdf_textboxes'}
     """
     doc = fitz.open(pdf_path)
+    page_count = doc.page_count
+
     annotations = _extract_and_sort_annots(doc, header_height, footer_height)
-    return [ann.to_dict() for ann in annotations]
+
+    # --- NEW: Count annotations from the list we already built ---
+    highlights_count = 0
+    textboxes_count = 0
+    for ann in annotations:
+        annot_type_name = ann.annotType[1]  # Get annotation type string name
+        if annot_type_name in ("Highlight", "Squiggly", "StrikeOut", "Underline"):
+            highlights_count += 1
+        elif annot_type_name in ("Text", "FreeText"):
+            textboxes_count += 1
+
+    pdf_stats = {
+        "pdf_pages": page_count,
+        "pdf_highlights": highlights_count,
+        "pdf_textboxes": textboxes_count,
+    }
+
+    annotation_dicts = [ann.to_dict() for ann in annotations]
+
+    return annotation_dicts, pdf_stats
 
 
 # ===============================================================
