@@ -1,9 +1,11 @@
+# src/pdf_annot/extract.py
 import argparse
 import json
 from pathlib import Path
 from typing import List, Tuple, Dict
 import fitz
-import numpy as np
+
+# import numpy as np  <- REMOVED
 
 from .annotation import Annotation, TEXTUAL_ANNOTS
 
@@ -12,55 +14,16 @@ from .annotation import Annotation, TEXTUAL_ANNOTS
 # ===============================================================
 DEFAULT_HEADER_HEIGHT = 60.0  # points: ignore annotations above this y value
 DEFAULT_FOOTER_HEIGHT = 50.0  # points: ignore annotations below this y value
-FULLWIDTH_RATIO = 0.80  # rect.width / page.width threshold for "single block"
-COLUMN_GAP_THRESHOLD = 100  # x gap (points) to detect separate columns
+# FULLWIDTH_RATIO = 0.80  <- REMOVED
+# COLUMN_GAP_THRESHOLD = 100  <- REMOVED
 
 
 # ===============================================================
-#  Column detector
+#  Column detector (REMOVED)
 # ===============================================================
 
-
-def _split_rects_by_max_gap(
-    rects: List[fitz.Rect], x_positions: List[int], gaps: np.ndarray
-) -> Tuple[List[fitz.Rect], List[fitz.Rect]]:
-    """
-    Finds the largest gap in x_positions and splits the rects list based on it.
-    """
-    max_gap_idx = int(np.argmax(gaps))
-    split_x = (x_positions[max_gap_idx] + x_positions[max_gap_idx + 1]) / 2
-    left = [r for r in rects if r.x0 < split_x]
-    right = [r for r in rects if r.x0 >= split_x]
-    return left, right
-
-
-def detect_columns(rects: List[fitz.Rect], x_gap_threshold: float = COLUMN_GAP_THRESHOLD):
-    """
-    Detect columns by looking for large X gaps between rect groups.
-    Returns a list of clusters (each cluster = one column's rects).
-    """
-    if not rects:
-        return []
-
-    rects_sorted = sorted(rects, key=lambda r: r.x0)
-    x_positions = sorted({int(r.x0) for r in rects_sorted})
-    if len(x_positions) < 2:
-        return [rects_sorted]
-
-    gaps = np.diff(x_positions)
-    if any(gap > x_gap_threshold for gap in gaps):
-        left, right = _split_rects_by_max_gap(rects_sorted, x_positions, gaps)
-
-        # Try detecting 3 columns by splitting again if needed
-        if len(right) > 1:
-            right_xs = sorted({int(r.x0) for r in right})
-            right_gaps = np.diff(right_xs)
-            if any(gap > x_gap_threshold for gap in right_gaps):
-                mid, far_right = _split_rects_by_max_gap(right, right_xs, right_gaps)
-                return [left, mid, far_right]
-        return [left, right]
-    else:
-        return [rects_sorted]
+# def _split_rects_by_max_gap(...) <- REMOVED
+# def detect_columns(...) <- REMOVED
 
 
 # ===============================================================
@@ -70,8 +33,7 @@ def extract_highlight_text(page: fitz.Page, annot: fitz.Annot, header_height: fl
     """
     Extract highlighted text, handling:
       - header/footer exclusion
-      - full-width (abstract) zones
-      - 2/3 column page layouts
+    Sorts all highlight rectangles by visual reading order (top-to-bottom, left-to-right).
     """
     verts = annot.vertices
     if not verts:
@@ -85,22 +47,15 @@ def extract_highlight_text(page: fitz.Page, annot: fitz.Annot, header_height: fl
     if not usable_rects:
         return ""
 
-    # Region analysis
-    page_width = page.rect.width
-    is_fullwidth = any(r.width > FULLWIDTH_RATIO * page_width for r in usable_rects)
-
-    if is_fullwidth:
-        clusters = [usable_rects]
-    else:
-        clusters = detect_columns(usable_rects)
+    # --- SIMPLIFIED LOGIC ---
+    # Sort all usable rects by top-to-bottom, then left-to-right
+    usable_rects.sort(key=lambda r: (round(r.y0, 1), r.x0))
 
     text_parts = []
-    for col in clusters:
-        col.sort(key=lambda r: (round(r.y0, 1), r.x0))
-        for rect in col:
-            t = page.get_text("text", clip=rect).strip()
-            if t:
-                text_parts.append(t)
+    for rect in usable_rects:
+        t = page.get_text("text", clip=rect).strip()
+        if t:
+            text_parts.append(t)
 
     return " ".join(text_parts)
 
@@ -156,7 +111,6 @@ def extract_annotations_to_list(
     """
     Extract and sort annotations from PDF, return as list of dicts
     AND a dictionary of PDF stats.
-
     Args:
         pdf_path: Path to the PDF file
         header_height: Header cutoff in points
