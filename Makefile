@@ -63,9 +63,19 @@ streamline: $(SETUP_STAMP)
 discover-pdfs: $(SETUP_STAMP)
 	$(RUN_WITH_PATH) python tools/discover_pdfs.py --env tests/fixtures/env/test_pdf_annot.toml --relative-to .
 
-# Concatenate files
-filesdump: $(SETUP_STAMP)
-	$(RUN_WITH_PATH) python tools/concat_files.py files.lst > tmp/filesdump.txt
+# --- Project Documentation ---
+showtree: ## Display project structure
+	@tree -I "node_modules|dist|build|.git|.idea|.vscode|.venv|__pycache__|tmp" -L 3
+
+gentree: ## Generate project tree to tmp/project-tree.txt
+	@mkdir -p tmp
+	@tree -I "node_modules|dist|build|.git|.idea|.vscode|.venv|__pycache__|tmp|cache" > tmp/project-tree.txt
+	@echo "Project tree saved to tmp/project-tree.txt"
+
+filesdump: gentree ## Create context dump for LLMs (requires Python)
+	@echo "--- Generating filesdump ---"
+	$(PYTHON) tools/concat_files.py manifest.lst > tmp/filesdump.txt
+	@echo "Filesdump created at tmp/filesdump.txt"
 
 # --- Utility targets ---
 
@@ -74,11 +84,3 @@ clean:
 	rm -rf $(VENV_DIR) .pytest_cache tmp
 	find . -name "__pycache__" -type d -prune -exec rm -rf {} +
 	find . -name "*.egg-info" -type d -prune -exec rm -rf {} +
-
-# Show project tree (excluding common noise)
-showtree:
-	tree -I ".venv|__pycache__|.idea|.pytest_cache|*egg-info|tmp"
-
-# Save a tree snapshot
-gentree:
-	tree -I ".venv|__pycache__|.idea|.pytest_cache|*egg-info|tmp" > project-tree.txt

@@ -1,0 +1,104 @@
+(This file is the basis of the `filesdump.txt` in which it is included, i.e. the document you are reading right now.
+The files in this manifest are the relevant files for understanding how the project hangs together.
+Files which are commented out are not included in the `filesdump.txt`.)
+
+### --- Context & Meta ---
+# ⚠️ NON-NEGOTIABLE collaboration rules - READ FIRST
+CRITICAL_RULES.md
+
+LLM-instructions.md
+manifest.lst
+tmp/project-tree.txt
+
+README.md
+Goals.md
+TODO.md
+
+### --- Build & Configuration ---
+Makefile
+requirements.txt
+pyproject.toml
+.gitignore
+.gitattributes
+.pre-commit-config.yaml
+
+pdf_annot.example.toml
+
+src/pdf_annot/annotation.py
+src/pdf_annot/env.py
+src/pdf_annot/extract.py
+src/pdf_annot/frontmatter.py
+src/pdf_annot/ndjson_to_md_block.py
+src/pdf_annot/notes.py
+src/pdf_annot/notes_db.py
+src/pdf_annot/pdf_discovery.py
+src/pdf_annot/pdf_registry.py
+src/pdf_annot/streamline_annotations.py
+src/pdf_annot/sync.py
+src/pdf_annot/utils.py
+
+tests/test_annotations.py
+tests/test_core_workflow.py
+tests/test_env.py
+tests/test_extract.py
+tests/test_frontmatter.py
+tests/test_notes_db.py
+tests/test_pdf_registry.py
+tests/test_pdf_to_markdown_e2e.py
+tests/test_streamline_integration.py
+tests/test_streamline_unit.py
+tests/test_sync_cli.py
+tests/test_utils.py
+
+tests/fixtures/consecutive_links/expected.ndjson
+tests/fixtures/consecutive_links/input.ndjson
+tests/fixtures/filter_and_pages/expected.ndjson
+tests/fixtures/filter_and_pages/input.ndjson
+tests/fixtures/headers/expected.ndjson
+tests/fixtures/headers/input.ndjson
+# tests/fixtures/highlight_scrambled_bug/(Dalbini 2016) On disregarding constructive emotions.pdf
+# tests/fixtures/highlight_scrambled_bug/input.pdf
+tests/fixtures/link_merge/expected.ndjson
+tests/fixtures/link_merge/input.ndjson
+tests/fixtures/malformed/input.ndjson
+tests/fixtures/pdf_to_markdown_e2e/expected_markdown.md
+tests/fixtures/pdf_to_markdown_e2e/expected_raw.ndjson
+tests/fixtures/pdf_to_markdown_e2e/expected_streamlined.ndjson
+tests/fixtures/pdf_to_markdown_e2e/final_streamlined.ndjson
+# tests/fixtures/pdf_to_markdown_e2e/input.pdf
+tests/fixtures/simple/expected.ndjson
+tests/fixtures/simple/input.ndjson
+
+tests/fixtures/workflow_all_pdfs_loop/goldens/(Albini 2013).md
+tests/fixtures/workflow_all_pdfs_loop/seeds/(Albini 2013).md
+# tests/fixtures/workflow_all_pdfs_loop/seeds/(Albini 2013) On dealing with destructive emotions.pdf
+
+tests/fixtures/workflow_complete_update/goldens/(Albini 2013).md
+tests/fixtures/workflow_complete_update/seeds/(Albini 2013).md
+# tests/fixtures/workflow_complete_update/seeds/(Albini 2013) On dealing with destructive emotions.pdf
+
+tests/fixtures/workflow_manual_edits/goldens/(Albini 2013).md
+tests/fixtures/workflow_manual_edits/goldens/(Calbini 2015).md
+tests/fixtures/workflow_manual_edits/seeds/(Albini 2013).md
+tests/fixtures/workflow_manual_edits/seeds/(Calbini 2015).md
+# tests/fixtures/workflow_manual_edits/seeds/(Albini 2013) On dealing with destructive emotions.pdf
+# tests/fixtures/workflow_manual_edits/seeds/(Calbini 2015) On disregarding destructive emotions.pdf
+
+tests/fixtures/workflow_new_pdfs/goldens/(Albini 2013).md
+tests/fixtures/workflow_new_pdfs/goldens/(Balbini 2014).md
+# tests/fixtures/workflow_new_pdfs/seeds/(Albini 2013) On dealing with destructive emotions.pdf
+# tests/fixtures/workflow_new_pdfs/seeds/(Balbini 2014) On dealing with constructive emotions.pdf
+
+tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013).md
+# tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013) On dealing with destructive emotions.pdf
+
+tools/concat_files.py
+tools/discover_pdfs.py
+tools/print_hashes.py
+
+windows_server/clean.bat
+windows_server/pdf_server.ini
+windows_server/README.md
+windows_server/requirements.txt
+windows_server/start_pdf_server.bat
+windows_server/windows_pdf_server.py
