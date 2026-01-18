@@ -8,9 +8,11 @@ both the stdout and the resulting golden files.
 """
 
 import io
+import os
 import shutil
 import sys
 from pathlib import Path
+from datetime import datetime
 from unittest.mock import patch
 import contextlib
 
@@ -33,7 +35,6 @@ PROJECT_ROOT = FIXTURES_DIR.parent.parent
 def setup_workflow(request):
     """
     A pytest fixture that sets up a test environment for the CLI.
-
     1. CLEANS the /tests/tmp/<name> directory.
     2. CREATES a valid 'config.toml' inside the temp directory.
     3. Copies seeds (preserving metadata) into the runtime temp dir.
@@ -82,6 +83,32 @@ create_missing_dirs = true
             dest_path = env.paths.temp_dir / seed_file.name
             shutil.copy2(seed_file, dest_path)
 
+    # 6.5. FIX: Align PDF mtimes with Note frontmatter to fix git-clone timestamp issues
+    # Iterates over notes, parses the expected mtime, and forces the PDF file to match.
+    # This ensures tests are stable even if 'git clone' reset file timestamps.
+    for note_file in env.paths.temp_dir.glob("*.md"):
+        try:
+            text = note_file.read_text(encoding="utf-8")
+            pn = parse_note(text)
+            fm = pn.front_matter
+
+            target_mtime_str = fm.get("pdf_mtime")
+            target_id = fm.get("pdf_id")
+
+            if target_mtime_str and target_id and isinstance(target_id, str):
+                # Convert ISO string back to timestamp
+                dt = datetime.fromisoformat(str(target_mtime_str))
+                timestamp = dt.timestamp()
+
+                # Find the matching PDF by checking if the PDF filename contains the ID
+                for pdf_file in env.paths.temp_dir.glob("*.pdf"):
+                    if target_id.lower() in pdf_file.name.lower():
+                        os.utime(pdf_file, (timestamp, timestamp))
+                        break
+        except Exception:
+            # Ignore parsing errors or missing fields; strictly a best-effort fix
+            pass
+
     # 7. Build registry (for helper verification, though main() will do its own)
     pdf_index = build_pdf_index([str(p) for p in env.paths.pdf_dirs])
 
@@ -96,7 +123,6 @@ create_missing_dirs = true
 def test_sync_cli_workflow(setup_workflow: dict):
     """
     Tests the main CLI entry point using the 'workflow_manual_edits' fixture.
-
     - Checks that the CLI (via patched sys.argv) runs without errors.
     - Captures stdout and checks that it correctly reports
       one skip and one update.

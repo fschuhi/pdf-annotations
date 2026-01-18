@@ -9,6 +9,7 @@ Tests the complete workflow:
 6. Verify result matches golden
 """
 
+import os
 import shutil
 from pathlib import Path
 from datetime import datetime
@@ -28,7 +29,6 @@ PROJECT_ROOT = FIXTURES_DIR.parent.parent
 def setup_workflow(request):
     """
     A pytest fixture that sets up a test environment based on a fixture_name.
-
     1. CLEANS the /tests/tmp/<name> directory.
     2. Loads or creates an Env pointing to that directory.
     3. Copies seeds (preserving metadata) into the runtime temp dir.
@@ -73,7 +73,36 @@ def setup_workflow(request):
             # Use copy2 to preserve mtime metadata
             shutil.copy2(seed_file, dest_path)
 
+    # 5.5. FIX: Align PDF mtimes with Note frontmatter to fix git-clone timestamp issues
+    # Iterates over notes, parses the expected mtime, and forces the PDF file to match.
+    # This ensures tests are stable even if 'git clone' reset file timestamps.
+    for note_file in env.paths.temp_dir.glob("*.md"):
+        try:
+            text = note_file.read_text(encoding="utf-8")
+            pn = parse_note(text)
+            fm = pn.front_matter
+
+            target_mtime_str = fm.get("pdf_mtime")
+            target_id = fm.get("pdf_id")
+
+            if target_mtime_str and target_id and isinstance(target_id, str):
+                # Convert ISO string back to timestamp
+                # Fixtures typically use 'YYYY-MM-DDTHH:MM:SS'
+                dt = datetime.fromisoformat(str(target_mtime_str))
+                timestamp = dt.timestamp()
+
+                # Find the matching PDF by checking if the PDF filename contains the ID
+                # (e.g. ID "(Albini 2013)" matches file "(Albini 2013) Title.pdf")
+                for pdf_file in env.paths.temp_dir.glob("*.pdf"):
+                    if target_id.lower() in pdf_file.name.lower():
+                        os.utime(pdf_file, (timestamp, timestamp))
+                        break
+        except Exception:
+            # Ignore parsing errors or missing fields; strictly a best-effort fix for tests
+            pass
+
     # 6. Build registry from the runtime PDF dirs specified in the Env
+    # Note: We do this AFTER Step 5.5 so the registry picks up the forced mtimes
     pdf_index = build_pdf_index([str(p) for p in env.paths.pdf_dirs])
 
     # 7. Yield the runtime Env and source goldens
