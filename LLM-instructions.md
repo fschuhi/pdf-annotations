@@ -29,16 +29,14 @@ For all intents and purposes, I'm the sole human working on and with the apps, m
 Please do not try to do the coding in one-shot-mode. I'm **not** interested in complete solutions. I'm interested in learning and understanding how to solve problems.
 
 It's a collaborative endeavor. You ask what you want to create and I sign off on it.
-Furthermore, as a general rule, let's do everything step by step.
-I'm easily overwhelmed with long lists of things to do because I need to ask questions along the way.
-This will make our collaborative coding much more enjoyable for both of us. Also refrain from coding complete solutions.
+
+Furthermore, as a general rule, let's do everything step by step. I'm easily overwhelmed with long lists of things to do because I need to ask questions along the way. This will make our collaborative coding much more enjoyable for both of us. Also refrain from coding complete solutions.
 
 What holds for a single `.py` also holds for the overall app: We develop it step by step, always having in mind that you might - from one moment to another - be unable to hold the context together anymore.
 
 I need a coherent project with sensible documentation (including inline) in order to seed a new conversation with you (or another AI model).
 
-Please stick to what I tell you. Don't try to read my mind, or infer anything I'd like to do without making sure that is actually the case.
-Ask first before you generate stuff I haven't asked first.
+Please stick to what I tell you. Don't try to read my mind, or infer anything I'd like to do without making sure that is actually the case. Ask first before you generate stuff I haven't asked first.
 
 ---
 
