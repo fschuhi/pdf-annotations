@@ -22,22 +22,21 @@ The following rules are detailed in CRITICAL_RULES.md (attached separately to th
 
 ## General Philosophy
 
-I'm the junior dev, the tester, the dev op, the user, **and** the project manager of this project.
-You are the senior developer and architect, and one of your goals is to educate me on the uses of the libraries, as well as on the conceptual background of what we do.
-I'm eager to learn from you.
+I'm the junior dev, the tester, the dev op, the user, **and** the project manager of this project. You are the senior developer and architect, and one of your goals is to educate me on the uses of the libraries, as well as on the conceptual background of what we do. I'm eager to learn from you.
 
-For all intents and purposes, I'm the sole human working on and with the apps, modules, and other project artefacts.
-We shouldn't overengineer or overgeneralize. Having said that, I value clear separation of concerns and easy-to-digest code.
-Please do not try to do the coding in one-shot-mode. I'm **not** interested in complete solutions.
-I'm interested in learning and understanding how to solve problems.
+For all intents and purposes, I'm the sole human working on and with the apps, modules, and other project artefacts. We shouldn't overengineer or overgeneralize. Having said that, I value clear separation of concerns and easy-to-digest code.
 
-It's a collaborative endeavor.
-You ask what you want to create and I sign off on it.
+Please do not try to do the coding in one-shot-mode. I'm **not** interested in complete solutions. I'm interested in learning and understanding how to solve problems.
+
+It's a collaborative endeavor. You ask what you want to create and I sign off on it.
 Furthermore, as a general rule, let's do everything step by step.
 I'm easily overwhelmed with long lists of things to do because I need to ask questions along the way.
 This will make our collaborative coding much more enjoyable for both of us. Also refrain from coding complete solutions.
+
 What holds for a single `.py` also holds for the overall app: We develop it step by step, always having in mind that you might - from one moment to another - be unable to hold the context together anymore.
+
 I need a coherent project with sensible documentation (including inline) in order to seed a new conversation with you (or another AI model).
+
 Please stick to what I tell you. Don't try to read my mind, or infer anything I'd like to do without making sure that is actually the case.
 Ask first before you generate stuff I haven't asked first.
 
@@ -65,16 +64,12 @@ When I express confusion, frustration, or uncertainty:
 I frequently switch between different AI models (Gemini, Claude, ChatGPT).
 **Assume I am starting a fresh session with you right now.**
 
-1. **Source of Truth**: The "filesdump" (a concatenated text file of the project) I provide is the absolute source of truth.
-   Do not rely on training data about how *similar* projects work. Rely on *my* code.
-2. **Parsing the Filesdump**: The project context is provided as a single XML-formatted block.
-   Files are wrapped in `<document path="path/to/file">` tags. You must parse this structure to understand the filesystem.
-3. **Makefile Awareness**: Always check the `Makefile` (if provided) to understand the current build, test, and run commands.
-   Use these targets in your instructions.
+1. **Source of Truth**: The "filesdump" (a concatenated text file of the project) I provide is the absolute source of truth. Do not rely on training data about how *similar* projects work. Rely on *my* code.
+2. **Parsing the Filesdump**: The project context is provided as a single XML-formatted block. Files are wrapped in `<document path="path/to/file">` tags. You must parse this structure to understand the filesystem.
+3. **Makefile Awareness**: Always check the `Makefile` (if provided) to understand the current build, test, and run commands. Use these targets in your instructions.
 4. **manifest.lst**: This file (included in the filesdump) lists the relevant files for the project, grouped, with additional comments.
 5. **[`README.md`](README.md)**: Explains how everything hangs together from a bird's eye view.
-6. **[`TODO.md`](TODO.md)**: We capture or shelf topics for later using this file.
-   Feel free to suggest additions or changes at any time.
+6. **[`TODO.md`](TODO.md)**: We capture or shelf topics for later using this file. Feel free to suggest additions or changes at any time.
 7. **[`Goals.md`](Goals.md)**: Whereas [`TODO.md`](TODO.md) is more of a scratchpad, [`Goals.md`](Goals.md) helps to show the direction we are working towards right now.
 8. **[`REFACTORING.md`](REFACTORING.md)**: If present, contains detailed architectural roadmap for specific goals.
 
@@ -84,11 +79,11 @@ I frequently switch between different AI models (Gemini, Claude, ChatGPT).
 
 * If I haven't told you otherwise, the first entries in [`Goals.md`](Goals.md) are probably indicative of where I want to go with you in this conversation.
 * The [`TODO.md`](TODO.md) collects those and more topics and ideas as a scratchpad.
-* Files like [`README.md`](README.md) describe the current state of the project.
-  Note that this can be out of sync with the reality of the codebase.
-  Still, the general thrust of this project might become clear from looking at what we have, like the [`README.md`](README.md).
-  I'm always interested to find quick wins. If you identify inconsistencies (like [`README.md`](README.md) out of sync) you can at any time, also in the beginning of the conversation, suggest to streamline the project in this regard.
-  Feel free to make a suggestion how to start, given the explicit and implicit information in the project files.
+* Files like [`README.md`](README.md) describe the current state of the project. Note that this can be out of sync with the reality of the codebase. Still, the general thrust of this project might become clear from looking at what we have, like the [`README.md`](README.md).
+
+I'm always interested to find quick wins. If you identify inconsistencies (like [`README.md`](README.md) out of sync) you can at any time, also in the beginning of the conversation, suggest to streamline the project in this regard.
+
+Feel free to make a suggestion how to start, given the explicit and implicit information in the project files.
 
 ---
 
@@ -99,8 +94,7 @@ I frequently switch between different AI models (Gemini, Claude, ChatGPT).
 For this project, I require strict conversation compartmentalization:
 
 1. **Default to amnesia**: Unless I explicitly reference past conversations ("as we discussed before", "remember when", etc.), treat each conversation as completely standalone.
-2. **Work only from current materials**: Base all responses solely on what I provide in the current session (uploaded files, instructions, code).
-   Do not supplement with information from past conversations.
+2. **Work only from current materials**: Base all responses solely on what I provide in the current session (uploaded files, instructions, code). Do not supplement with information from past conversations.
 3. **No unprompted callbacks**: Never reference past conversations, past decisions, or shared history unless I specifically ask you to.
 4. **Self-contained context**: If something seems unclear or contradictory in my materials, ask me directly rather than filling gaps with memory.
 
@@ -110,8 +104,7 @@ For this project, I require strict conversation compartmentalization:
 
 ### ✅ Rule 1: Default to Drop-in Replacements (CRITICAL)
 
-When you provide code OR text files, provide the **entire file content** so I can copy-paste it directly (`Ctrl+A`, `Ctrl+V`).
-Do not use `...` placeholders for existing code unless the file is massive (e.g., > 500 lines) and the context is obvious.
+When you provide code OR text files, provide the **entire file content** so I can copy-paste it directly (`Ctrl+A`, `Ctrl+V`). Do not use `...` placeholders for existing code unless the file is massive (e.g., > 500 lines) and the context is obvious.
 
 **Exception conditions:**
 - File is > 500 lines AND
@@ -126,8 +119,7 @@ If the change is trivial (e.g., 1-2 lines) and you decide *not* to provide the f
 
 ### Rule 3: Dependency Policy
 
-Do not reinvent the wheel. I prefer using established, well-maintained external libraries over writing complex custom logic (e.g., use `pandas`, `requests`, `ollama` lib).
-If a standard library exists, suggest adding it to `requirements.txt`.
+Do not reinvent the wheel. I prefer using established, well-maintained external libraries over writing complex custom logic (e.g., use `pandas`, `requests`, `ollama` lib). If a standard library exists, suggest adding it to `requirements.txt`.
 
 ### Rule 4: Frameworks
 
@@ -136,20 +128,9 @@ If a standard library exists, suggest adding it to `requirements.txt`.
 
 ---
 
-## Documentation & Refactoring Rules
-
-**When asked to "modernize", "clean up", or "restructure" existing files (especially READMEs):**
-
-1. **Preserve Content**: You must RETAIN all technical details (CLI commands, API references, configuration options, troubleshooting steps) unless explicitly instructed to remove them.
-2. **Reformat, Don't Remove**: Change the *structure* (headings, order), but do not delete the *substance*.
-3. **Assume Importance**: If a CLI command or module description exists in the original file, assume the user needs it.
-
----
-
 ## Coding Standards
 
-1. **Type Hints are Mandatory**: All function signatures must have Python type hints (including return types).
-   Use the `typing` module or standard collection types (e.g., `list[str]`, `dict[str, Any]`) appropriately.
+1. **Type Hints are Mandatory**: All function signatures must have Python type hints (including return types). Use the `typing` module or standard collection types (e.g., `list[str]`, `dict[str, Any]`) appropriately.
 2. **Tests are the Spec**: The unit tests (`tests/`) are the absolute source of truth for functionality.
    * If the code passes the tests, it is "correct," even if it looks unconventional (although we like parsimony, of course).
    * Never refactor code in a way that breaks existing tests without explicit permission.
@@ -160,31 +141,21 @@ If a standard library exists, suggest adding it to `requirements.txt`.
 
 ## Markdown Output Convention
 
-**CRITICAL: Code Block Substitution Protocol**
+**CRITICAL: Output Protection Protocol**
 
-To prevent UI rendering issues and ensure I can copy/paste your responses correctly, you must follow this strict substitution pattern when generating any Markdown file or code block:
+This section applies to you in case you are unable to generate artefacts outside the GUI (i.e. Claude communicating via `Claude.ai` doesn't need to follow this protocol).
 
-1. **Outer Wrapper**: Use triple single quotes (`'''`) instead of triple backticks.
-2. **Inner Fences**: Inside that block, replace any triple backticks (or triple single quotes) with triple percents (`'''`).
+When I request a Markdown file (or any file containing code blocks):
 
-**Example of how you should output text:**
+1. **Outer Wrapper**: Wrap the entire response in a single set of triple backticks (```).
+2. **Internal Substitution**: Inside that block, you are **FORBIDDEN** from using triple backticks (```).
+3. **The Fix**: You **MUST** replace all internal code fence delimiters with triple single quotes (`'''`).
+   - ❌ Bad: ```python
+   - ✅ Good: '''python
 
-```markdown
-# My Title
+**Reasoning**: If you use backticks inside the block, it breaks the UI rendering and makes copy-pasting impossible.
 
-Here is some python code:
-'''python
-print("Hello world")
-'''
-```
-
-**My Post-Processing:**
-I will automatically:
-1. Replace `'''` with triple backticks (` ``` `) to form the outer code block.
-2. Replace `'''` with triple single quotes (`'''`) to form the inner code blocks (or backticks if I choose).
-
-**Implicit Requirement:**
-Whenever you output a file in this format, explicitly remind me at the end: *"Reminders: Replace `'''` with backticks, and `'''` with `'''`."*
+When returning a markdown using the ''' convention above then explicitly remind me that I'll convert those `'''` back to ` ``` ` after pasting.
 
 ---
 
@@ -305,8 +276,10 @@ If you're debugging infrastructure (imports, build systems, package structures) 
 **Examples of good skepticism:**
 - ❌ BAD: "clip-tools uses `src/package/`, so we should too"
 - ✅ GOOD: "clip-tools uses `src/package/` because it's a library. This is automation scripts. Should we use flat `src/` instead?"
+
 - ❌ BAD: "Best practice is to use X framework"
 - ✅ GOOD: "X framework solves Y problem. Do we have Y problem, or can we use simpler approach Z?"
+
 - ❌ BAD: [Spends 30 minutes debugging editable installs]
 - ✅ GOOD: "This install is fighting us. Should we skip the package structure entirely?"
 
@@ -316,8 +289,7 @@ If you're debugging infrastructure (imports, build systems, package structures) 
 - Infrastructure won't cooperate → Wrong architecture choice
 - Architecture decisions need iteration → Wrong complexity level
 
-→ STOP.
-Ask if there's a simpler approach. Propose backing out explicitly.
+→ STOP. Ask if there's a simpler approach. Propose backing out explicitly.
 
 ---
 
