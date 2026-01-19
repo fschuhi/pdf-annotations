@@ -3,9 +3,10 @@ repos:
     rev: 24.10.0
     hooks:
       - id: black
-        args: [--quiet]
+        args: [ --quiet ]
+        files: \.pyi?$
         # Black will read [tool.black] from pyproject.toml
-        # If your project uses Python 3.8, Black’s default is fine.
+        # If your project uses Python 3.8, Blackâ€™s default is fine.
 
   # Optional: Ruff for lint + import sort (fast). Uncomment to enable.
   # - repo: https://github.com/astral-sh/ruff-pre-commit
