@@ -18,9 +18,12 @@ notes_root = "~/notes/pdf-annotations"
 [frontmatter]
 # Field names to use in note YAML frontmatter
 title_field = "pdf_title"
-size_field  = "pdf_size"
+size_field = "pdf_size"
 # has_annots_field = "has_annotations"
 # last_run_field = "last_run_at"
+
+[annotations]
+default_info_text = "(below the annotations from the PDF)"
 
 [io]
 # Write files atomically (via temp file + rename) for safety

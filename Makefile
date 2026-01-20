@@ -78,7 +78,7 @@ gentree: ## Save tree structure to tmp/project-tree.txt
 
 filesdump: gentree ## Create context dump for LLMs
 	@echo "--- Generating filesdump ---"
-	$(PYTHON) tools/concat_files.py manifest.lst > tmp/filesdump.txt
+	$(RUN_WITH_PATH) python tools/concat_files.py manifest.lst > tmp/filesdump.txt
 	@echo "Filesdump created at tmp/filesdump.txt"
 
 help: ## Show this help message
