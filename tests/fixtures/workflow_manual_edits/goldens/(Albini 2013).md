@@ -12,7 +12,7 @@ This is some additional text added manually, with an empty line after the frontm
 This line follows immediately, intentionally without adding an empty line before the pdf-annot-sep.
 <hr class="pdf-annot-sep">
 
-<span class="pdf-annot-info">below the automatically generated annotations from the PDF</span>
+<span class="pdf-annot-info">(annotations from the PDF below)</span>
 
 ## Introduction—Definition
 

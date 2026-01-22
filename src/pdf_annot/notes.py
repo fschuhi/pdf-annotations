@@ -51,7 +51,7 @@ def extract_info_text(note_text: str) -> str:
     match = re.search(pattern, note_text)
     if match:
         return match.group(1)
-    return "below the automatically generated annotations from the PDF"
+    return "(annotations from the PDF below)"
 
 
 def replace_annotation_block(note_text: str, new_block: str) -> str:

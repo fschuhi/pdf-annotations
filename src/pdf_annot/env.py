@@ -12,7 +12,7 @@ except Exception as e:  # pragma: no cover
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
 # --- NEW: Define the default here ---
-DEFAULT_INFO_TEXT = "Below are annotations from the PDF (highlights and comments)."
+DEFAULT_INFO_TEXT = "(annotations from the PDF below)"
 
 
 def _expand_path(value: Any) -> Optional[Path]:

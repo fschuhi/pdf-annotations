@@ -23,7 +23,7 @@ size_field = "pdf_size"
 # last_run_field = "last_run_at"
 
 [annotations]
-default_info_text = "(below the annotations from the PDF)"
+default_info_text = "(annotations from the PDF below)"
 
 [io]
 # Write files atomically (via temp file + rename) for safety

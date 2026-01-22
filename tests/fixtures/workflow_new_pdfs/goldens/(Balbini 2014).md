@@ -13,4 +13,4 @@ pdf_textboxes: 0
 
 <hr class="pdf-annot-sep">
 
-<span class="pdf-annot-info">below the automatically generated annotations from the PDF</span>
+<span class="pdf-annot-info">(annotations from the PDF below)</span>
