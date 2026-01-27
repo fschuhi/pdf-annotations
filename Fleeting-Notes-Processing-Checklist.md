@@ -1,0 +1,96 @@
+# Fleeting Notes Processing Checklist
+
+A quality gate for deciding what becomes an Idea Note, and prompts for finding where it belongs.
+
+---
+
+## Quality Gate
+
+Before creating an Idea Note, ask:
+
+### 1. Is this my insight, or am I recording what the author said?
+
+- **Author's point** → stays in bibnote (highlights + comments)
+- **My response / connection / disagreement** → candidate for idea note
+
+### 2. Does this connect to something I'm already thinking about?
+
+- **Yes** → stronger candidate; look for `Continues::` link
+- **No, but it opens a new thread I care about** → root idea note (no `Continues::`)
+- **No, and I don't see where it leads** → probably decline
+
+### 3. Would I want to find this again in six months?
+
+- **Yes** → idea note (even as placeholder)
+- **No** → decline; the bibnote preserves it anyway
+
+### 4. Can I state it in one or two sentences in my own words?
+
+- **Yes** → ready to write
+- **No** → maybe not yet clear enough; let it sit
+
+---
+
+## Finding Connections
+
+Once you've decided to create an Idea Note, explore how it relates to what you already have.
+
+### Relationship to existing ideas
+
+*(from Ahrens, p. 28)*
+
+- Does the new information **contradict** what you already have?
+- Does it **support** an existing idea?
+- Does it **add to** something you've written?
+- Does it **correct** a previous note?
+- Can you **combine** ideas to generate something new?
+- Should you **delete** or retire an old idea?
+
+### Questions triggered by the new idea
+
+*(from Ahrens, p. 28)*
+
+- What new **questions** are triggered by this idea?
+- Does this **challenge** something you believed?
+- Does it **strengthen** an existing argument?
+- Does it **change** an argument's direction?
+- Where should you **develop further**?
+
+### Elaborative interrogation
+
+*(from Ahrens, p. 67)*
+
+- How does this fact fit into my idea of ...?
+- How can this phenomenon be explained by that theory?
+- Are these two ideas contradictory or do they complement each other?
+- Isn't this argument similar to that one?
+- Haven't I heard this before?
+- **And above all: What does x mean for y?**
+
+---
+
+## Finding a Home (for `Continues::`)
+
+- Search existing idea notes by `#topic/*` tag
+- Check "Idea Chain Endpoints" query (once implemented)
+- Browse the workbench's Ideas section
+- Use the elaborative interrogation questions above
+
+If nothing fits, it's a **root note** — and that's fine.
+
+---
+
+## After Writing
+
+*(from Ahrens, p. 28)*
+
+- Write exactly one note for each idea
+- Write as if for someone else
+- Use full sentences, disclose sources, make references
+- Be precise, clear, and brief
+- Throw away the fleeting note (remove `^idea-*` marker)
+- The bibnote preserves what the author said; all that matters now is what's in the slip-box
+
+---
+
+*The checklist prevents file explosion while keeping the system generative.*
