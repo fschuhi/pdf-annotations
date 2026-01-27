@@ -52,12 +52,15 @@ note_type: bibnote
 ```
 
 **Status values:**
-| Status | Icon | Meaning |
-|--------|------|---------|
-| `to-read` | 🔵 | Not yet started |
-| `reading` | 🟢 | Currently active |
-| `blocked` | ⛔️ | Waiting for another PDF |
-| `done` | — | Completed |
+| Status | Icon | Note | Meaning |
+|--------|------|------|---------|
+| `to-read` | 🔵 | Bibnote | Not yet started |
+| `reading` | 🟢 | Bibnote | Currently active |
+| `blocked` | ⛔️ | Bibnote | Waiting for another PDF |
+| `done` | — | Bibnote | Completed |
+| `placeholder` | — | Idea | Not a fully-fledged idea yet |
+| `active` | — | Workbench | Working on it |
+| `archive` | — | Workbench | Currently inactive |
 
 **Key properties:**
 - `pdf_hash` — Unique identifier, used in `pdf://` links
