@@ -51,17 +51,6 @@ note_type: bibnote
 > Your comment on the highlight
 ```
 
-**Status values:**
-| Status | Icon | Note | Meaning |
-|--------|------|------|---------|
-| `to-read` | 🔵 | Bibnote | Not yet started |
-| `reading` | 🟢 | Bibnote | Currently active |
-| `blocked` | ⛔️ | Bibnote | Waiting for another PDF |
-| `done` | — | Bibnote | Completed |
-| `placeholder` | — | Idea | Not a fully-fledged idea yet |
-| `active` | — | Workbench | Working on it |
-| `archive` | — | Workbench | Currently inactive |
-
 **Key properties:**
 - `pdf_hash` — Unique identifier, used in `pdf://` links
 - `Unblocks::` — Points to bibnote(s) this PDF enables (when you finish reading this, you can continue those)
@@ -76,22 +65,25 @@ An atomic insight extracted from reading or thinking.
 date: {{date}}
 time: {{time}}
 note_type: idea
+derived_from: "[[(Source Bibnote)]]"
+status: placeholder  # optional, omit for fully developed ideas
 ---
 #topic/
-**DerivedFrom**:: [[(Source Bibnote)]]
-**Continues**:: [[(Previous Idea)]]
 
-### The Idea
+## The Idea
 [Your atomic idea, written for your future self]
 
-### Next in Chain
+## Next in Chain
 ```dataviewjs
 await dv.view("Scripts/next_in_chain", { current: dv.current() });
 ```
 ```
 
+**Key properties:**
+- `derived_from` — Links to the source (bibnote, workbench, or another idea)
+- `status` — Set to `placeholder` for underdeveloped ideas; omit entirely for fully developed ideas
+
 **Inline fields:**
-- `DerivedFrom::` — Links to the source (bibnote, workbench, or another idea)
 - `Continues::` — Links to the idea this one builds upon (Folgezettel)
 
 ### Workbench (`note_type: workbench`)
@@ -130,11 +122,25 @@ await dv.view("Scripts/fleeting_block_markers", { current: dv.current(), marker:
 ```dataviewjs
 await dv.view("Scripts/workbench_list", { current: dv.current() });
 ```
-```
 
 **Status values:**
 - `active` — Currently being worked on
 - `dormant` — Paused, but not finished
+
+---
+
+## Status Values Reference
+
+| Status | Note Type | Meaning |
+|--------|-----------|---------|
+| `to-read` | Bibnote | Not yet started |
+| `reading` | Bibnote | Currently active |
+| `blocked` | Bibnote | Waiting for another PDF |
+| `done` | Bibnote | Completed |
+| `placeholder` | Idea | Not a fully-fledged idea yet; needs development |
+| (absent) | Idea | Fully developed idea |
+| `active` | Workbench | Working on it |
+| `dormant` | Workbench | Currently inactive |
 
 ---
 
@@ -172,8 +178,9 @@ Find the original source for this claim ^todo-find-source
 
 1. Run `pdf-annotations` to sync comments to bibnotes
 2. Open the Workbench — fleeting notes appear in the query tables
-3. Create an Idea Note from the fleeting note
-4. Return to PDF, remove the `^idea-*` marker (optionally replace with link to the new Idea Note)
+3. For each fleeting note, decide: **promote** (create idea note), **decline** (remove marker), or **placeholder** (create minimal idea note)
+4. Create an Idea Note using the Templater template (trigger from the bibnote to auto-fill `derived_from`)
+5. Return to PDF, replace the `^idea-*` marker with a link to the new Idea Note
 
 ### Marker Conventions
 
@@ -181,6 +188,16 @@ Find the original source for this claim ^todo-find-source
 |--------|---------|---------|
 | `^idea-` | Insight worth developing | `^idea-folders-self-defeating` |
 | `^todo-` | Action item or question | `^todo-check-citation` |
+
+### Fleeting Note Resolution
+
+Every fleeting note should be resolved to keep the queue short:
+
+| Resolution | When to use | Action |
+|------------|-------------|--------|
+| **Promote** | The note has substance or makes a connection | Create full idea note |
+| **Placeholder** | Worth tracking but not yet developed | Create idea note with `status: placeholder` |
+| **Decline** | Not actually generative for your thinking | Remove `^idea-` prefix, keep comment text if useful |
 
 ---
 
@@ -209,6 +226,11 @@ Inline fields live on the note where your attention is focused, pointing to cont
 **From PDF comments to other notes:**
 ```markdown
 [[Other Note#section]]    — cross-reference to another note
+```
+
+**From PDF comments to other parts of the same PDF:**
+```markdown
+see [[#^some-block-anchor]]  — internal cross-reference within the document
 ```
 
 ### Folgezettel Chains
@@ -291,7 +313,9 @@ await dv.view("Scripts/next_in_chain", { current: dv.current() });
 |----------|---------|--------|---------|
 | `note_type` | all | `bibnote`, `idea`, `workbench` | Classification |
 | `status` | bibnote | `to-read`, `reading`, `blocked`, `done` | Reading state |
+| `status` | idea | `placeholder` or absent | Development state |
 | `status` | workbench | `active`, `dormant` | Project state |
+| `derived_from` | idea | wiki-link | Source of the idea |
 | `date` | idea, workbench | ISO date | Creation date |
 | `time` | idea, workbench | HH:MM | Creation time |
 | `pdf_*` | bibnote | various | Managed by pdf-annotations |
@@ -302,7 +326,6 @@ await dv.view("Scripts/next_in_chain", { current: dv.current() });
 |-------|---------|-----------|---------|
 | `Unblocks::` | bibnote | bibnote(s) | "Reading me enables progress on X" |
 | `Continues::` | idea | idea(s) | "I am a Folgezettel of X" |
-| `DerivedFrom::` | idea | bibnote, idea, or workbench | "I originated from X" |
 
 ### Tags
 
@@ -310,6 +333,39 @@ Reserved for multi-valued classification:
 - `#topic/dzogchen`
 - `#topic/phenomenology`
 - `#topic/zettelkasten`
+
+---
+
+## Templater Integration
+
+The Idea Note template uses Templater to streamline creation:
+
+**Template: `Idea Note from Bibnote.md`**
+```
+<%*
+const sourceFile = tp.config.active_file;
+const title = await tp.system.prompt("Idea title");
+const fileName = "Idea - " + title;
+await tp.file.rename(fileName);
+await tp.file.move("Ideas/" + fileName);
+-%>
+---
+date: <% tp.date.now("YYYY-MM-DD") %>
+time: <% tp.date.now("HH:mm") %>
+note_type: idea
+derived_from: "[[<% sourceFile.basename %>]]"
+---
+#topic/
+
+## The Idea
+<% tp.file.cursor() %>
+
+## Next in Chain
+```dataviewjs
+await dv.view("Scripts/next_in_chain", { current: dv.current() });
+```
+
+**Workflow:** Trigger the template while viewing a bibnote. The `derived_from` field auto-populates with the bibnote name, and the cursor lands in the Idea section ready for writing.
 
 ---
 
@@ -337,11 +393,11 @@ The Studio uses custom CSS in `.obsidian/snippets/studio.css` for:
 
 1. Open the Workbench
 2. Review Fleeting Notes table
-3. For each promising idea:
-   - Create new Idea Note from template
-   - Fill in `DerivedFrom::` and optionally `Continues::`
-   - Write the atomic idea
-4. Return to PDF, remove the `^idea-*` marker
+3. For each fleeting note, decide: promote, placeholder, or decline
+4. For promotions/placeholders: trigger the Templater template from the bibnote
+5. Write the idea (or minimal placeholder text)
+6. Add `status: placeholder` if underdeveloped
+7. Return to PDF, replace `^idea-*` marker with link to the Idea Note
 
 ### Managing Blockers
 
@@ -356,23 +412,12 @@ When PDF A requires reading PDF B first:
 
 ## Query Candidates (Future)
 
-These queries could be added as the system grows:
+See `Query-Candidates.md` for the full list of future queries to implement as The Studio grows, including:
 
-**Hygiene:**
-- Orphaned ideas (DerivedFrom points to bibnote, but no backlink)
-- Bibnotes with no ideas extracted (status: done but no ideas link to them)
-- Stale workbenches (active but untouched for X days)
-- Blocked bibnotes with completed blockers
-
-**Growth:**
-- Idea chain endpoints (leaf nodes — growth points)
-- Lonely ideas (not linked to any workbench)
-- Most connected ideas (hubs)
-- Ideas per bibnote (which PDFs are most generative?)
-
-**Discovery:**
-- Random idea (serendipity)
-- Ideas by topic tag
+- Hygiene queries (orphaned ideas, dangling links, placeholder ideas)
+- Growth queries (chain endpoints, lonely ideas, workbench ideas auto-population)
+- Reading management (reading queue, workbench progress)
+- Discovery (random idea, ideas by topic)
 
 ---
 
