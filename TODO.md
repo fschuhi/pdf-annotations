@@ -1,5 +1,6 @@
 Refactoring TODOs
 
+- **Add `tags` frontmatter property**: should be `type/bibnote`. This should be configurable in the env.
 - **Just changing tags should not trigger update**: Any change (add, remove, update) of the _tags_ frontmatter attribute triggers a full PDF read and update of the annotations. Why? Should not happen.
 - **More workflows in README.md**: We should call the text between the frontmatter and the `<hr class="pdf-annot-sep">` the "free text".
 - **Implement `--dry-run` Flag**: We still need to implement the logic for the --dry-run argument in `src/pdf_annot/sync.py`.
