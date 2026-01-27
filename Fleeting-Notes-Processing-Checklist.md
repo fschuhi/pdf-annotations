@@ -67,6 +67,19 @@ Once you've decided to create an Idea Note, explore how it relates to what you a
 - Haven't I heard this before?
 - **And above all: What does x mean for y?**
 
+### Limits and disagreements
+
+- Where does the author's framework stop short?
+- What would they say about X — and would you agree?
+- Does this account fully capture what you know from other traditions or experience?
+- What's missing from this picture?
+
+### Open questions
+
+- What questions remain open for you after reading this?
+- What would you need to read or think through to resolve them?
+- Is there an adjacent field or tradition that might illuminate this?
+
 ---
 
 ## Finding a Home (for `Continues::`)
