@@ -33,8 +33,11 @@ pdf_title: Title of the PDF
 pdf_hash: XXXXXXX
 status: to-read | reading | blocked | done
 note_type: bibnote
+time_spent: 0
 ---
 #topic/...
+
+`BUTTON[time-spent-increment]` `BUTTON[resume-pdf]`
 
 [Free Text Area - user controlled]
 - Your notes about this PDF
@@ -53,6 +56,7 @@ note_type: bibnote
 
 **Key properties:**
 - `pdf_hash` — Unique identifier, used in `pdf://` links
+- `time_spent` — Reading time in minutes, tracked via Meta Bind button
 - `Unblocks::` — Points to bibnote(s) this PDF enables (when you finish reading this, you can continue those)
 
 ### Idea Note (`note_type: idea`)
@@ -97,7 +101,11 @@ date: {{date}}
 time: {{time}}
 note_type: workbench
 status: active
+time_spent: 0
 ---
+
+`BUTTON[time-spent-increment]`
+
 ### Source Material
 >[!tldr] Let's read!
 - [[(Bibnote 1)]]
@@ -122,6 +130,9 @@ await dv.view("Scripts/fleeting_block_markers", { current: dv.current(), marker:
 ```dataviewjs
 await dv.view("Scripts/workbench_list", { current: dv.current() });
 ```
+
+**Key properties:**
+- `time_spent` — Writing/organizing time in minutes, tracked via Meta Bind button
 
 **Status values:**
 - `active` — Currently being worked on
@@ -243,6 +254,32 @@ Idea A  ←(Continues)—  Idea B  ←(Continues)—  Idea C
 
 The `next_in_chain.js` script shows all ideas that continue from the current one.
 
+### Citations in Free Text
+
+Track what a paper cites using a `## Cites` section in the bibnote's Free Text:
+
+```markdown
+## Cites
+- [[(Zahavi 2005)]] — subjectivity, for-me-ness
+- [[(Klawonn 2009)]] — I-dimension origin
+- (Madell 1981) — not in library yet
+```
+
+**Conventions:**
+- Wiki-links `[[(Author Year)]]` for papers with bibnotes (creates backlinks)
+- Plain text `(Author Year)` for papers not yet in the library
+- Emdash `—` followed by relevance note (why this citation matters, not just the title)
+
+### Embedding Headers in Workbenches
+
+Pull sections from bibnotes into workbenches for project organization:
+
+```markdown
+![[(Fasching 2012c)#eliminativism, reductionism, naturalism]]
+```
+
+This embeds the entire section, useful for building argument outlines from multiple sources.
+
 ---
 
 ## Scripts Reference
@@ -258,7 +295,13 @@ Displays all active workbenches with idea counts.
 await dv.view("Scripts/active_workbenches", { current: dv.current() });
 ```
 
-**Output:** Table with Active Workbench, Connected Ideas, Last Touched
+**Output:** Table with Active Workbench, Ideas, Writing, Reading, Last Touched
+
+**Features:**
+- Shows connected idea count per workbench
+- Displays writing time (from workbench's `time_spent`)
+- Displays total reading time (summed from linked bibnotes)
+- Shows grand total below table
 
 ### workbench_list.js
 
@@ -269,12 +312,14 @@ Shows the reading queue for a workbench with status, blockers, and resume links.
 await dv.view("Scripts/workbench_list", { current: dv.current() });
 ```
 
-**Output:** Table with Status, Document, Waiting For, Action
+**Output:** Table with Status, Document, Action, Time, Waiting For
 
 **Features:**
 - Calculates last-read page from annotation timestamps
 - Shows blocking relationships
 - Direct `pdf://` links to resume reading
+- Displays time spent per bibnote
+- Shows total reading time below table
 
 ### fleeting_block_markers.js
 
@@ -303,6 +348,60 @@ await dv.view("Scripts/next_in_chain", { current: dv.current() });
 
 **Output:** Table with Idea Note, Last Modified
 
+### open_pdf_resume.js
+
+Opens the current bibnote's PDF at the most recently annotated page.
+
+**Usage:** Called via Meta Bind button on bibnotes.
+
+**Features:**
+- Reads `pdf_hash` from frontmatter
+- Scans annotations for most recent timestamp
+- Opens PDF at that page via `pdf://` URL
+
+---
+
+## Time Tracking
+
+The Studio tracks time spent on reading (bibnotes) and writing (workbenches) using Meta Bind buttons.
+
+### Time Increment Button
+
+Add to Meta Bind button templates:
+
+```yaml
+label: ⏱️ +30 min
+id: time-spent-increment
+style: default
+actions:
+  - type: updateMetadata
+    bindTarget: time_spent
+    evaluate: true
+    value: Number(x || 0) + 30
+```
+
+Place the button in bibnotes and workbenches: `BUTTON[time-spent-increment]`
+
+### Resume Reading Button
+
+For bibnotes, add a button to open the PDF at the last-read page:
+
+```yaml
+label: 📖 Resume reading
+id: resume-pdf
+style: primary
+actions:
+  - type: js
+    file: Scripts/open_pdf_resume.js
+```
+
+Place in bibnotes: `BUTTON[resume-pdf]`
+
+### Time Display
+
+- **Reading List** (workbench): Shows time per bibnote and total reading time
+- **Studio Dashboard**: Shows writing time, reading time, and grand total per workbench
+
 ---
 
 ## Properties Reference
@@ -316,6 +415,8 @@ await dv.view("Scripts/next_in_chain", { current: dv.current() });
 | `status` | idea | `placeholder` or absent | Development state |
 | `status` | workbench | `active`, `dormant` | Project state |
 | `derived_from` | idea | wiki-link | Source of the idea |
+| `time_spent` | bibnote | minutes | Reading time tracked via button |
+| `time_spent` | workbench | minutes | Writing/organizing time tracked via button |
 | `date` | idea, workbench | ISO date | Creation date |
 | `time` | idea, workbench | HH:MM | Creation time |
 | `pdf_*` | bibnote | various | Managed by pdf-annotations |

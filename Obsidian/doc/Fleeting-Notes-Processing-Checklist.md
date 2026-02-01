@@ -29,6 +29,15 @@ Before creating an Idea Note, ask:
 - **Yes** → ready to write
 - **No** → maybe not yet clear enough; let it sit
 
+### 5. Why did this catch my interest?
+
+*(from Ahrens, p. 77)*
+
+- What does this mean for my own research and the questions I think about?
+- Is this convincing?
+- What methods do they use?
+- Which of the references are familiar?
+
 ---
 
 ## Finding Connections
