@@ -1,0 +1,217 @@
+/* =================================================================
+   THE STUDIO THEME
+   ================================================================= */
+
+/* annotations */
+
+/* PDF Annotation Date Styling */
+.pdf-annot-date {
+    font-size: 10px !important;
+    color: #888888 !important;
+    opacity: 0.7 !important;
+}
+
+/* compact frontmatter*/
+
+/* 1. THE CONTAINER LAYOUT */
+.metadata-content {
+    gap: 0 !important;
+    padding: 0 !important;
+    margin-bottom: 3px !important;
+}
+
+.metadata-container {
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+}
+
+/* Hide the header */
+.metadata-properties-heading {
+    display: none !important;
+}
+
+/* 2. THE ROWS - More aggressive */
+.metadata-property {
+    padding: 0 !important;           /* Zero padding */
+    margin: 0 !important;            /* Zero margin */
+    min-height: 18px !important;     /* Minimal row height */
+    line-height: 18px !important;    /* Tight line height */
+    border-bottom: none !important;
+}
+
+/* 3. THE FONTS & INPUTS */
+.metadata-property-key .metadata-property-key-input,
+.metadata-property-value .metadata-input-longtext,
+.metadata-property-value input,
+.metadata-property-value {
+    font-size: 12px !important;      /* Slightly smaller */
+    height: 18px !important;         /* Tighter height */
+    min-height: 18px !important;
+    line-height: 18px !important;    /* Match height */
+    padding: 0 4px !important;       /* Minimal internal padding */
+    margin: 0 !important;
+}
+
+.metadata-property-key {
+    width: auto !important;
+    min-width: 80px !important;
+    padding-right: 8px !important;
+}
+
+/* 4. ICONS & PILLS */
+.metadata-property-icon {
+    display: none !important;
+}
+
+.multi-select-pill {
+    height: 16px !important;
+    font-size: 11px !important;
+    padding: 0 5px !important;
+    margin: 0 2px 0 0 !important;
+    line-height: 16px !important;
+}
+
+/* 5. CHECKBOX STYLING */
+.metadata-property-value .checkbox-container {
+    height: 18px !important;
+    padding: 0 !important;
+}
+
+/* 6. TARGET THE ACTUAL CONTENT WRAPPER */
+.cm-embed-block.cm-table-widget {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* 7. REDUCE SPACE AFTER FRONTMATTER */
+.metadata-container + * {
+    margin-top: 0 !important;
+}
+
+/* 8. TARGET SPECIFIC MULTI-SELECT CONTAINERS */
+.metadata-property-value .multi-select-container {
+    gap: 2px !important;
+    padding: 0 !important;
+    min-height: 18px !important;
+}
+
+/* =================================================================
+   DATAVIEW QUERY TABLES
+   ================================================================= */
+
+/* Container: light blue background, subtle border, rounded corners */
+.dataview.table-view-table {
+    background-color: #f0f7fb;
+    border: 1px solid #d4e5f7;
+    border-radius: 6px;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 8px 0;
+    overflow: hidden;
+}
+
+/* Header row */
+.dataview.table-view-table thead tr th {
+    background-color: #e3eff8;
+    color: #5a7a9a;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 6px 10px;
+    border-bottom: 1px solid #d4e5f7;
+}
+
+/* Remove default header underline */
+.dataview.table-view-table thead tr {
+    border-bottom: none;
+}
+
+/* Body cells */
+.dataview.table-view-table tbody tr td {
+    font-size: 12px;
+    padding: 5px 10px;
+    border-bottom: none;
+    vertical-align: middle;
+}
+
+/* Last column (Link) - subtle gray, slightly smaller */
+.dataview.table-view-table tbody tr td:last-child {
+    font-size: 11px;
+    color: #888;
+}
+
+.dataview.table-view-table tbody tr td:last-child a {
+    color: #888;
+    text-decoration: none;
+}
+
+.dataview.table-view-table tbody tr td:last-child a:hover {
+    color: #5a7a9a;
+    text-decoration: underline;
+}
+
+/* Hover effect on rows */
+.dataview.table-view-table tbody tr:hover {
+    background-color: #e8f2fa;
+}
+
+/* Accent stripe on left edge */
+.dataview.table-view-table {
+    border-left: 3px solid #7ab3d4;
+}
+
+/* Fix first/last cell border radius */
+.dataview.table-view-table thead tr th:first-child {
+    border-top-left-radius: 5px;
+}
+
+.dataview.table-view-table thead tr th:last-child {
+    border-top-right-radius: 5px;
+}
+
+.dataview.table-view-table tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 5px;
+}
+
+.dataview.table-view-table tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 5px;
+}
+
+/* "No results" paragraph styling */
+.dataview.dataview-error-box,
+.block-language-dataviewjs > p {
+    font-size: 11px;
+    color: #888;
+    font-style: italic;
+    padding: 8px 12px;
+    background-color: #f0f7fb;
+    border: 1px solid #d4e5f7;
+    border-left: 3px solid #7ab3d4;
+    border-radius: 6px;
+    margin: 8px 0;
+}
+
+/* =================================================================
+   FREE TEXT / ANNOTATIONS SEPARATOR
+   ================================================================= */
+
+hr.pdf-annot-sep {
+    border: none;
+    height: 2px;
+    background: darkred;
+    border-radius: 2px;
+    margin: 20px 0 0 0 !important;
+}
+
+span.pdf-annot-info {
+    display: block;
+    font-size: 11px;
+    color: darkred;
+    background-color: #e3eff8;
+    padding: 6px 12px;
+    border-left: 3px solid #7ab3d4;
+    border-radius: 0 4px 4px 0;
+    margin: -25px 0 -10px 0;
+    font-style: italic;
+}
