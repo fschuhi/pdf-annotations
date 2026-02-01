@@ -15,9 +15,13 @@ Before creating an Idea Note, ask:
 
 ### 2. Does this connect to something I'm already thinking about?
 
+*(from Ahrens, p. 78: "The only criterion is whether something adds to a discussion in the slip-box. The only thing that matters is that it connects or is open to connections.")*
+
 - **Yes** → stronger candidate; look for `Continues::` link
 - **No, but it opens a new thread I care about** → root idea note (no `Continues::`)
 - **No, and I don't see where it leads** → probably decline
+
+> **Habitual shift:** Move attention from the individual project with preconceived ideas towards the open connections within the slip-box.
 
 ### 3. Would I want to find this again in six months?
 
@@ -75,6 +79,18 @@ Once you've decided to create an Idea Note, explore how it relates to what you a
 - Isn't this argument similar to that one?
 - Haven't I heard this before?
 - **And above all: What does x mean for y?**
+
+### Probing distinctions and assumptions
+
+*(from Luhmann 2000, via Ahrens p. 79)*
+
+Rewriting in your own words trains attention toward frames, patterns, and the conditions that enable certain descriptions but not others. Ask:
+
+- What is **not** meant? What is **excluded** if this claim is made?
+- What **distinction** is being made?
+- What are the **conditions or assumptions** that enable this description?
+
+> If the text doesn't give a clear answer, resort to your own imagination.
 
 ### Limits and disagreements
 
