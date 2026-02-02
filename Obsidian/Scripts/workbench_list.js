@@ -78,16 +78,20 @@ const rows = await Promise.all(workbenchReadings.map(async p => {
     const page = await getLastReadPage(p.file.path);
 
     // B. Status logic
-    const isBlocked = p.status === "blocked";
     const isToRead = p.status === "to-read";
+	const isReading = p.status === "reading";
+    const isBlocked = p.status === "blocked";
+    const isDone = p.status === "done";
 
     let statusIcon;
     if (isBlocked) {
         statusIcon = "⛔️";
     } else if (isToRead) {
         statusIcon = "🔵";
-    } else {
+    } else if (isReading) {
         statusIcon = "🟢";
+	} else {
+        statusIcon = "⚪";
     }
 
     // C. Action Link
