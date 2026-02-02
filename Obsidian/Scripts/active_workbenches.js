@@ -60,7 +60,7 @@ const rows = activeWorkbenches.map(p => {
     ];
 });
 
-dv.table(["Active Workbench", "Ideas", "Writing", "Reading", "Last Touched"], rows);
+dv.table(["Active Workbench", "Ideas", "Writing", "Time Spent", "Last Touched"], rows);
 
 // Summary below table
 if (grandTotalWriting > 0 || grandTotalReading > 0) {
