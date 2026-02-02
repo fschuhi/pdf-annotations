@@ -27,7 +27,7 @@ Bibnote A has `status: blocked`, but the bibnote that has `Unblocks:: [[(A)]]` i
 **Purpose:** Remind you to unblock PDFs that are now ready to continue.
 
 ### 5. Dangling Relationships
-Inline fields (`Unblocks::`, `Continues::`, `DerivedFrom::`) that point to notes that don't exist.
+Inline fields (`Unblocks::`, `Follows::`, `DerivedFrom::`) that point to notes that don't exist.
 
 **Purpose:** Catch broken links from deleted or renamed notes.
 
@@ -41,7 +41,7 @@ Ideas with `status: placeholder`.
 ## Zettelkasten Growth / Health
 
 ### 7. Idea Chain Endpoints
-Ideas that nothing continues from — leaf nodes in the Folgezettel tree.
+Ideas that nothing follows from — leaf nodes in the Folgezettel tree.
 
 **Purpose:** Identify growth points where new ideas could branch off.
 
@@ -98,6 +98,11 @@ Cluster ideas across Workbenches by `#topic/*` tags.
 
 **Purpose:** Cross-project discovery of related concepts.
 
+### 17. Folgezettel Sequence
+Given an Idea Note, walk the `Follows::` chain in both directions and render the full sequence as an ordered list.
+
+**Purpose:** See an entire line of thought from origin to endpoints, presenting notes in their developmental sequence. Supports Luhmann's practice of following threads through the slip-box.
+
 ---
 
 ## Implementation Notes
@@ -105,6 +110,6 @@ Cluster ideas across Workbenches by `#topic/*` tags.
 - Queries 1-6 are housekeeping — run periodically to maintain system health
 - Queries 7-11 help understand the shape of your Zettelkasten
 - Queries 12-14 support daily reading workflow
-- Queries 15-16 enable serendipitous discovery
+- Queries 15-17 enable serendipitous discovery
 
 Priority: Start with **#4** (blocked with completed blockers) and **#7** (chain endpoints) — these have immediate practical value.

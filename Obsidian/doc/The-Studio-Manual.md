@@ -88,7 +88,7 @@ await dv.view("Scripts/next_in_chain", { current: dv.current() });
 - `status` — Set to `placeholder` for underdeveloped ideas; omit entirely for fully developed ideas
 
 **Inline fields:**
-- `Continues::` — Links to the idea this one builds upon (Folgezettel)
+- `Follows::` — Links to the idea this one follows from (Folgezettel). It can be either an idea building on the one linked to, or something which is coupled more loosely but still being related.
 
 ### Workbench (`note_type: workbench`)
 
@@ -219,7 +219,7 @@ Every fleeting note should be resolved to keep the queue short:
 Inline fields live on the note where your attention is focused, pointing to context you need to remember:
 
 - **`Unblocks::`** on Bibnote A → "I'm reading A to enable progress on B"
-- **`Continues::`** on Idea B → "B builds upon A"
+- **`Follows::`** on Idea B → "B builds upon A"
 
 ### Link Types in Bibnotes
 
@@ -249,7 +249,7 @@ see [[#^some-block-anchor]]  — internal cross-reference within the document
 Ideas can form chains where each idea builds on the previous:
 
 ```
-Idea A  ←(Continues)—  Idea B  ←(Continues)—  Idea C
+Idea A  ←(Follows)—  Idea B  ←(Follows)—  Idea C
 ```
 
 The `next_in_chain.js` script shows all ideas that continue from the current one.
@@ -423,10 +423,10 @@ Place in bibnotes: `BUTTON[resume-pdf]`
 
 ### Inline Fields
 
-| Field | Used On | Points To | Meaning |
-|-------|---------|-----------|---------|
+| Field        | Used On | Points To | Meaning |
+|--------------|---------|-----------|---------|
 | `Unblocks::` | bibnote | bibnote(s) | "Reading me enables progress on X" |
-| `Continues::` | idea | idea(s) | "I am a Folgezettel of X" |
+| `Follows::`  | idea | idea(s) | "I am a Folgezettel of X" |
 
 ### Tags
 
