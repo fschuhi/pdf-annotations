@@ -7,7 +7,7 @@ Future queries to implement as The Studio grows.
 ## Hygiene / Housekeeping
 
 ### 1. Orphaned Ideas
-Ideas where `DerivedFrom::` points to a bibnote, but there's no corresponding backlink in that bibnote's annotations (e.g., a `→ [[Idea - ...]]` in a processed fleeting note).
+Ideas where `derived_from` (frontmatter property) points to a bibnote, but there's no corresponding backlink in that bibnote's annotations (e.g., a `→ [[Idea - ...]]` in a processed fleeting note).
 
 **Purpose:** Detect inconsistencies in the provenance trail.
 
@@ -27,7 +27,7 @@ Bibnote A has `status: blocked`, but the bibnote that has `Unblocks:: [[(A)]]` i
 **Purpose:** Remind you to unblock PDFs that are now ready to continue.
 
 ### 5. Dangling Relationships
-Inline fields (`Unblocks::`, `Follows::`, `DerivedFrom::`) that point to notes that don't exist.
+Inline fields (`Unblocks::`, `Follows::`) or frontmatter properties (`derived_from`) that point to notes that don't exist.
 
 **Purpose:** Catch broken links from deleted or renamed notes.
 
@@ -56,7 +56,7 @@ Ideas with the most inbound and outbound links.
 **Purpose:** Identify hubs in your thinking — central concepts that connect many threads.
 
 ### 10. Ideas per Bibnote
-Count of Idea Notes with `DerivedFrom::` pointing to each bibnote.
+Count of Idea Notes with `derived_from` pointing to each bibnote.
 
 **Purpose:** See which PDFs have been most generative for your thinking.
 
