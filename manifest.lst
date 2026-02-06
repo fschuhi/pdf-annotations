@@ -1,6 +1,6 @@
 (This file is the basis of the `filesdump.txt` in which it is included, i.e. the document you are reading right now.
 The files in this manifest are the relevant files for understanding how the project hangs together.
-Files which are commented out are not included in the `filesdump.txt`.)
+Files which are commented out exist but are not included in the `filesdump.txt`.)
 
 ### --- Context & Meta ---
 # ⚠️ NON-NEGOTIABLE collaboration rules - READ FIRST
@@ -21,8 +21,9 @@ pyproject.toml
 .gitignore
 .gitattributes
 .pre-commit-config.yaml
-
 pdf_annot.example.toml
+
+### --- macOS PDF annotations tool ---
 
 src/pdf_annot/annotation.py
 src/pdf_annot/env.py
@@ -36,6 +37,8 @@ src/pdf_annot/pdf_registry.py
 src/pdf_annot/streamline_annotations.py
 src/pdf_annot/sync.py
 src/pdf_annot/utils.py
+
+### --- testing the PDF annotations tool ---
 
 tests/test_annotations.py
 tests/test_core_workflow.py
@@ -92,9 +95,13 @@ tests/fixtures/workflow_new_pdfs/goldens/(Balbini 2014).md
 tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013).md
 # tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 
-tools/concat_files.py
-tools/discover_pdfs.py
-tools/print_hashes.py
+### --- Support tools ---
+
+# tools/concat_files.py
+# tools/discover_pdfs.py
+# tools/print_hashes.py
+
+### --- Windows 11 server (running on Parallels VM) ---
 
 windows_server/clean.bat
 windows_server/pdf_server.ini
@@ -102,3 +109,16 @@ windows_server/README.md
 windows_server/requirements.txt
 windows_server/start_pdf_server.bat
 windows_server/windows_pdf_server.py
+
+### --- Obsidian tooling for The Studio, the Zettelkasten which uses the PDF annotations ---
+
+# Obsidian/doc/Fleeting-Notes-Processing-Checklist.md
+# Obsidian/doc/Query-Candidates.md
+Obsidian/doc/The-Studio-Manual.md
+# Obsidian/doc/TODO-Obsidian.md
+# Obsidian/Scripts/active_workbenches.js
+# Obsidian/Scripts/open_pdf_resume.js
+# Obsidian/Scripts/next_in_chain.js
+# Obsidian/Scripts/fleeting_block_markers.js
+# Obsidian/Scripts/workbench_list.js
+# Obsidian/Snippets/studio.css
