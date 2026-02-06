@@ -14,13 +14,17 @@ README.md
 Goals.md
 TODO.md
 
-### --- Build & Configuration ---
+### --- Build & Python Configuration ---
 Makefile
 requirements.txt
 pyproject.toml
 .gitignore
 .gitattributes
 .pre-commit-config.yaml
+
+### --- configuration for the PDF annotations tool ---
+
+# pdf_annot.toml
 pdf_annot.example.toml
 
 ### --- macOS PDF annotations tool ---
