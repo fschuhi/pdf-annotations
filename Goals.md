@@ -4,8 +4,8 @@
 Create a robust, automated "drumbeat" for knowledge management that propels the reading, highlighting, and writing process (Zettelkasten) in Obsidian. The system must reliably handle 1600+ PDF files, including complex multi-column layouts, and integrate seamlessly with Obsidian Dataview for process tracking.
 
 ## PDF Annotations Quality
-- [ ] **Margin Detection**: For some PDFs the first line(s) are missing.
-- [ ] **Spurious Artefacts**: Comparing the output to Zotero's extracted annotations, there are a lot of bigger and smaller problems.
+- [x] **Margin Detection**: For some PDFs the first line(s) are missing.
+- [x] **Spurious Artefacts**: Comparing the output to Zotero's extracted annotations, there are a lot of bigger and smaller problems.
 
 ## Code Review & Scalability
 - [ ] **Code Audit**: Review `src/pdf_annot/` for "production readiness" against 1600 files.
@@ -17,7 +17,3 @@ Create a robust, automated "drumbeat" for knowledge management that propels the 
 ## Advanced PDF Handling
 - [ ] **Multi-Column Support**: Implement a frontmatter flag (e.g., `reading_order: columns`) to correctly sort annotations in 2-column papers.
 - [ ] **Frontmatter Management**: Ensure `has_annotations`, `pdf_pages`, and layout flags are correctly synced.
-
-## Workflow & Process
-- [x] **Obsidian Integration**: Design Dataview queries to create a Zettelkasten system for Obsidian.
-- [x] **Process Definition**: Define and implement lifecycle states - - see Obsidian/doc/The-Studio-Manual.md

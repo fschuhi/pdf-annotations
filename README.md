@@ -45,20 +45,41 @@ graph LR
     Ren --> Body
 ```
 
+### Extraction: Words-Based Approach
+
+The extraction layer uses a **word-level overlap matching** strategy rather than raw rectangle clipping. For each
+highlight annotation, the extractor:
+
+1. **Merges quads by visual line** — highlight quads with similar y-coordinates (within 3pt) are grouped into a single
+   rect per line, preventing typographic characters (curly quotes, apostrophes) from bleeding into adjacent lines.
+2. **Matches words by overlap ratio** — page words from `get_text("words")` are matched against merged line rects.
+   A word must have ≥50% area overlap to be included, which rejects stray characters from neighbouring lines.
+3. **Detects superscript contamination** — font-size analysis via `get_text("dict")` identifies footnote reference
+   numbers. Words partially overlapping superscript regions have trailing digits stripped; pure superscript words are
+   skipped entirely.
+
+This approach eliminates three classes of extraction artefacts: stray single characters (`g`, `p`), footnote number
+leakage (`of).4`), and intra-highlight misordering.
+
+### Change Detection: Fast Skip
+
+The sync engine checks `pdf_mtime` and `pdf_size` against the note's frontmatter **before** opening the PDF. Unchanged
+files are skipped without any PDF parsing, making repeated `make run` calls fast even across 1600+ files.
+
 ---
 
 ## Current Status
 
-| Feature                  | Status     | Notes                               |
-|--------------------------|------------|-------------------------------------|
-| **Core Sync Engine**     | ✅ Complete | Automatic sync of all PDFs to Notes |
-| **Incremental Updates**  | ✅ Complete | Time/Size based detection           |
-| **Highlight Extraction** | ✅ Complete | Header/Footer aware                 |
-| **Frontmatter Mgmt**     | ✅ Complete | Preserves non-PDF fields            |
-| **Windows Link Handler** | ✅ Complete | `pdf://` protocol support           |
-| **Multi-Column PDFs**    | 🚧 Planned | Better reading order sorting        |
-| **Large File Strategy**  | 🚧 Planned | Handling 300+ highlights            |
-| **CLI Profiles**         | 🚧 Planned | Dev/Prod environment switching      |
+| Feature                  | Status     | Notes                                       |
+|--------------------------|------------|---------------------------------------------|
+| **Core Sync Engine**     | ✅ Complete | Automatic sync of all PDFs to Notes         |
+| **Incremental Updates**  | ✅ Complete | Fast mtime/size gate, no unnecessary parsing |
+| **Highlight Extraction** | ✅ Complete | Words-based with superscript detection       |
+| **Frontmatter Mgmt**     | ✅ Complete | Preserves non-PDF fields                    |
+| **Windows Link Handler** | ✅ Complete | `pdf://` protocol support                   |
+| **Multi-Column PDFs**    | 🚧 Planned | Better reading order sorting                |
+| **Large File Strategy**  | 🚧 Planned | Handling 300+ highlights                    |
+| **Highlight Colors**     | 🚧 Planned | Color-coded callouts in Obsidian            |
 
 > **Note:** For the future roadmap and planned features, please refer to [`Goals.md`](Goals.md).
 
@@ -120,8 +141,8 @@ The main entry point is `src/pdf_annot/sync.py`. When run, it automatically:
 1. **Loads configuration** (e.g., `pdf_annot.toml`) to get `pdf_dirs` and `notes_root`.
 2. **Builds registries** for all PDFs (`PdfRegistry`) and all notes (`NotesDB`).
 3. **Loops over every PDF** and compares it to its corresponding note.
-4. **Detects changes** by comparing PDF mtime/size with note frontmatter.
-5. **Calls `sync_pdf_to_note`** for any new or changed PDFs.
+4. **Detects changes** by comparing PDF mtime/size with note frontmatter (fast — no PDF parsing).
+5. **Calls `sync_pdf_to_note`** only for new or changed PDFs.
 
 This function handles the extraction, streamlining, rendering, and atomic updating. This workflow is tested end-to-end
 in `tests/test_core_workflow.py`.
@@ -141,18 +162,19 @@ env = load_env("pdf_annot.toml")
 
 #### `src/pdf_annot/sync.py`
 
-The core workflow logic and `main` CLI entry point.
+The core workflow logic and `main` CLI entry point. Performs a cheap mtime/size check before any PDF parsing, so
+unchanged files are skipped instantly.
 
 ```python
 from pdf_annot.sync import sync_pdf_to_note
 
-# Core "god function"
 result = sync_pdf_to_note(env, pdf_info, note_path, current_time_iso)
 ```
 
 #### `src/pdf_annot/extract.py`
 
-PDF annotation extraction with header/footer awareness.
+PDF annotation extraction using words-based overlap matching. Handles header/footer exclusion, superscript footnote
+detection, and visual reading order sorting.
 
 ```python
 # Library API
@@ -226,6 +248,9 @@ pdf_hash: "VQGPEHE"
 has_annotations: true
 pdf_mtime: "2025-10-21T21:37:00"
 last_run_at: "2025-10-30T20:01:00"
+pdf_pages: 12
+pdf_highlights: 6
+pdf_textboxes: 0
 ---
 
 <hr class="pdf-annot-sep">
@@ -276,6 +301,9 @@ We use strict TDD. Tests must pass before features are merged.
 make test           # Run quiet
 make test-verbose   # Run with detailed output
 ```
+
+The test suite includes extraction quality regression tests using real academic PDFs (e.g., Fasching 2008) with golden
+file comparison to catch artefacts like stray characters, footnote leakage, and sort order issues.
 
 ### Utilities
 
