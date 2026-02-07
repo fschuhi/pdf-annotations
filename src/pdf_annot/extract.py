@@ -1,39 +1,180 @@
 # src/pdf_annot/extract.py
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import List, Tuple, Dict
-import fitz
 
-# import numpy as np  <- REMOVED
+import fitz
 
 from .annotation import Annotation, TEXTUAL_ANNOTS
 
 # ===============================================================
 #  Default heuristic parameters
 # ===============================================================
-DEFAULT_HEADER_HEIGHT = 60.0  # points: ignore annotations above this y value
-DEFAULT_FOOTER_HEIGHT = 50.0  # points: ignore annotations below this y value
-# FULLWIDTH_RATIO = 0.80  <- REMOVED
-# COLUMN_GAP_THRESHOLD = 100  <- REMOVED
+DEFAULT_HEADER_HEIGHT = 30.0  # points: ignore annotations above this y value
+DEFAULT_FOOTER_HEIGHT = 30.0  # points: ignore annotations below this y value
+
+# Words-based extraction parameters
+LINE_MERGE_TOLERANCE = 3.0  # points: quads within this y-distance are on the same line
+WORD_OVERLAP_THRESHOLD = 0.5  # fraction: minimum overlap for a word to be "inside" highlight
+SUPERSCRIPT_SIZE_RATIO = 0.85  # font size < dominant * this ratio => superscript
+SUPERSCRIPT_SKIP_THRESHOLD = 0.8  # if >80% of word overlaps superscript => skip entirely
 
 
 # ===============================================================
-#  Column detector (REMOVED)
+#  Superscript detection
 # ===============================================================
+def _get_superscript_regions(page: fitz.Page) -> List[fitz.Rect]:
+    """
+    Identify superscript text regions by comparing span font sizes.
 
-# def _split_rects_by_max_gap(...) <- REMOVED
-# def detect_columns(...) <- REMOVED
+    Superscript footnote numbers (e.g. ², ³⁴) use a smaller font than the
+    body text on the same line. We detect spans whose font size is
+    significantly smaller than the dominant size on their line.
+
+    Returns a list of Rects covering superscript spans.
+    """
+    regions: List[fitz.Rect] = []
+    blocks = page.get_text("dict")["blocks"]
+    for block in blocks:
+        if "lines" not in block:
+            continue
+        for line in block["lines"]:
+            sizes = [span["size"] for span in line["spans"] if span["text"].strip()]
+            if not sizes:
+                continue
+            dominant = max(set(sizes), key=sizes.count)
+            for span in line["spans"]:
+                if span["size"] < dominant * SUPERSCRIPT_SIZE_RATIO and span["text"].strip():
+                    regions.append(fitz.Rect(span["bbox"]))
+    return regions
 
 
 # ===============================================================
-#  Highlight text extraction with region awareness
+#  Quad merging
+# ===============================================================
+def _merge_quads_by_line(rects: List[fitz.Rect], tolerance: float = LINE_MERGE_TOLERANCE) -> List[fitz.Rect]:
+    """
+    Group highlight quads that sit on the same text line and merge them.
+
+    Typographic characters like curly quotes (" ") and apostrophes (')
+    produce quads with slightly different y-coordinates than the main text.
+    This merges them into a single rect per visual line, preventing the
+    "rect bleeding" problem where narrow, tall quads clip text from
+    adjacent lines.
+
+    Args:
+        rects: List of highlight quad rects, pre-filtered for header/footer.
+        tolerance: Maximum y0 difference (in points) to consider quads
+                   as being on the same line.
+
+    Returns:
+        List of merged Rects, one per visual line, sorted top-to-bottom.
+    """
+    if not rects:
+        return []
+
+    sorted_rects = sorted(rects, key=lambda r: (r.y0, r.x0))
+    lines: List[List[fitz.Rect]] = [[sorted_rects[0]]]
+
+    for r in sorted_rects[1:]:
+        if abs(r.y0 - lines[-1][0].y0) <= tolerance:
+            lines[-1].append(r)
+        else:
+            lines.append([r])
+
+    merged = []
+    for line in lines:
+        merged.append(
+            fitz.Rect(
+                min(r.x0 for r in line),
+                min(r.y0 for r in line),
+                max(r.x1 for r in line),
+                max(r.y1 for r in line),
+            )
+        )
+
+    return merged
+
+
+# ===============================================================
+#  Word-level overlap matching
+# ===============================================================
+def _best_overlap_ratio(wx0: float, wy0: float, wx1: float, wy1: float, line_rects: List[fitz.Rect]) -> float:
+    """
+    Compute the best (maximum) overlap ratio between a word bbox and
+    any of the merged line rects.
+
+    We check ALL line rects and return the highest ratio, not the first
+    match. This is necessary because a word (e.g. "one's") may partially
+    overlap a narrow apostrophe-quad line while having high overlap with
+    the actual text line.
+    """
+    word_area = (wx1 - wx0) * (wy1 - wy0)
+    if word_area <= 0:
+        return 0.0
+
+    best = 0.0
+    for lr in line_rects:
+        ox0 = max(wx0, lr.x0)
+        oy0 = max(wy0, lr.y0)
+        ox1 = min(wx1, lr.x1)
+        oy1 = min(wy1, lr.y1)
+        if ox0 < ox1 and oy0 < oy1:
+            ratio = (ox1 - ox0) * (oy1 - oy0) / word_area
+            if ratio > best:
+                best = ratio
+    return best
+
+
+def _superscript_overlap(wx0: float, wy0: float, wx1: float, wy1: float, sup_regions: List[fitz.Rect]) -> float:
+    """Fraction of word area that overlaps with superscript regions."""
+    word_area = (wx1 - wx0) * (wy1 - wy0)
+    if word_area <= 0:
+        return 0.0
+    total = 0.0
+    for sr in sup_regions:
+        ox0 = max(wx0, sr.x0)
+        oy0 = max(wy0, sr.y0)
+        ox1 = min(wx1, sr.x1)
+        oy1 = min(wy1, sr.y1)
+        if ox0 < ox1 and oy0 < oy1:
+            total += (ox1 - ox0) * (oy1 - oy0)
+    return total / word_area
+
+
+# ===============================================================
+#  Highlight text extraction (words-based)
 # ===============================================================
 def extract_highlight_text(page: fitz.Page, annot: fitz.Annot, header_height: float, footer_height: float) -> str:
     """
-    Extract highlighted text, handling:
-      - header/footer exclusion
-    Sorts all highlight rectangles by visual reading order (top-to-bottom, left-to-right).
+    Extract highlighted text using word-level overlap matching.
+
+    This approach solves three problems with the previous rect-clipping method:
+
+    1. **Stray characters**: Curly quotes and apostrophes produce quads with
+       different vertical extents. Clipping these quads individually would
+       pick up characters from adjacent lines. By merging quads per visual
+       line and matching at the word level, stray characters are excluded.
+
+    2. **Footnote number leakage**: Superscript footnote numbers (e.g. ²⁴)
+       sometimes get merged into adjacent words by PyMuPDF's word segmentation
+       (e.g. "of).4"). We detect superscript regions via font-size analysis
+       and strip trailing digits from contaminated words.
+
+    3. **Intra-highlight ordering**: Words come pre-sorted in reading order
+       from PyMuPDF's get_text("words"), so we get correct ordering even
+       when individual quads have inconsistent y-coordinates.
+
+    Args:
+        page: The fitz.Page containing the annotation.
+        annot: The highlight annotation.
+        header_height: Y cutoff for header exclusion (points from top).
+        footer_height: Y cutoff for footer exclusion (points from bottom).
+
+    Returns:
+        Extracted text as a single string, words joined by spaces.
     """
     verts = annot.vertices
     if not verts:
@@ -43,21 +184,42 @@ def extract_highlight_text(page: fitz.Page, annot: fitz.Annot, header_height: fl
     rects = [fitz.Quad(*verts[i * 4 : (i + 1) * 4]).rect for i in range(n)]
 
     # Filter out header/footer areas
-    usable_rects = [r for r in rects if (r.y0 > header_height) and (r.y1 < page.rect.height - footer_height)]
+    page_height = page.rect.height
+    usable_rects = [r for r in rects if r.y0 > header_height and r.y1 < page_height - footer_height]
     if not usable_rects:
         return ""
 
-    # --- SIMPLIFIED LOGIC ---
-    # Sort all usable rects by top-to-bottom, then left-to-right
-    usable_rects.sort(key=lambda r: (round(r.y0, 1), r.x0))
+    # Merge quads on the same visual line
+    line_rects = _merge_quads_by_line(usable_rects)
 
-    text_parts = []
-    for rect in usable_rects:
-        t = page.get_text("text", clip=rect).strip()
-        if t:
-            text_parts.append(t)
+    # Get all words and superscript regions for this page
+    words = page.get_text("words")
+    sup_regions = _get_superscript_regions(page)
 
-    return " ".join(text_parts)
+    # Match words against highlight line rects
+    matched: List[str] = []
+    for w in words:
+        wx0, wy0, wx1, wy1 = w[:4]
+        word: str = w[4]
+
+        # Check overlap with highlight
+        overlap = _best_overlap_ratio(wx0, wy0, wx1, wy1, line_rects)
+        if overlap < WORD_OVERLAP_THRESHOLD:
+            continue
+
+        # Check for superscript contamination
+        sup_ratio = _superscript_overlap(wx0, wy0, wx1, wy1, sup_regions)
+        if sup_ratio > SUPERSCRIPT_SKIP_THRESHOLD:
+            continue  # word is entirely a superscript number
+        if sup_ratio > 0.01:
+            # Word partially overlaps superscript — strip trailing digits
+            word = re.sub(r"\d+$", "", word)
+            if not word:
+                continue
+
+        matched.append(word)
+
+    return " ".join(matched)
 
 
 # ===============================================================

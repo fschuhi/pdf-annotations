@@ -8,3 +8,4 @@ Refactoring TODOs
 - **Windows Server**: Dynamic Indexing: The Windows server should pick up additions, renames, and deletions in the PDF folder and recalculate the hash map.
 - **`streamline_annotations.py` Refactor**: Refactor `streamline_annotations.py` to fix duplicated logic and inefficiencies (currently postponed).
 - **New Scenarios**: Flesh out and test more workflow edge cases (e.g., what happens if a note is missing its frontmatter entirely).
+- **Initialize new bibnotes with workflow properties**: New bibnotes should include `status: to-read`, `note_type: bibnote`, `time_spent: 0` in frontmatter, plus the two buttons (`BUTTON[time-spent-increment]`, `BUTTON[resume-pdf]`) in the free text area. These should be configurable in the env.
