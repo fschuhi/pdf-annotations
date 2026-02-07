@@ -21,6 +21,9 @@ WORD_OVERLAP_THRESHOLD = 0.5  # fraction: minimum overlap for a word to be "insi
 SUPERSCRIPT_SIZE_RATIO = 0.85  # font size < dominant * this ratio => superscript
 SUPERSCRIPT_SKIP_THRESHOLD = 0.8  # if >80% of word overlaps superscript => skip entirely
 
+# Annotation sort parameters
+SORT_ROUND = 3.0  # points: y/x rounding for sort key (prevents sub-point misordering)
+
 
 # ===============================================================
 #  Superscript detection
@@ -255,10 +258,24 @@ def extract_annotations(doc: fitz.Document, header_height: float, footer_height:
 
 
 def _extract_and_sort_annots(doc: fitz.Document, header_height: float, footer_height: float) -> List[Annotation]:
-    """Extracts and sorts annotations by visual reading order."""
+    """Extracts and sorts annotations by visual reading order.
+
+    Sort key: (page, rounded_y, rounded_x, width).
+    Rounding y and x to the nearest SORT_ROUND points prevents sub-point
+    coordinate differences from misordering annotations on the same visual
+    line. The width tiebreaker ensures that narrow annotations (e.g. a
+    heading like "Abstract") sort before wider ones (the body paragraph)
+    when they share the same line position.
+    """
     annotations = list(extract_annotations(doc, header_height, footer_height))
-    # Sort by visual reading order: page, y (top to bottom), x (left to right)
-    annotations.sort(key=lambda a: (a.pageNum, a.topLeft[1], a.topLeft[0]))
+
+    def _sort_key(a: Annotation):
+        y = round(a.topLeft[1] / SORT_ROUND) * SORT_ROUND
+        x = round(a.topLeft[0] / SORT_ROUND) * SORT_ROUND
+        width = a.botRight[0] - a.topLeft[0]
+        return (a.pageNum, y, x, width)
+
+    annotations.sort(key=_sort_key)
     return annotations
 
 
