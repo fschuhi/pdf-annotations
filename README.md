@@ -81,7 +81,7 @@ files are skipped without any PDF parsing, making repeated `make run` calls fast
 | **Large File Strategy**  | 🚧 Planned | Handling 300+ highlights                    |
 | **Highlight Colors**     | 🚧 Planned | Color-coded callouts in Obsidian            |
 
-> **Note:** For the future roadmap and planned features, please refer to [`Goals.md`](Goals.md).
+> **Note:** For the future roadmap and planned features, please refer to [`Goals.md`](GOALS.md).
 
 ---
 
