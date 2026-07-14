@@ -9,8 +9,7 @@ structured, frontmatter-rich Markdown notes.
 
 ## Vision
 
-This is not just a file converter; it is the "drumbeat" of a Zettelkasten workflow. The goal is to manage a library of
-1600+ academic papers and books, transforming static PDF highlights into a living network of ideas.
+This is not just a file converter; it is the "drumbeat" of a Zettelkasten workflow. The goal is to manage a library of 1600+ academic papers and books, transforming static PDF highlights into a living network of ideas.
 
 **Core Philosophy:**
 
@@ -50,21 +49,15 @@ graph LR
 The extraction layer uses a **word-level overlap matching** strategy rather than raw rectangle clipping. For each
 highlight annotation, the extractor:
 
-1. **Merges quads by visual line** — highlight quads with similar y-coordinates (within 3pt) are grouped into a single
-   rect per line, preventing typographic characters (curly quotes, apostrophes) from bleeding into adjacent lines.
-2. **Matches words by overlap ratio** — page words from `get_text("words")` are matched against merged line rects.
-   A word must have ≥50% area overlap to be included, which rejects stray characters from neighbouring lines.
-3. **Detects superscript contamination** — font-size analysis via `get_text("dict")` identifies footnote reference
-   numbers. Words partially overlapping superscript regions have trailing digits stripped; pure superscript words are
-   skipped entirely.
+1. **Merges quads by visual line** — highlight quads with similar y-coordinates (within 3pt) are grouped into a single rect per line, preventing typographic characters (curly quotes, apostrophes) from bleeding into adjacent lines.
+2. **Matches words by overlap ratio** — page words from `get_text("words")` are matched against merged line rects. A word must have ≥50% area overlap to be included, which rejects stray characters from neighbouring lines.
+3. **Detects superscript contamination** — font-size analysis via `get_text("dict")` identifies footnote reference numbers. Words partially overlapping superscript regions have trailing digits stripped; pure superscript words are skipped entirely.
 
-This approach eliminates three classes of extraction artefacts: stray single characters (`g`, `p`), footnote number
-leakage (`of).4`), and intra-highlight misordering.
+This approach eliminates three classes of extraction artefacts: stray single characters (`g`, `p`), footnote number leakage (`of).4`), and intra-highlight misordering.
 
 ### Change Detection: Fast Skip
 
-The sync engine checks `pdf_mtime` and `pdf_size` against the note's frontmatter **before** opening the PDF. Unchanged
-files are skipped without any PDF parsing, making repeated `make run` calls fast even across 1600+ files.
+The sync engine checks `pdf_mtime` and `pdf_size` against the note's frontmatter **before** opening the PDF. Unchanged files are skipped without any PDF parsing, making repeated `make run` calls fast even across 1600+ files.
 
 ---
 
@@ -162,8 +155,7 @@ env = load_env("pdf_annot.toml")
 
 #### `src/pdf_annot/sync.py`
 
-The core workflow logic and `main` CLI entry point. Performs a cheap mtime/size check before any PDF parsing, so
-unchanged files are skipped instantly.
+The core workflow logic and `main` CLI entry point. Performs a cheap mtime/size check before any PDF parsing, so unchanged files are skipped instantly.
 
 ```python
 from pdf_annot.sync import sync_pdf_to_note
@@ -173,8 +165,7 @@ result = sync_pdf_to_note(env, pdf_info, note_path, current_time_iso)
 
 #### `src/pdf_annot/extract.py`
 
-PDF annotation extraction using words-based overlap matching. Handles header/footer exclusion, superscript footnote
-detection, and visual reading order sorting.
+PDF annotation extraction using words-based overlap matching. Handles header/footer exclusion, superscript footnote detection, and visual reading order sorting.
 
 ```python
 # Library API
@@ -185,8 +176,7 @@ annotations, stats = extract_annotations_to_list(pdf_path)
 
 #### `src/pdf_annot/streamline_annotations.py`
 
-Post-processes raw annotations: keeps highlights, merges link annotations (e.g., across pages or hyphens), extracts
-headings.
+Post-processes raw annotations: keeps highlights, merges link annotations (e.g., across pages or hyphens), extracts headings.
 
 ```python
 # Library API
@@ -197,8 +187,7 @@ streamlined = streamline_annotations_list(raw_annotations)
 
 #### `src/pdf_annot/frontmatter.py`
 
-YAML frontmatter parsing and manipulation. Safely updates PDF-specific fields while preserving user-added tags or
-categories.
+YAML frontmatter parsing and manipulation. Safely updates PDF-specific fields while preserving user-added tags or categories.
 
 ```python
 changed, updated_text = upsert_fields(note_text, {"pdf_title": "New"})
@@ -218,12 +207,10 @@ Indexing systems for discovering controlled PDFs (bracket format) and existing M
 
 ### PDF URL Click Handler (Windows)
 
-This project generates hash-based `pdf://` links (e.g., `pdf://VQGPEHE?page=1`). To make these clickable, a helper
-application is required.
+This project generates hash-based `pdf://` links (e.g., `pdf://VQGPEHE?page=1`). To make these clickable, a helper application is required.
 
 * **Location:** `windows_server/`
-* **Function:** Intercepts `pdf://` URLs from macOS/Obsidian (via Parallels) and opens the correct PDF page in a native
-  Windows viewer (PDF-XChange).
+* **Function:** Intercepts `pdf://` URLs from macOS/Obsidian (via Parallels) and opens the correct PDF page in a native Windows viewer (PDF-XChange).
 * **Documentation:** See `windows_server/README.md` for setup.
 
 ### PDF ID and Hash
@@ -264,8 +251,7 @@ pdf_textboxes: 0
 
 ### Info Text Preservation
 
-The `<span class="pdf-annot-info">...</span>` text is designed to be edited by the user. The sync workflow **preserves**
-this text rather than overwriting it with defaults.
+The `<span class="pdf-annot-info">...</span>` text is designed to be edited by the user. The sync workflow **preserves** this text rather than overwriting it with defaults.
 
 ---
 
@@ -302,8 +288,7 @@ make test           # Run quiet
 make test-verbose   # Run with detailed output
 ```
 
-The test suite includes extraction quality regression tests using real academic PDFs (e.g., Fasching 2008) with golden
-file comparison to catch artefacts like stray characters, footnote leakage, and sort order issues.
+The test suite includes extraction quality regression tests using real academic PDFs (e.g., Fasching 2008) with golden file comparison to catch artefacts like stray characters, footnote leakage, and sort order issues.
 
 ### Utilities
 
