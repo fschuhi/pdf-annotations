@@ -10,9 +10,13 @@ LLM-instructions.md
 manifest.lst
 tmp/project-tree.txt
 
+# Plan to combine `anima` and `pdf-annotations` to arrive at a fully macOS-native workflow.
+TARGET_ARCHITECTURE.md
+
 README.md
 Goals.md
 TODO.md
+# HISTORY.md
 
 ### --- Build & Python Configuration ---
 Makefile

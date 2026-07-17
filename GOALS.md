@@ -8,21 +8,20 @@
 
 ## 📍 Current Session Pointer
 
-**Where we are:** We stopped working on this project a while ago.
+**Where we are:** We stopped working on this project a while ago. The locus of attention switched to `anima`, a lightweight PDF editor. This is the moment to bring this project and `anima` together.
 
 **What's next:**
-- We need to get back to it, first step: review, inventory, brainstorming, touch-up artefacts.
-- Move done tasks to new `HISTORY.md`.
-- Think about what should go into `GOALS.md` and what in `TODO.md`.
+- Read `TARGET_ARCHITECTURE.md`. Other than the model I collaborated with to arrive at the file, you are literally the first model which will start implementing it. Exciting!
+- In parallel, please help me to get back to this project. Where necessary, do a review, create an inventory, engage in brainstorming, and particularly touch-up artefacts.
+- At the end of the session I'd like to start a `HISTORY.md` which will have then captured what we do in this session.
+- As part of the end-of-session work, we need to streamline `GOALS.md` and `TODO.md` and decide what goes where.
+
+Let's thus pick a small first task from `TARGET_ARCHITECTURE.md`, so that we get some momentum going, including brushing up the artefacts.
 
 ---
 
 ## 🎯 Strategic Vision
 Create a robust, automated "drumbeat" for knowledge management that propels the reading, highlighting, and writing process (Zettelkasten) in Obsidian. The system must reliably handle 1600+ PDF files, including complex multi-column layouts, and integrate seamlessly with Obsidian Dataview for process tracking.
-
-## PDF Annotations Quality
-- ~~**Margin Detection**: For some PDFs the first line(s) are missing.~~
-- ~~**Spurious Artefacts**: Comparing the output to Zotero's extracted annotations, there are a lot of bigger and smaller problems.~~
 
 ## Code Review & Scalability
 - **Code Audit**: Review `src/pdf_annot/` for "production readiness" against 1600 files.
