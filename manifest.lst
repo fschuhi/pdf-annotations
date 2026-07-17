@@ -1,22 +1,22 @@
-(This file is the basis of the `filesdump.txt` in which it is included, i.e. the document you are reading right now.
-The files in this manifest are the relevant files for understanding how the project hangs together.
-Files which are commented out exist but are not included in the `filesdump.txt`.)
+# (This file is the basis of the `filesdump.txt` in which it is included, i.e. the document you are reading right now.
+# The files in this manifest are the relevant files for understanding how the project hangs together.
+# Files which are commented out are not included in the `filesdump.txt`.)
 
 ### --- Context & Meta ---
 # ⚠️ NON-NEGOTIABLE collaboration rules - READ FIRST
 CRITICAL_RULES.md
 
-LLM-instructions.md
+LLM_INSTRUCTIONS.md
 manifest.lst
 tmp/project-tree.txt
-
-# Plan to combine `anima` and `pdf-annotations` to arrive at a fully macOS-native workflow.
-TARGET_ARCHITECTURE.md
 
 README.md
 Goals.md
 TODO.md
 # HISTORY.md
+
+# Plan to combine `anima` and `pdf-annotations` to arrive at a fully macOS-native workflow.
+TARGET_ARCHITECTURE.md
 
 ### --- Build & Python Configuration ---
 Makefile
@@ -129,4 +129,3 @@ Obsidian/doc/The-Studio-Manual.md
 # Obsidian/Scripts/next_in_chain.js
 # Obsidian/Scripts/fleeting_block_markers.js
 # Obsidian/Scripts/workbench_list.js
-# Obsidian/Snippets/studio.css
