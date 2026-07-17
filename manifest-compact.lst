@@ -1,0 +1,55 @@
+# (This file is the basis of the `filesdump-compact.txt` in which it is included, i.e. the document you are reading right now.
+# The files in this manifest are the relevant files for understanding how the project hangs together.
+# Files which are commented out are not included in the `filesdump-compact.txt`.)
+
+# IMPORTANT: This is a manifest to create a "compact" filesdump, for analysis purposes.
+# Not included: initial instructions, tests, history, configuration files.
+manifest-compact.lst
+
+# Original `manifest.lst` included as reference.
+manifest.lst
+
+tmp/project_tree.txt
+
+README.md
+GOALS.md
+TODO.md
+
+### --- Build & Python Configuration ---
+
+Makefile
+requirements.txt
+pyproject.toml
+
+### --- configuration for the PDF annotations tool ---
+
+# pdf_annot.toml
+pdf_annot.example.toml
+
+### --- macOS PDF annotations tool ---
+
+src/pdf_annot/annotation.py
+src/pdf_annot/env.py
+src/pdf_annot/extract.py
+src/pdf_annot/frontmatter.py
+src/pdf_annot/ndjson_to_md_block.py
+src/pdf_annot/notes.py
+src/pdf_annot/notes_db.py
+src/pdf_annot/pdf_discovery.py
+src/pdf_annot/pdf_registry.py
+src/pdf_annot/streamline_annotations.py
+src/pdf_annot/sync.py
+src/pdf_annot/utils.py
+
+### --- Windows 11 server (running on Parallels VM) ---
+
+windows_server/clean.bat
+windows_server/pdf_server.ini
+windows_server/README.md
+windows_server/requirements.txt
+windows_server/start_pdf_server.bat
+windows_server/windows_pdf_server.py
+
+### --- Obsidian tooling for The Studio, the Zettelkasten which uses the PDF annotations ---
+
+Obsidian/doc/The-Studio-Manual.md

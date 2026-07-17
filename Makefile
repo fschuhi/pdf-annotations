@@ -71,15 +71,20 @@ clean: ## Remove venv, cache, and tmp files
 showtree: ## Show project directory structure
 	@tree -I "node_modules|dist|build|.git|.idea|.vscode|.venv|__pycache__|tmp|cache|*egg-info" -L 3
 
-gentree: ## Save tree structure to tmp/project-tree.txt
+gentree: ## Save tree structure to tmp/project_tree.txt
 	@mkdir -p tmp
-	@tree -I "node_modules|dist|build|.git|.idea|.vscode|.venv|__pycache__|tmp|cache|*egg-info" > tmp/project-tree.txt
-	@echo "Project tree saved to tmp/project-tree.txt"
+	@tree -I "node_modules|dist|build|.git|.idea|.vscode|.venv|__pycache__|tmp|cache|*egg-info" > tmp/project_tree.txt
+	@echo "Project tree saved to tmp/project_tree.txt"
 
 filesdump: gentree ## Create context dump for LLMs
 	@echo "--- Generating filesdump ---"
 	$(RUN_WITH_PATH) python tools/concat_files.py manifest.lst > tmp/filesdump.txt
 	@echo "Filesdump created at tmp/filesdump.txt"
+
+filesdump-compact: gentree ## Create context dump for LLMs
+	@echo "--- Generating filesdump ---"
+	$(ACTIVATE) && python tools/concat_files.py manifest-compact.lst > tmp/filesdump-compact.txt
+	@echo "Filesdump created at tmp/filesdump-compact.txt"
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
