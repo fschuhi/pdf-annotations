@@ -59,22 +59,7 @@ This approach eliminates three classes of extraction artefacts: stray single cha
 
 The sync engine checks `pdf_mtime` and `pdf_size` against the note's frontmatter **before** opening the PDF. Unchanged files are skipped without any PDF parsing, making repeated `make run` calls fast even across 1600+ files.
 
----
-
-## Current Status
-
-| Feature                  | Status     | Notes                                       |
-|--------------------------|------------|---------------------------------------------|
-| **Core Sync Engine**     | ✅ Complete | Automatic sync of all PDFs to Notes         |
-| **Incremental Updates**  | ✅ Complete | Fast mtime/size gate, no unnecessary parsing |
-| **Highlight Extraction** | ✅ Complete | Words-based with superscript detection       |
-| **Frontmatter Mgmt**     | ✅ Complete | Preserves non-PDF fields                    |
-| **Windows Link Handler** | ✅ Complete | `pdf://` protocol support                   |
-| **Multi-Column PDFs**    | 🚧 Planned | Better reading order sorting                |
-| **Large File Strategy**  | 🚧 Planned | Handling 300+ highlights                    |
-| **Highlight Colors**     | 🚧 Planned | Color-coded callouts in Obsidian            |
-
-> **Note:** For the future roadmap and planned features, please refer to [`Goals.md`](GOALS.md).
+> **Note:** For the future roadmap and planned features, see [`GOALS.md`](GOALS.md).
 
 ---
 
@@ -201,17 +186,25 @@ Handles extraction of custom info text (preserves user edits) and rendering of t
 
 Indexing systems for discovering controlled PDFs (bracket format) and existing Markdown notes.
 
+#### `src/pdf_annot/resolve.py`
+
+Resolver CLI: maps a `crc32_az7` hash (as it appears in a `pdf://<HASH>` URL) to a fully-qualified PDF path. This is the public interface consumed by the macOS PDF viewer (Anima) as a subprocess -- the contract is the CLI surface (stdout / stderr / exit code), frozen in `TARGET_ARCHITECTURE.md`. It reuses `build_pdf_index` and imports nothing heavy (no PyMuPDF), so per-click latency stays low. Must be run with the working directory set to the project root, so `load_env` finds `pdf_annot.toml`.
+
+```bash
+# Prints the absolute path on success (exit 0); a one-line reason on stderr otherwise (exit 1)
+pdf-annot-resolve VQGPEHE
+```
+
 ---
 
 ## Key Concepts
 
-### PDF URL Click Handler (Windows)
+### PDF URL Click Handler
 
-This project generates hash-based `pdf://` links (e.g., `pdf://VQGPEHE?page=1`). To make these clickable, a helper application is required.
+This project generates hash-based `pdf://` links (e.g., `pdf://VQGPEHE?page=1`). Clicking one opens the referenced PDF at the requested page.
 
-* **Location:** `windows_server/`
-* **Function:** Intercepts `pdf://` URLs from macOS/Obsidian (via Parallels) and opens the correct PDF page in a native Windows viewer (PDF-XChange).
-* **Documentation:** See `windows_server/README.md` for setup.
+* **macOS (current):** the link is served by the native PDF viewer (Anima) together with `pdf_annot.resolve`, which turns the hash into a path. The resolver is stateless -- it rebuilds its index from the filesystem on every click, so there is no cache to refresh. See `TARGET_ARCHITECTURE.md` for the full contract.
+* **Windows (legacy):** a helper application in `windows_server/` intercepts `pdf://` URLs (via Parallels) and opens the PDF in a native Windows viewer (PDF-XChange). See `windows_server/README.md` for setup. This path is retained for the Windows machine only and is no longer the reference implementation.
 
 ### PDF ID and Hash
 
@@ -321,6 +314,7 @@ Displays the project layout (src-layout pattern).
 
 * Ensure you are using `make run` or `make test`, which handle `PYTHONPATH` automatically.
 
-### "Hash not found" (Windows Server)
+### "Hash not found"
 
-* Restart the Windows server script to rebuild its in-memory index of PDFs.
+* **macOS:** the resolver rebuilds its index on every click, so there is nothing to restart. A hash that will not resolve means the PDF is not in a folder listed under `pdf_dirs`, or a duplicate `pdf_id` exists somewhere in those folders (any duplicate fails all resolutions by design). Run `make discover-pdfs` to see what the config actually indexes.
+* **Windows (legacy server):** restart the Windows server script to rebuild its in-memory index of PDFs.

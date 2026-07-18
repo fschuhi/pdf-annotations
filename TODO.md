@@ -11,6 +11,12 @@
 
 ---
 
+## Making the Workflow Fully MacOS-native
+
+- ~~**`pdf://` resolver (Phase A)**: Implemented `src/pdf_annot/resolve.py` (hash -> PDF path), registered the `pdf-annot-resolve` console script, pinned by `tests/test_resolve.py` (5 contract tests), accepted against the real collection. Contract frozen per `TARGET_ARCHITECTURE.md` section 3. Next locus is Phase B in Anima.~~ Completed 2026-07-18; see `HISTORY.md`.
+
+---
+
 ## Refactoring TODOs
 
 - **Add `tags` frontmatter property**: should be `type/bibnote`. This should be configurable in the env.

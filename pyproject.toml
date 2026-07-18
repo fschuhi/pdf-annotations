@@ -11,6 +11,7 @@ version = "0.1.0"
 pdf-annot-extract = "pdf_annot.extract:main"
 pdf-annot-streamline = "pdf_annot.streamline_annotations:main"
 pdf-annot-sync = "pdf_annot.sync:main"
+pdf-annot-resolve = "pdf_annot.resolve:main"
 # --------------------------------------------------
 
 [tool.setuptools.packages.find]

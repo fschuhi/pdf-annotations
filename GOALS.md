@@ -8,15 +8,11 @@
 
 ## 📍 Current Session Pointer
 
-**Where we are:** We stopped working on this project a while ago. The locus of attention switched to `anima`, a lightweight PDF editor. This is the moment to bring this project and `anima` together.
+**Where we are:** Phase A of the `pdf://` link-resolution work (`TARGET_ARCHITECTURE.md`) is complete and the CLI contract is frozen. `src/pdf_annot/resolve.py` maps a `pdf://<HASH>` to a PDF path, reusing `build_pdf_index` unchanged; it is pinned by `tests/test_resolve.py` and was accepted against the real collection (known hash, unknown hash, strict duplicate, and the section 3.6 CWD-discovery check). The `pdf-annot-resolve` console script is registered. See `HISTORY.md` for the full record.
 
-**What's next:**
-- Read `TARGET_ARCHITECTURE.md`. Other than the model I collaborated with to arrive at the file, you are literally the first model which will start implementing it. Exciting!
-- In parallel, please help me to get back to this project. Where necessary, do a review, create an inventory, engage in brainstorming, and particularly touch-up artefacts.
-- At the end of the session I'd like to start a `HISTORY.md` which will have then captured what we do in this session.
-- As part of the end-of-session work, we need to streamline `GOALS.md` and `TODO.md` and decide what goes where.
+**What's next:** Phase B (Anima) per `TARGET_ARCHITECTURE.md` section 8 -- register the `pdf` URL scheme and add the `pdfAnnotationsRoot` constant (step 4). That is an Anima-project session; per the "one project per session" rule, the contract stays frozen here and Anima adapts to it. Switch back to this project only if a contract inadequacy surfaces.
 
-Let's thus pick a small first task from `TARGET_ARCHITECTURE.md`, so that we get some momentum going, including brushing up the artefacts.
+Everything else sits in `TODO.md` until it earns a place here.
 
 ---
 
