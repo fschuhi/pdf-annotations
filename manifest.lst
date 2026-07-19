@@ -11,7 +11,7 @@ manifest.lst
 tmp/project-tree.txt
 
 README.md
-Goals.md
+GOALS.md
 TODO.md
 # HISTORY.md
 
@@ -113,12 +113,13 @@ tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013).md
 
 ### --- Windows 11 server (running on Parallels VM) ---
 
-windows_server/clean.bat
-windows_server/pdf_server.ini
-windows_server/README.md
-windows_server/requirements.txt
-windows_server/start_pdf_server.bat
-windows_server/windows_pdf_server.py
+## 2026-07-19: now fully macOS-native, `windows_server` is legacy, will be removed from GitHub
+# windows_server/clean.bat
+# windows_server/pdf_server.ini
+# windows_server/README.md
+# windows_server/requirements.txt
+# windows_server/start_pdf_server.bat
+# windows_server/windows_pdf_server.py
 
 ### --- Obsidian tooling for The Studio, the Zettelkasten which uses the PDF annotations ---
 

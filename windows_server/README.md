@@ -1,3 +1,7 @@
+> **⚠️ macOS users: this component is no longer needed.**
+> The `pdf://` URL scheme is now handled natively by **Anima** together with `pdf_annot.resolve`.
+> This folder documents the legacy Windows VM route, which remains functional for the Windows machine only.
+
 # PDF URL Handler (Windows Server)
 
 This is the Windows server component for the `pdf-annotations` project. It runs on a Windows VM (e.g., Parallels), listens for `pdf://` hash-based URLs from macOS/Obsidian, and opens the correct PDF in a native Windows viewer.

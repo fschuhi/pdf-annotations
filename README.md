@@ -203,8 +203,8 @@ pdf-annot-resolve VQGPEHE
 
 This project generates hash-based `pdf://` links (e.g., `pdf://VQGPEHE?page=1`). Clicking one opens the referenced PDF at the requested page.
 
-* **macOS (current):** the link is served by the native PDF viewer (Anima) together with `pdf_annot.resolve`, which turns the hash into a path. The resolver is stateless -- it rebuilds its index from the filesystem on every click, so there is no cache to refresh. See `TARGET_ARCHITECTURE.md` for the full contract.
-* **Windows (legacy):** a helper application in `windows_server/` intercepts `pdf://` URLs (via Parallels) and opens the PDF in a native Windows viewer (PDF-XChange). See `windows_server/README.md` for setup. This path is retained for the Windows machine only and is no longer the reference implementation.
+* **macOS (current):** the link is handled natively by the PDF viewer (Anima) together with `pdf_annot.resolve`, which turns the hash into a path. The resolver is stateless -- it rebuilds its index from the filesystem on every click, so there is no cache to refresh. See `TARGET_ARCHITECTURE.md` for the full contract.
+* **Windows (legacy):** a helper application in `windows_server/` intercepts `pdf://` URLs (via Parallels) and opens the PDF in PDF-XChange. See `windows_server/README.md` for setup. This path is retained for the Windows machine only.
 
 ### PDF ID and Hash
 
@@ -317,4 +317,3 @@ Displays the project layout (src-layout pattern).
 ### "Hash not found"
 
 * **macOS:** the resolver rebuilds its index on every click, so there is nothing to restart. A hash that will not resolve means the PDF is not in a folder listed under `pdf_dirs`, or a duplicate `pdf_id` exists somewhere in those folders (any duplicate fails all resolutions by design). Run `make discover-pdfs` to see what the config actually indexes.
-* **Windows (legacy server):** restart the Windows server script to rebuild its in-memory index of PDFs.
