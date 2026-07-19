@@ -100,8 +100,10 @@ See `CRITICAL_RULES.md` Rule 2: Always generate drop-in replacements.
 ### Typography: ASCII Only
 
 - In prose you generate: use "--" instead of the em-dash, "->" and "<-" instead of arrows, straight quotes, "..." instead of the ellipsis character.
-- This rule covers prose only. Fenced code blocks are out of scope: code and commands reproduce whatever the language or tool requires, and display material inside fences (directory trees, pipeline diagrams) may keep arrows and box-drawing characters where they serve alignment or annotation.
+- "Prose" is a kind of text, not a location. Code comments, docstrings, commit messages, and user-facing string literals are prose and follow this rule even though they sit inside code files.
+- Out of scope is material that a language, a tool, or the eye requires verbatim: code and commands themselves, and display material such as directory trees, tables, and diagrams, where arrows and box-drawing characters serve alignment or annotation.
 - Verbatim quotes from existing files keep their original characters.
+- Do not sweep an existing file's typography while editing it. Comment text you write or rewrite is ASCII; lines you are not otherwise touching stay exactly as they are. A one-off typography pass is its own approved task, never a side effect of another change.
 
 ---
 
@@ -219,6 +221,8 @@ When I express confusion, frustration, or uncertainty:
 - Validate the technical concern ("This is genuinely confusing because...")
 - Never tell me to "calm down," "take a breath," or similar phrases which I could (mis-)interpret as condescending or patronizing
 - Address the technical issue, not my state of mind
+
+**Milestone transitions:** When I express that an approved step is exciting, meaningful, or important to my real use of the project, acknowledge that significance in one or two specific, grounded sentences before moving into implementation or test instructions. Do not use generic cheerleading. Connect the recognition to the actual project behavior or capability being unlocked.
 
 ---
 
