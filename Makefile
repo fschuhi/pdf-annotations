@@ -9,7 +9,7 @@ RUN_WITH_PATH = $(ACTIVATE) && PYTHONPATH=src
 SETUP_STAMP = $(VENV_DIR)/.setup_stamp
 
 # --- Phony targets ---
-.PHONY: all setup test test-verbose run extract streamline hash discover-pdfs clean showtree gentree filesdump help
+.PHONY: all setup test test-verbose run extract streamline hash discover-pdfs discover-pdf-names clean showtree gentree filesdump filesdump-compact help
 
 # Default target runs 'setup'
 all: setup
@@ -58,8 +58,11 @@ extract: $(SETUP_STAMP) ## Run extraction on the fixture PDF (dev test)
 streamline: $(SETUP_STAMP) ## Run streamline on fixture NDJSON (dev test)
 	$(RUN_WITH_PATH) python -m pdf_annot.streamline_annotations -i tests/fixtures/pdf_to_markdown_e2e/expected_raw.ndjson -o tmp/final_streamlined.ndjson
 
-discover-pdfs: $(SETUP_STAMP) ## List all PDFs found by current config
+discover-pdfs: $(SETUP_STAMP) ## List all PDFs (fully qualified filenames) found by current config
 	$(RUN_WITH_PATH) python tools/discover_pdfs.py --env pdf_annot.toml --relative-to .
+
+discover-pdf-names: $(SETUP_STAMP) ## List all PDFs (just the filename, without path)
+	$(RUN_WITH_PATH) python tools/discover_pdfs.py --env pdf_annot.toml --relative-to . | sed 's#.*/##'
 
 # --- Utility Targets ---
 
@@ -76,12 +79,12 @@ gentree: ## Save tree structure to tmp/project_tree.txt
 	@tree -I "node_modules|dist|build|.git|.idea|.vscode|.venv|__pycache__|tmp|cache|*egg-info" > tmp/project_tree.txt
 	@echo "Project tree saved to tmp/project_tree.txt"
 
-filesdump: gentree ## Create context dump for LLMs
+filesdump: gentree ## Create context dump for LLMs with manifest.lst
 	@echo "--- Generating filesdump ---"
 	$(RUN_WITH_PATH) python tools/concat_files.py manifest.lst > tmp/filesdump.txt
 	@echo "Filesdump created at tmp/filesdump.txt"
 
-filesdump-compact: gentree ## Create context dump for LLMs
+filesdump-compact: gentree ## Create context dump for LLMs with manifest-compact.lst
 	@echo "--- Generating filesdump ---"
 	$(ACTIVATE) && python tools/concat_files.py manifest-compact.lst > tmp/filesdump-compact.txt
 	@echo "Filesdump created at tmp/filesdump-compact.txt"
