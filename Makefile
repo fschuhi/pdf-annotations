@@ -59,10 +59,13 @@ streamline: $(SETUP_STAMP) ## Run streamline on fixture NDJSON (dev test)
 	$(RUN_WITH_PATH) python -m pdf_annot.streamline_annotations -i tests/fixtures/pdf_to_markdown_e2e/expected_raw.ndjson -o tmp/final_streamlined.ndjson
 
 discover-pdfs: $(SETUP_STAMP) ## List all PDFs (fully qualified filenames) found by current config
-	$(RUN_WITH_PATH) python tools/discover_pdfs.py --env pdf_annot.toml --relative-to .
+	@$(RUN_WITH_PATH) python tools/discover_pdfs.py --env pdf_annot.toml --relative-to .
 
 discover-pdf-names: $(SETUP_STAMP) ## List all PDFs (just the filename, without path)
-	$(RUN_WITH_PATH) python tools/discover_pdfs.py --env pdf_annot.toml --relative-to . | sed 's#.*/##'
+	@$(RUN_WITH_PATH) python tools/discover_pdfs.py --env pdf_annot.toml --relative-to . | sed 's#.*/##'
+
+discover-pdf-folders: $(SETUP_STAMP)
+	@$(RUN_WITH_PATH) python tools/discover_pdfs.py --env pdf_annot.toml --relative-to . | sed 's#/[^/]*$$##' | sort -u
 
 # --- Utility Targets ---
 
