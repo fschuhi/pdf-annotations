@@ -15,8 +15,11 @@ GOALS.md
 TODO.md
 # HISTORY.md
 
-# Plan to combine `anima` and `pdf-annotations` to arrive at a fully macOS-native workflow.
-TARGET_ARCHITECTURE.md
+# Historical plan to combine `anima` and `pdf-annotations` for a fully macOS-native workflow. Complete 2026-07-19.
+# docs/TARGET_ARCHITECTURE.md
+
+# Production-readiness audit: findings ledger, implementation agenda, open decisions.
+AUDIT.md
 
 ### --- Build & Python Configuration ---
 Makefile
@@ -121,12 +124,15 @@ tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013).md
 # windows_server/start_pdf_server.bat
 # windows_server/windows_pdf_server.py
 
+### --- Documentation how to Obsidian implements the "The Studio" Zettelkasten ---
+
+# Obsidian/docs/Fleeting-Notes-Processing-Checklist.md
+# Obsidian/docs/Query-Candidates.md
+Obsidian/docs/The-Studio-Manual.md
+# Obsidian/docs/TODO-Obsidian.md
+
 ### --- Obsidian tooling for The Studio, the Zettelkasten which uses the PDF annotations ---
 
-# Obsidian/doc/Fleeting-Notes-Processing-Checklist.md
-# Obsidian/doc/Query-Candidates.md
-Obsidian/doc/The-Studio-Manual.md
-# Obsidian/doc/TODO-Obsidian.md
 # Obsidian/Scripts/active_workbenches.js
 # Obsidian/Scripts/open_pdf_resume.js
 # Obsidian/Scripts/next_in_chain.js

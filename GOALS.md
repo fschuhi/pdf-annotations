@@ -8,12 +8,12 @@
 
 ## 📍 Current Session Pointer
 
-**Where we are:** Target architecture for Anima, the proprietary light-weight PDF reader with highlighting and commenting, is completed: Anima is fully macOS-native now. The focus moves now back to working with PDFs, including continuing to work on this `pdf-annotations`.
+**Where we are:** Production-readiness audit of `src/pdf_annot/` complete (2026-07-21). Findings, dispositions, and the implementation agenda live in `AUDIT.md` -- self-contained, `TARGET_ARCHITECTURE.md`-style. Notable outcomes: production writes are currently non-atomic (A1), the tags-trigger mystery is solved (A3), the slow-PDF mechanism is identified (A4).
 
 **What's next:**
 
-1. **Code Audit:** Review `src/pdf_annot/` for "production readiness" against 1600 files.
-2. **Batch `pdf_ctime`:** (`TODO.md`) Create a tool that adds the creation time of a PDF as frontmatter `pdf_ctime`
+1. **Implementation sessions per `AUDIT.md`:** work the act ledger A1-A10 in order; decide D1 (plan/apply fork) at the first session's start. Preconditions V0-V2 before touching code.
+2. **Batch `pdf_ctime`:** (`TODO.md`) Create a tool that adds the creation time of a PDF as frontmatter `pdf_ctime` -- implement after A3, whose normalization work is adjacent.
 3. **Add `pdf_ctime` in frontmatter generation:** (`TODO.md`) A newly created page adds `pdf_ctime` from the beginning, i.e. before opening the PDF with Anima both `pdf_ctime` and `pdf_mtime` are the same.
 
 Everything else sits in `TODO.md` until it earns a place here.
