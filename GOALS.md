@@ -8,11 +8,11 @@
 
 ## 📍 Current Session Pointer
 
-**Where we are:** Production-readiness audit of `src/pdf_annot/` complete (2026-07-21). Findings, dispositions, and the implementation agenda live in `AUDIT.md` -- self-contained, `TARGET_ARCHITECTURE.md`-style. Notable outcomes: production writes are currently non-atomic (A1), the tags-trigger mystery is solved (A3), the slow-PDF mechanism is identified (A4).
+**Where we are:** Implementing the `AUDIT.md` act ledger. A1a (atomic production writes) and A2 (decline-guards) landed 2026-07-22; D1 decided in favour of (a) DELETE. The audit's remaining agenda is A3-A10 plus A1b, which rides with A9/D2.
 
 **What's next:**
 
-1. **Implementation sessions per `AUDIT.md`:** work the act ledger A1-A10 in order; decide D1 (plan/apply fork) at the first session's start. Preconditions V0-V2 before touching code.
+1. **A3 (`AUDIT.md`) -- normalized change-detection comparison.** Mechanism fully diagnosed; retires the `TODO.md` mystery item "Just changing tags should not trigger update". Then A4 ff. in ledger order. V1 blocks A9, V2 blocks A5.
 2. **Batch `pdf_ctime`:** (`TODO.md`) Create a tool that adds the creation time of a PDF as frontmatter `pdf_ctime` -- implement after A3, whose normalization work is adjacent.
 3. **Add `pdf_ctime` in frontmatter generation:** (`TODO.md`) A newly created page adds `pdf_ctime` from the beginning, i.e. before opening the PDF with Anima both `pdf_ctime` and `pdf_mtime` are the same.
 

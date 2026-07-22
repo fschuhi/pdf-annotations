@@ -23,6 +23,7 @@
 - **Just changing tags should not trigger update:** Any change (add, remove, update) of the _tags_ frontmatter attribute triggers a full PDF read and update of the annotations. Why? Should not happen.
 - **Initialize new bibnotes with workflow properties:** New bibnotes should include `status: to-read`, `note_type: bibnote`, `time_spent: 0` in frontmatter, plus the two buttons (`BUTTON[time-spent-increment]`, `BUTTON[resume-pdf]`) in the free text area. These should be configurable in the env.
 - **Frontmatter Management**: Ensure `has_annotations`, `pdf_pages`, and layout flags are correctly synced.
+- **Frontmatter that parses but is not a mapping:** `--- \n some string \n ---` gives `has_fm=True` with an empty dict, so it passes A2's decline-guard and sync writes into it as though it were fine. Rare enough to defer, but it needs a defined answer -- most likely a third decline condition.
 
 ## UX
 
@@ -30,7 +31,7 @@
 
 ## Testing
 
-- **New Scenarios:** Flesh out and test more workflow edge cases (e.g., what happens if a note is missing its frontmatter entirely).
+- **New Scenarios:** Flesh out and test more workflow edge cases. (The "note is missing its frontmatter entirely" case is answered as of A2: sync declines it. See `tests/fixtures/workflow_declines/`.)
 - **Implement `--dry-run` Flag:** We still need to implement the logic for the --dry-run argument in `src/pdf_annot/sync.py`.
 
 ## Refactoring
@@ -41,3 +42,6 @@
 - **`streamline_annotations.py` Refactor:** Refactor `streamline_annotations.py` to fix duplicated logic and inefficiencies (currently postponed).
 - **Extract a PDF-identity module from `pdf-annotations`:**  _Needs investigation, deliberately deferred._ `resolve.py` depends on `pdf_registry`, `utils`, and config -- none of which are about annotations. This project is currently both the PDF-identity layer (hashes, index, lookups) and a consumer of it; Anima becoming a second consumer in 2026-07-18 is what made the dual role visible. The candidate shape: a standalone module owning the PDF "database" -- hashing, index construction, path lookup -- used by `pdf-annotations` for Obsidian bibnote generation and by Anima for `pdf://` resolution, with neither depending on the other. **Deferred on purpose, not overlooked.** The pull toward it is aesthetic ("the resolver sits in the wrong place") rather than driven by an observed problem: the resolver CLI contract is frozen, tested, and accepted, and Anima consumes it as a subprocess, so nothing is currently blocked. Scope Skepticism applies -- this is a plausible time sink whose payoff is tidiness. Note that Anima deliberately holds two independent absolute path constants (`projectRoot`, `pdfAnnotationsRoot`) rather than deriving both from a shared parent; the alternative was weighed partly as a deliberate speed bump against starting this refactoring on impulse, and rejected. That means the code contains no friction against it, and **this note is the speed bump instead**. Do not begin it as a side effect of another session. Reconsider when something concrete pushes: a third consumer appears, the resolver contract needs changes that force edits to annotation code, dependency or packaging needs diverge between the two roles. If it survives that test, promote it to `GOALS.md` for a proper strategy discussion before any code moves.
 - **Multi-Column Support**: Implement a frontmatter flag (e.g., `reading_order: columns`) to correctly sort annotations in 2-column papers.
+- **Home for `atomic_write_file`:** It lives in `utils.py`, chosen from an "e.g." in `AUDIT.md` A1 rather than decided. `notes.py` is arguably the better home -- it owns note-level operations, `sync.py` already imports from it, and the writer's hardcoded `suffix=".md"` for its temp file is honest in a notes module and a leaked assumption in a generic one. Decide rather than let it drift.
+- **Tighten `atomic_write_file(path: Path | str)` to `Path`:** The `str` half was added on ergonomic speculation during A1a; after D1 = DELETE there is no caller that passes a `str`, and no test exercises that branch. Speculative generality of exactly the kind the audit diagnosed.
+- **`ANNOT_SEP` exists in three places:** as a module constant in `sync.py`, as a local `separator` in `notes.py::replace_annotation_block`, and as a module constant in `notes_db.py`. If one copy ever drifts, sync declines every note. Export it from `notes.py` and import it in the others. (`notes_db.py`'s copy dies with A8.)
