@@ -10,7 +10,7 @@ from typing import Optional
 from pdf_annot.env import load_env, Env
 from pdf_annot.pdf_registry import build_pdf_index, PdfInfo
 from pdf_annot.notes_db import NotesDB
-from pdf_annot.frontmatter import upsert_fields, parse_note
+from pdf_annot.frontmatter import upsert_fields, parse_note, as_timestamp
 from pdf_annot.ndjson_to_md_block import render_block
 from pdf_annot.extract import extract_annotations_to_list
 from pdf_annot.streamline_annotations import streamline_annotations_list
@@ -34,10 +34,17 @@ def _pdf_has_changed(note_text: str, pdf_info: PdfInfo) -> bool:
         return True  # No frontmatter — treat as new
 
     fm = parsed.front_matter
-    pdf_mtime_iso = datetime.fromtimestamp(pdf_info.mtime).isoformat(timespec="seconds")
 
-    # Compare the two cheap fields
-    if fm.get("pdf_mtime") != pdf_mtime_iso:
+    # Compare normalized values, not raw ones: Obsidian's property editor unquotes
+    # the timestamp, so yaml.safe_load hands us a datetime where sync wrote a string
+    # (AUDIT.md A3). replace(microsecond=0) mirrors the timespec="seconds" truncation
+    # applied when the value was written.
+    fm_mtime = as_timestamp(fm.get("pdf_mtime"))
+    pdf_mtime = datetime.fromtimestamp(pdf_info.mtime).replace(microsecond=0)
+
+    # Equality only, never ordering: an unexpected timezone-aware value compares
+    # unequal here (-> re-extract) instead of raising TypeError and killing the run.
+    if fm_mtime is None or fm_mtime != pdf_mtime:
         return True
     if fm.get("pdf_size") != pdf_info.size:
         return True

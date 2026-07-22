@@ -94,10 +94,10 @@ tests/fixtures/workflow_complete_update/seeds/(Albini 2013).md
 # tests/fixtures/workflow_complete_update/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 
 tests/fixtures/workflow_declines/goldens/(Albini 2013).md
-tests/fixtures/workflow_declines/goldens/(Balbini 2013).md
+tests/fixtures/workflow_declines/goldens/(Balbini 2014).md
 tests/fixtures/workflow_declines/seeds/(Albini 2013).md
 # tests/fixtures/workflow_declines/seeds/(Albini 2013) On dealing with destructive emotions.pdf
-tests/fixtures/workflow_declines/seeds/(Balbini 2013).md
+tests/fixtures/workflow_declines/seeds/(Balbini 2014).md
 # tests/fixtures/workflow_declines/seeds/(Balbini 2014) On dealing with constructive emotions.pdf
 
 tests/fixtures/workflow_manual_edits/goldens/(Albini 2013).md
@@ -114,6 +114,9 @@ tests/fixtures/workflow_new_pdfs/goldens/(Balbini 2014).md
 
 tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013).md
 # tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013) On dealing with destructive emotions.pdf
+
+tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013).md
+# tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 
 ### --- Support tools ---
 

@@ -246,6 +246,50 @@ def test_workflow_pdf_unchanged(setup_workflow: dict):
     assert new_mtime == original_mtime, "Note mtime should not have changed"
 
 
+@pytest.mark.parametrize("setup_workflow", ["workflow_unquoted_mtime"], indirect=True)
+def test_workflow_unquoted_mtime(setup_workflow: dict):
+    """
+    Tests the change-detection gate against an Obsidian-rewritten note (AUDIT.md A3).
+
+    Obsidian's property editor rewrites the whole frontmatter block on any property
+    edit and drops the quotes around the timestamps. yaml.safe_load then yields a
+    datetime where sync wrote a string, so a raw comparison is unequal forever and
+    every run re-extracts an unchanged PDF.
+
+    This fixture is a byte-for-byte twin of workflow_pdf_unchanged apart from the
+    quoting, so any difference in outcome can only come from the quoting.
+    """
+    env: Env = setup_workflow["env"]
+    pdf_index: dict[str, PdfInfo] = setup_workflow["pdf_index"]
+
+    pdf_info = pdf_index["(albini 2013)"]
+    note_path = env.paths.notes_root / f"{pdf_info.pdf_id}.md"
+    current_time_iso = datetime.now().isoformat(timespec="seconds")
+
+    # 1. Capture the seed state: both the mtime and the exact bytes
+    assert note_path.exists()
+    original_mtime = note_path.stat().st_mtime
+    original_text = note_path.read_text(encoding="utf-8")
+
+    # 1a. Guard: the fixture is only meaningful while the timestamp is genuinely
+    # unquoted. If someone re-quotes the seed, this test silently becomes a
+    # duplicate of test_workflow_pdf_unchanged instead of failing.
+    seeded_mtime = parse_note(original_text).front_matter.get("pdf_mtime")
+    assert isinstance(seeded_mtime, datetime), "Seed must carry an unquoted pdf_mtime (YAML-typed datetime)"
+
+    # 2. Process through workflow
+    result = sync_pdf_to_note(env, pdf_info, note_path, current_time_iso)
+
+    # 3. Assert the gate stayed closed
+    assert result.success, f"Workflow should succeed: {result.error}"
+    assert not result.frontmatter_changed, "Frontmatter should NOT have changed"
+    assert not result.note_updated, "Note should NOT have been updated"
+
+    # 4. Assert nothing was written at all
+    assert note_path.stat().st_mtime == original_mtime, "Note mtime should not have changed"
+    assert note_path.read_text(encoding="utf-8") == original_text, "Note should be byte-identical to the seed"
+
+
 @pytest.mark.parametrize("setup_workflow", ["workflow_new_pdfs"], indirect=True)
 def test_workflow_new_pdfs(setup_workflow: dict):
     """

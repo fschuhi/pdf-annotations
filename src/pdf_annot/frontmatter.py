@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import io
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from datetime import datetime
+from typing import Dict, List, Optional, Tuple
 
 import yaml
 
@@ -72,6 +73,30 @@ def parse_note(text: str) -> ParsedNote:
         return ParsedNote(front_matter=data, body=tail, has_fm=True, _head=head, _fm_block=fm_block, _tail=tail)
     else:
         return ParsedNote(front_matter={}, body=text, has_fm=False, _head="", _fm_block="", _tail=text)
+
+
+def as_timestamp(value: object) -> Optional[datetime]:
+    """
+    Normalize a frontmatter timestamp to a datetime, or None if it is not one.
+
+    Timestamps are written into a note as quoted ISO strings, but Obsidian's
+    property editor rewrites the whole frontmatter block on any property edit and
+    drops the quotes. yaml.safe_load then yields a datetime where we wrote a str,
+    and a raw comparison between the two is unequal forever.
+
+    Callers compare normalized values instead. None means "not comparable", and a
+    caller should treat that as changed rather than as unchanged: re-reading a PDF
+    is cheap and idempotent, whereas trusting an unreadable timestamp would freeze
+    the note against all future updates.
+    """
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError:
+            return None
+    return None
 
 
 def _dump_yaml_block(data: Dict[str, object]) -> str:
