@@ -25,9 +25,9 @@ AUDIT.md
 Makefile
 requirements.txt
 pyproject.toml
-.gitignore
-.gitattributes
-.pre-commit-config.yaml
+# .gitignore
+# .gitattributes
+# .pre-commit-config.yaml
 
 ### --- configuration for the PDF annotations tool ---
 
@@ -111,8 +111,8 @@ tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013).md
 ### --- Support tools ---
 
 # tools/concat_files.py
-# tools/discover_pdfs.py
-# tools/print_hashes.py
+tools/discover_pdfs.py
+tools/print_hashes.py
 
 ### --- Windows 11 server (running on Parallels VM) ---
 

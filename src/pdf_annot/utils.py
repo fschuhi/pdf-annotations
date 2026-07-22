@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import os
 import re
+import tempfile
 import zlib
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Tuple
 
 # -----------------------------------------------------------------------------
@@ -153,3 +155,41 @@ def pdf_id_from_filename(full_path: str) -> str:
     Convenience: return the '(Authors Year)' id from a file path.
     """
     return parse_filename(full_path).pdf_id
+
+
+# -----------------------------------------------------------------------------
+# File I/O
+# -----------------------------------------------------------------------------
+
+
+def atomic_write_file(path: Path | str, new_text: str) -> None:
+    """
+    Atomically write new_text to path.
+    Writes to temp file in same dir, fsyncs, and replaces.
+
+    The replace is what makes the write atomic: a reader sees either the old
+    file or the new one, never a half-written one. The directory fsync is what
+    makes the replace survive a power loss.
+    """
+    target = os.fspath(path)
+    dirpath = os.path.dirname(target)
+    fd, tmppath = tempfile.mkstemp(prefix=".tmp-", suffix=".md", dir=dirpath, text=True)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as tmpf:
+            tmpf.write(new_text)
+            tmpf.flush()
+            os.fsync(tmpf.fileno())
+        # Also fsync the directory to persist the rename on some filesystems
+        os.replace(tmppath, target)
+        dirfd = os.open(dirpath, os.O_DIRECTORY)
+        try:
+            os.fsync(dirfd)
+        finally:
+            os.close(dirfd)
+    finally:
+        # If replace succeeded, tmppath is gone; if failed, try to remove
+        if os.path.exists(tmppath):
+            try:
+                os.remove(tmppath)
+            except OSError:
+                pass

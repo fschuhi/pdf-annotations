@@ -14,6 +14,7 @@ from pdf_annot.ndjson_to_md_block import render_block
 from pdf_annot.extract import extract_annotations_to_list
 from pdf_annot.streamline_annotations import streamline_annotations_list
 from pdf_annot.notes import extract_info_text, replace_annotation_block, UpdateResult
+from pdf_annot.utils import atomic_write_file
 
 
 def _pdf_has_changed(note_text: str, pdf_info: PdfInfo) -> bool:
@@ -117,7 +118,7 @@ def sync_pdf_to_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_
 
         # 9. Write updated note atomically
         # TODO: This logic should respect dry_run
-        note_path.write_text(updated_note_text, encoding="utf-8")
+        atomic_write_file(note_path, updated_note_text)
 
         return UpdateResult(
             note_path=note_path,

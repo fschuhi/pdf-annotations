@@ -25,6 +25,8 @@ from pdf_annot.frontmatter import parse_note
 
 # Import the main function we are testing
 from pdf_annot.sync import main as sync_main
+from pdf_annot import sync as sync_module
+from pdf_annot.utils import atomic_write_file as real_atomic_write_file
 
 # Fixture paths
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -164,6 +166,67 @@ def test_sync_cli_workflow(setup_workflow: dict):
     note_path_calbini = env.paths.notes_root / "(Calbini 2015).md"
     golden_path_calbini = goldens_dir / "(Calbini 2015).md"
     self_verify_golden(note_path_calbini, golden_path_calbini)
+
+
+@pytest.mark.parametrize("setup_workflow", ["workflow_manual_edits"], indirect=True)
+def test_sync_writes_through_atomic_helper(setup_workflow: dict):
+    """
+    Guards F18: production note writes must go through the atomic writer.
+
+    Runs the same CLI workflow, but spies on the write helper. `wraps=` makes
+    the mock record the call *and* delegate to the real function, so the note
+    is genuinely written and can still be checked against its golden. A plain
+    stub would prove the door was used while leaving nothing on disk.
+    """
+    env: Env = setup_workflow["env"]
+    goldens_dir: Path = setup_workflow["goldens_dir"]
+    config_path: Path = setup_workflow["config_path"]
+
+    cli_args = ["pdf-annot-sync", "-c", str(config_path)]
+    stdout_capture = io.StringIO()
+
+    # Patch the name in sync's namespace, NOT in utils. sync.py binds the
+    # function via `from pdf_annot.utils import atomic_write_file`, so the
+    # lookup happens on the sync module. Patching "pdf_annot.utils.atomic_
+    # write_file" would leave that binding untouched: the spy would never
+    # fire and the test would pass for the wrong reason.
+    with patch("pdf_annot.sync.atomic_write_file", wraps=real_atomic_write_file) as write_spy:
+        with contextlib.redirect_stdout(stdout_capture), patch.object(sys, "argv", cli_args):
+            return_code = sync_main()
+
+    assert return_code == 0, "CLI should exit with status 0"
+
+    # This fixture yields one skip (Albini) and one update (Calbini), so there
+    # should be exactly one write, and it must be the updated note.
+    assert write_spy.call_count == 1, "Exactly one note should have been written"
+
+    written_path, written_text = write_spy.call_args.args
+    expected_path = env.paths.notes_root / "(Calbini 2015).md"
+    assert Path(written_path) == expected_path, "The updated note should be the one written"
+    assert written_text, "Composed note text should not be empty"
+
+    # Delegation really happened: the file on disk is correct, not just the call.
+    self_verify_golden(expected_path, goldens_dir / "(Calbini 2015).md")
+
+
+def test_sync_has_no_direct_note_write():
+    """
+    Tripwire against F18 returning.
+
+    The spy test above proves that sync *uses* the atomic writer. It cannot
+    prove that a second, direct write has not been added alongside it -- the
+    spy would still fire and still pass. This checks the source of sync.py for
+    a bare `write_text(` call, which is exactly how the unprotected write
+    looked before A1a.
+
+    NOTE: this is a source grep, not a behaviour test. If a future change adds
+    a legitimate `write_text(` to sync.py for some unrelated purpose, this test
+    will fail. That failure means the assertion needs narrowing, not that the
+    new code is wrong. Notes themselves must still go through the helper.
+    """
+    source = Path(sync_module.__file__).read_text(encoding="utf-8")
+    msg = "sync.py must write notes only through atomic_write_file (see AUDIT.md F18/A1)"
+    assert "write_text(" not in source, msg
 
 
 def self_verify_golden(updated_note_path: Path, golden_path: Path):
