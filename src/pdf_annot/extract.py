@@ -3,7 +3,7 @@ import argparse
 import json
 import re
 from pathlib import Path
-from typing import List, Tuple, Dict
+from typing import List, Optional, Tuple, Dict
 
 import fitz
 
@@ -23,6 +23,9 @@ SUPERSCRIPT_SKIP_THRESHOLD = 0.8  # if >80% of word overlaps superscript => skip
 
 # Annotation sort parameters
 SORT_ROUND = 3.0  # points: y/x rounding for sort key (prevents sub-point misordering)
+
+# One entry as returned by page.get_text("words")
+PageWord = Tuple[float, float, float, float, str, int, int, int]
 
 
 # ===============================================================
@@ -150,7 +153,14 @@ def _superscript_overlap(wx0: float, wy0: float, wx1: float, wy1: float, sup_reg
 # ===============================================================
 #  Highlight text extraction (words-based)
 # ===============================================================
-def extract_highlight_text(page: fitz.Page, annot: fitz.Annot, header_height: float, footer_height: float) -> str:
+def extract_highlight_text(
+    page: fitz.Page,
+    annot: fitz.Annot,
+    header_height: float,
+    footer_height: float,
+    words: List[PageWord],
+    sup_regions: List[fitz.Rect],
+) -> str:
     """
     Extract highlighted text using word-level overlap matching.
 
@@ -175,6 +185,13 @@ def extract_highlight_text(page: fitz.Page, annot: fitz.Annot, header_height: fl
         annot: The highlight annotation.
         header_height: Y cutoff for header exclusion (points from top).
         footer_height: Y cutoff for footer exclusion (points from bottom).
+        words: The page's words, from page.get_text("words").
+        sup_regions: The page's superscript regions.
+
+    The last two are the same for every highlight on a page, so the caller
+    computes them once per page and passes them in. They are required rather
+    than optional: a "compute it myself if absent" fallback would be a second,
+    slower pathway that nothing calls and nobody notices going stale.
 
     Returns:
         Extracted text as a single string, words joined by spaces.
@@ -194,10 +211,6 @@ def extract_highlight_text(page: fitz.Page, annot: fitz.Annot, header_height: fl
 
     # Merge quads on the same visual line
     line_rects = _merge_quads_by_line(usable_rects)
-
-    # Get all words and superscript regions for this page
-    words = page.get_text("words")
-    sup_regions = _get_superscript_regions(page)
 
     # Match words against highlight line rects
     matched: List[str] = []
@@ -234,13 +247,29 @@ def extract_annotations(doc: fitz.Document, header_height: float, footer_height:
     For highlights, also include extracted text in info['extractedText'].
     """
     for i, page in enumerate(doc):  # type: ignore
+        # Per-page cache. The page's words and its superscript regions are the
+        # same for every highlight on that page, but both are expensive: the
+        # superscript scan walks every span via get_text("dict"). Computing
+        # them on the first highlight and reusing them turns "once per
+        # highlight" into "once per page that has highlights".
+        #
+        # Lazily, not eagerly: most pages in a book carry no highlights at all,
+        # and they must keep costing nothing.
+        page_words: Optional[List[PageWord]] = None
+        sup_regions: Optional[List[fitz.Rect]] = None
+
         for annot in page.annots(types=TEXTUAL_ANNOTS):
             if not annot:
                 continue
 
             info = dict(annot.info)
             if annot.type[1].lower() == "highlight":
-                info["extractedText"] = extract_highlight_text(page, annot, header_height, footer_height)
+                if page_words is None:
+                    page_words = page.get_text("words")
+                    sup_regions = _get_superscript_regions(page)
+                info["extractedText"] = extract_highlight_text(
+                    page, annot, header_height, footer_height, page_words, sup_regions
+                )
 
             rect = annot.rect
             yield Annotation(
@@ -300,10 +329,14 @@ def extract_annotations_to_list(
         - annotation_dicts: List of annotation dictionaries in visual reading order
         - pdf_stats: Dict with {'pdf_pages', 'pdf_highlights', 'pdf_textboxes'}
     """
-    doc = fitz.open(pdf_path)
-    page_count = doc.page_count
-
-    annotations = _extract_and_sort_annots(doc, header_height, footer_height)
+    # The document is closed as soon as we are done reading it. Only the two
+    # lines that need the document live in the block: Annotation objects hold
+    # plain values and geometry built from floats, so the returned list stays
+    # valid afterwards, and the generator inside _extract_and_sort_annots is
+    # fully consumed before we leave.
+    with fitz.open(pdf_path) as doc:
+        page_count = doc.page_count
+        annotations = _extract_and_sort_annots(doc, header_height, footer_height)
 
     # --- NEW: Count annotations from the list we already built ---
     highlights_count = 0
@@ -355,9 +388,8 @@ def main():
     pdf_path = Path(args.pdf)
     output_path = pdf_path.with_suffix(".ndjson")
 
-    doc = fitz.open(pdf_path)
-
-    annotations = _extract_and_sort_annots(doc, args.header_height, args.footer_height)
+    with fitz.open(pdf_path) as doc:
+        annotations = _extract_and_sort_annots(doc, args.header_height, args.footer_height)
 
     # Write sorted annotations to JSON (NDJSON style)
     with output_path.open("w", encoding="utf-8") as f:

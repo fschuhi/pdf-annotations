@@ -9,7 +9,7 @@ RUN_WITH_PATH = $(ACTIVATE) && PYTHONPATH=src
 SETUP_STAMP = $(VENV_DIR)/.setup_stamp
 
 # --- Phony targets ---
-.PHONY: all setup test test-verbose run extract streamline hash discover-pdfs discover-pdf-names clean showtree gentree filesdump filesdump-compact help
+.PHONY: all setup test test-verbose run extract streamline hash discover-pdfs discover-pdf-names discover-pdf-folders time-extraction clean showtree gentree filesdump filesdump-compact help
 
 # Default target runs 'setup'
 all: setup
@@ -64,8 +64,11 @@ discover-pdfs: $(SETUP_STAMP) ## List all PDFs (fully qualified filenames) found
 discover-pdf-names: $(SETUP_STAMP) ## List all PDFs (just the filename, without path)
 	@$(RUN_WITH_PATH) python tools/discover_pdfs.py --env pdf_annot.toml --relative-to . | sed 's#.*/##'
 
-discover-pdf-folders: $(SETUP_STAMP)
+discover-pdf-folders: $(SETUP_STAMP) ## List all PDFs (just the unique folders)
 	@$(RUN_WITH_PATH) python tools/discover_pdfs.py --env pdf_annot.toml --relative-to . | sed 's#/[^/]*$$##' | sort -u
+
+time-extraction: $(SETUP_STAMP) ## Time annotation extraction per PDF, read-only (ARGS="--top 0")
+	@$(RUN_WITH_PATH) python tools/time_extraction.py --env pdf_annot.toml $(ARGS)
 
 # --- Utility Targets ---
 
