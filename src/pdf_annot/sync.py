@@ -5,6 +5,7 @@ import sys
 import argparse
 from pathlib import Path
 from datetime import datetime
+from typing import Optional
 
 from pdf_annot.env import load_env, Env
 from pdf_annot.pdf_registry import build_pdf_index, PdfInfo
@@ -44,6 +45,27 @@ def _pdf_has_changed(note_text: str, pdf_info: PdfInfo) -> bool:
     return False
 
 
+ANNOT_SEP = '<hr class="pdf-annot-sep">'
+
+
+def _decline_reason(note_text: str) -> Optional[str]:
+    """
+    Return why sync must not write to this existing note, or None if it may.
+
+    Two conditions, one rule (AUDIT.md A2). The separator answers "is this a
+    bibnote at all"; the frontmatter answers "is it intact". Both must hold.
+
+    This is not protection of the user from their own edits -- it is a refusal
+    to guess at the shape of a note sync did not write. An empty file fails the
+    first check, which is the correct diagnosis: it is not a bibnote.
+    """
+    if ANNOT_SEP not in note_text:
+        return "missing annotation separator"
+    if not parse_note(note_text).has_fm:
+        return "missing or invalid frontmatter"
+    return None
+
+
 def sync_pdf_to_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_iso: str) -> UpdateResult:
     """
     Process a single PDF-note pair through the complete workflow.
@@ -69,12 +91,27 @@ def sync_pdf_to_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_
     """
     try:
         # 1. Read existing note text (or empty string)
+        note_exists = True
         try:
             note_text = note_path.read_text(encoding="utf-8")
             existing_info_text = extract_info_text(note_text)
         except FileNotFoundError:
+            note_exists = False
             note_text = ""  # Start with an empty note
             existing_info_text = env.annotations.default_info_text
+
+        # 1a. Decline-guards: a missing note is created from scratch, but an
+        # existing one must be diagnosable before we write into it.
+        if note_exists:
+            decline_reason = _decline_reason(note_text)
+            if decline_reason:
+                return UpdateResult(
+                    note_path=note_path,
+                    frontmatter_changed=False,
+                    annotation_block_changed=False,
+                    note_updated=False,
+                    declined=decline_reason,
+                )
 
         # 2. Quick gate: skip if PDF hasn't changed (no PDF parsing needed)
         if not _pdf_has_changed(note_text, pdf_info):
@@ -164,7 +201,7 @@ def main() -> int:
 
         # 2. Loop: Iterate over all PDFs and sync
         current_time_iso = datetime.now().isoformat(timespec="seconds")
-        stats = {"updated": 0, "skipped": 0, "errors": 0}
+        stats = {"updated": 0, "skipped": 0, "declined": 0, "errors": 0}
 
         for pdf_id_lower, pdf_info in pdf_index.items():
             note_info = notes_db.get(pdf_id_lower)
@@ -182,6 +219,9 @@ def main() -> int:
             if not result.success:
                 print(f"❌ ERROR: Failed to sync {pdf_info.filename_with_ext}:\n  {result.error}")
                 stats["errors"] += 1
+            elif result.declined:
+                print(f"⚠️ DECLINED: {note_path.name} -- {result.declined}")
+                stats["declined"] += 1
             elif result.note_updated:
                 print(f"✅ UPDATED: {note_path.name}")
                 stats["updated"] += 1
@@ -193,9 +233,10 @@ def main() -> int:
         # 4. Summary
         print("-" * 30)
         print("Sync complete.")
-        print(f"  Updated: {stats['updated']}")
-        print(f"  Skipped: {stats['skipped']}")
-        print(f"  Errors:  {stats['errors']}")
+        print(f"  Updated:  {stats['updated']}")
+        print(f"  Skipped:  {stats['skipped']}")
+        print(f"  Declined: {stats['declined']}")
+        print(f"  Errors:   {stats['errors']}")
         print("-" * 30)
 
         return 1 if stats["errors"] > 0 else 0

@@ -1,0 +1,26 @@
+---
+pdf_id: (Albini 2013)
+pdf_title: On dealing with destructive emotions
+pdf_size: 1  # deliberately wrong, so the change gate would open; the guard must fire first
+pdf_hash: VQGPEHE
+has_annotations: true
+pdf_mtime: '2025-10-21T21:20:40'
+last_run_at: '2025-10-31T14:31:58'
+pdf_pages: 7
+pdf_highlights: 6
+pdf_textboxes: 0
+---
+
+Damage modelled here: the annotation separator line has been deleted by hand.
+Everything else is intact, including this free text, which must survive untouched.
+
+<span class="pdf-annot-info">(annotations from the PDF below)</span>
+
+## Introduction—Definition
+
+> They are: hatred, craving and delusion. <span class="pdf-annot-date">21.10.25 21:20</span> [1](pdf://VQGPEHE?page=1)
+
+> [!note] <span class="pdf-annot-date">21.10.25 21:20</span>
+> yes
+
+> These three mental factors are produced by each individual's karma immediately upon conception, and are the main producers of the delusional belief in an ego. <span class="pdf-annot-date">21.10.25 21:20</span> [1](pdf://VQGPEHE?page=1)

@@ -25,6 +25,7 @@ from pdf_annot.frontmatter import parse_note
 
 # Import the main function we are testing
 from pdf_annot.sync import main as sync_main
+from pdf_annot.sync import _decline_reason
 from pdf_annot import sync as sync_module
 from pdf_annot.utils import atomic_write_file as real_atomic_write_file
 
@@ -152,7 +153,7 @@ def test_sync_cli_workflow(setup_workflow: dict):
     assert "SKIPPED: (Albini 2013).md" in output
     assert "UPDATED: (Calbini 2015).md" in output
     assert "Sync complete." in output
-    assert "Errors:  0" in output
+    assert "Errors:   0" in output
 
     # 6. Verify files on disk against goldens
     # This proves the sync logic ran correctly
@@ -229,6 +230,84 @@ def test_sync_has_no_direct_note_write():
     assert "write_text(" not in source, msg
 
 
+def test_decline_reason_conditions():
+    """
+    The decline predicate in isolation: two conditions, in order.
+
+    The separator answers "is this a bibnote at all"; the frontmatter answers
+    "is it intact". The third case keeps the separator deliberately, so it can
+    only be caught by the second condition -- that is what proves the two are
+    ordered rather than collapsed into one check.
+    """
+    intact = '---\npdf_id: (Albini 2013)\n---\n\nfree text\n\n<hr class="pdf-annot-sep">\n\nannotations\n'
+    assert _decline_reason(intact) is None
+
+    no_separator = "---\npdf_id: (Albini 2013)\n---\n\nfree text\n"
+    assert _decline_reason(no_separator) == "missing annotation separator"
+
+    broken_frontmatter = '---\npdf_title: "unclosed quote\n---\n\n<hr class="pdf-annot-sep">\n'
+    assert _decline_reason(broken_frontmatter) == "missing or invalid frontmatter"
+
+    # An empty file is not a bibnote; the separator check is the right diagnosis.
+    assert _decline_reason("") == "missing annotation separator"
+
+
+@pytest.mark.parametrize("setup_workflow", ["workflow_declines"], indirect=True)
+def test_sync_declines_note_without_separator(setup_workflow: dict):
+    """
+    A note whose annotation separator was deleted must be left untouched.
+
+    The seed carries a deliberately wrong pdf_size, so the change gate would
+    open and sync would genuinely rewrite this note. The guard has to fire
+    ahead of it -- byte-identity is what proves that it did.
+    """
+    env: Env = setup_workflow["env"]
+    goldens_dir: Path = setup_workflow["goldens_dir"]
+    config_path: Path = setup_workflow["config_path"]
+
+    cli_args = ["pdf-annot-sync", "-c", str(config_path)]
+    stdout_capture = io.StringIO()
+    with contextlib.redirect_stdout(stdout_capture), patch.object(sys, "argv", cli_args):
+        return_code = sync_main()
+
+    assert return_code == 0, "A decline is not an error: the run still exits 0"
+
+    output = stdout_capture.getvalue()
+    assert "DECLINED: (Albini 2013).md -- missing annotation separator" in output
+    assert "Declined: 2" in output
+    assert "Updated:  0" in output
+
+    verify_bytes_identical(env.paths.notes_root / "(Albini 2013).md", goldens_dir / "(Albini 2013).md")
+
+
+@pytest.mark.parametrize("setup_workflow", ["workflow_declines"], indirect=True)
+def test_sync_declines_note_with_invalid_frontmatter(setup_workflow: dict):
+    """
+    A note whose frontmatter does not parse must be left untouched.
+
+    The seed keeps its separator, so it passes the first condition. Its
+    frontmatter carries an unclosed quote, which also means the fixture cannot
+    realign the PDF mtime from it -- so the PDF looks changed and, again, the
+    guard must fire ahead of the change gate.
+    """
+    env: Env = setup_workflow["env"]
+    goldens_dir: Path = setup_workflow["goldens_dir"]
+    config_path: Path = setup_workflow["config_path"]
+
+    cli_args = ["pdf-annot-sync", "-c", str(config_path)]
+    stdout_capture = io.StringIO()
+    with contextlib.redirect_stdout(stdout_capture), patch.object(sys, "argv", cli_args):
+        return_code = sync_main()
+
+    assert return_code == 0, "A decline is not an error: the run still exits 0"
+
+    output = stdout_capture.getvalue()
+    assert "DECLINED: (Balbini 2014).md -- missing or invalid frontmatter" in output
+    assert "Errors:   0" in output
+
+    verify_bytes_identical(env.paths.notes_root / "(Balbini 2014).md", goldens_dir / "(Balbini 2014).md")
+
+
 def self_verify_golden(updated_note_path: Path, golden_path: Path):
     """
     Helper to compare an updated note against its golden file.
@@ -262,3 +341,18 @@ def self_verify_golden(updated_note_path: Path, golden_path: Path):
 
     # Compare body
     assert actual_parsed.body.strip() == golden_parsed.body.strip(), "Annotation block should match golden"
+
+
+def verify_bytes_identical(actual_path: Path, golden_path: Path):
+    """
+    Byte-for-byte comparison, for notes sync declined to touch.
+
+    `self_verify_golden` is the wrong tool here: it compares parsed frontmatter
+    fields and body, and for a note whose frontmatter does not parse, both sides
+    come back empty and it would pass without proving anything. A decline
+    promises the file is untouched, and only the raw bytes can show that.
+    """
+    assert golden_path.exists(), f"Golden file not found: {golden_path}"
+    actual_bytes = actual_path.read_bytes()
+    golden_bytes = golden_path.read_bytes()
+    assert actual_bytes == golden_bytes, f"Declined note must be byte-identical: {actual_path.name}"

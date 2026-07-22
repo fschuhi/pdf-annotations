@@ -27,6 +27,10 @@ class UpdateResult:
     annotation_block_changed: bool
     note_updated: bool
     error: Optional[str] = None
+    # Reason sync refused to touch the note (missing separator or frontmatter).
+    # None means the note was not declined. A decline is not an error: sync did
+    # the right thing by not guessing, so `success` stays True.
+    declined: Optional[str] = None
 
     @property
     def success(self) -> bool:
