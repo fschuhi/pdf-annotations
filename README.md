@@ -55,9 +55,13 @@ highlight annotation, the extractor:
 
 This approach eliminates three classes of extraction artefacts: stray single characters (`g`, `p`), footnote number leakage (`of).4`), and intra-highlight misordering.
 
+Page text is extracted once per page, not once per highlight. `extract_annotations` computes the page's words and its superscript regions when it meets the first highlight on a page, and hands both to every later highlight on that page. The computation is lazy on purpose: most pages in a book carry no highlights at all, and eager per-page extraction would make those pages pay for text nobody reads. Measured 2026-07-22 across the 244-file collection, a full extraction pass went from 363s to 145s.
+
 ### Change Detection: Fast Skip
 
 The sync engine checks `pdf_mtime` and `pdf_size` against the note's frontmatter **before** opening the PDF. Unchanged files are skipped without any PDF parsing, making repeated `make run` calls fast even across 1600+ files.
+
+The timestamp comparison is normalized, not raw. Obsidian's property editor rewrites the whole frontmatter block whenever any property is edited, and drops the quotes around `pdf_mtime`, so YAML parsing then yields a `datetime` where sync wrote a string. `frontmatter.as_timestamp` reduces both sides to a `datetime` before comparing, and a value it cannot interpret counts as changed -- failing toward a re-extract, which is cheap and idempotent, rather than toward a note frozen against updates. Only the read side normalizes: a timestamp Obsidian has unquoted stays unquoted.
 
 > **Note:** For the future roadmap and planned features, see [`GOALS.md`](GOALS.md).
 
@@ -266,6 +270,7 @@ make hash ARGS="(Author Year)"  # Get 7-char hash for PDF ID
 make discover-pdfs              # List all PDFs visible to config
 make showtree                   # Display project structure
 make filesdump                  # Create context dump for LLMs
+make time-extraction            # Time extraction per PDF (read-only)
 ```
 
 ---

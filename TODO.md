@@ -20,7 +20,7 @@
 
 - **Add `pdf_ctime` in frontmatter generation:** a newly created page adds `pdf_ctime` from the beginning, i.e. before opening the PDF with Anima both `pdf_ctime` and `pdf_mtime` are the same.
 - **Add `tags` frontmatter property:** should be `type/bibnote`. This should be configurable in the env.
-- **Just changing tags should not trigger update:** Any change (add, remove, update) of the _tags_ frontmatter attribute triggers a full PDF read and update of the annotations. Why? Should not happen.
+- ~~**Just changing tags should not trigger update:** Any change (add, remove, update) of the _tags_ frontmatter attribute triggers a full PDF read and update of the annotations. Why? Should not happen.~~ Retired by `AUDIT.md` A3 (landed 2026-07-22). Cause: Obsidian's property editor rewrites the frontmatter block on any property edit and unquotes `pdf_mtime`, so the change gate compared a `datetime` against a string and was unequal forever. The gate now normalizes both sides via `frontmatter.as_timestamp`; `make run` over 244 bibnotes reports no updates.
 - **Initialize new bibnotes with workflow properties:** New bibnotes should include `status: to-read`, `note_type: bibnote`, `time_spent: 0` in frontmatter, plus the two buttons (`BUTTON[time-spent-increment]`, `BUTTON[resume-pdf]`) in the free text area. These should be configurable in the env.
 - **Frontmatter Management**: Ensure `has_annotations`, `pdf_pages`, and layout flags are correctly synced.
 - **Frontmatter that parses but is not a mapping:** `--- \n some string \n ---` gives `has_fm=True` with an empty dict, so it passes A2's decline-guard and sync writes into it as though it were fine. Rare enough to defer, but it needs a defined answer -- most likely a third decline condition.
