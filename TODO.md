@@ -31,7 +31,7 @@
 
 ## UX
 
-- **Highlight Color as Metadata**: Add a `highlight_color` field to the PDF metadata to allow for color-coded highlighting in Obsidian. Will affect the `ndjson` files and the callout colors.
+- **Highlight Color as Metadata**: carry the highlight's stroke colour through to the rendered block so callouts can be colour-coded in Obsidian. The colour already survives extraction -- `Annotation.to_dict` emits `colors`, so it is present in the raw NDJSON -- and is then dropped by `make_output_obj` in `streamline_annotations.py`, which assembles its output dict from seven fixed keys. The work is therefore: carry `colors["stroke"]` through the streamliner, map RGB to a callout class in `render_block`, and decide where that mapping lives (code constant vs config -- see `AUDIT.md` D2). Since A6, Highlight is the only rendered type, so there is exactly one colour to carry.
 - **Duplicate ids are not an "unexpected error":** `sync.main`'s broad handler reports `DuplicatePdfIdError` and `DuplicateNoteIdError` as "FATAL ERROR: An unexpected error occurred", which misdescribes a standing, user-fixable condition. A targeted `except` for the two would say so properly. Deliberately left out of `AUDIT.md` A5, because `sync.py` is not a file that item opens and ride-alongs never go standalone.
 
 ## Testing

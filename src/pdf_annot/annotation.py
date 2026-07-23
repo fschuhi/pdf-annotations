@@ -3,13 +3,23 @@ from typing import List, Tuple, Union, Optional
 
 import fitz
 
+# The gate: this list is handed to page.annots(types=...), so a type that is
+# not named here never reaches extraction, the stats, or the renderer.
+#
+# Squiggly, StrikeOut and Underline were dropped (AUDIT.md A6). Anima emits
+# only highlights and comments and the collection contains no real use of
+# them, yet they were counted into pdf_highlights while the streamliner
+# filtered them out of rendering -- an inflated count against a block that
+# never showed them.
+#
+# Text and FreeText stay although nothing renders them either. That asymmetry
+# is deliberate and documented in README.md: pdf_textboxes is the Dataview
+# tracker for PDFs whose legacy textboxes are not yet converted, and the
+# signal for author-supplied textboxes.
 TEXTUAL_ANNOTS = [
     fitz.PDF_ANNOT_TEXT,  # type: ignore
     fitz.PDF_ANNOT_FREE_TEXT,  # type: ignore
     fitz.PDF_ANNOT_HIGHLIGHT,  # type: ignore
-    fitz.PDF_ANNOT_SQUIGGLY,  # type: ignore
-    fitz.PDF_ANNOT_STRIKE_OUT,  # type: ignore
-    fitz.PDF_ANNOT_UNDERLINE,  # type: ignore
 ]
 
 

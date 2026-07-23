@@ -57,6 +57,12 @@ This approach eliminates three classes of extraction artefacts: stray single cha
 
 Page text is extracted once per page, not once per highlight. `extract_annotations` computes the page's words and its superscript regions when it meets the first highlight on a page, and hands both to every later highlight on that page. The computation is lazy on purpose: most pages in a book carry no highlights at all, and eager per-page extraction would make those pages pay for text nobody reads. Measured 2026-07-22 across the 244-file collection, a full extraction pass went from 363s to 145s.
 
+### Annotation Types: Counted vs Rendered
+
+Extraction reads three annotation types (`TEXTUAL_ANNOTS` in `annotation.py`): Text, FreeText and Highlight. Squiggly, StrikeOut and Underline are not read at all -- Anima emits only highlights and comments, and the collection contains no real use of the marker types.
+
+Of the three that are read, only Highlight is ever rendered. Text and FreeText are extracted and counted into `pdf_textboxes`, then filtered out by the streamliner before anything reaches the block. The asymmetry is deliberate: `pdf_textboxes` is the Dataview tracker for PDFs whose legacy textboxes have not yet been converted into highlights and comments, and it is the signal that an author supplied textboxes of their own. The count is retained permanently -- do not remove the types on the grounds that nothing renders them.
+
 ### Change Detection: Fast Skip
 
 The sync engine checks `pdf_mtime` and `pdf_size` against the note's frontmatter **before** opening the PDF. Unchanged files are skipped without any PDF parsing, making repeated `make run` calls fast even across 1600+ files.

@@ -41,8 +41,7 @@ The report carries two independent cost drivers:
 
 Counting note: the highlight count here is true Highlight annotations only,
 which is what drives the cost (extract_highlight_text runs for those alone).
-It can therefore differ slightly from the pdf_highlights value in a bibnote,
-which also counts Squiggly, StrikeOut and Underline.
+It intentionally doesn't include Squiggly, StrikeOut and Underline.
 """
 
 from __future__ import annotations

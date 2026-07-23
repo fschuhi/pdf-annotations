@@ -22,7 +22,7 @@ TODO.md
 AUDIT.md
 
 # Link refactoring for old Entry Page links, originated from "Fix old IDs" in `TODO.md`
-LINK_REFACTOR.md
+# LINK_REFACTOR.md
 
 ### --- Build & Python Configuration ---
 Makefile
@@ -69,6 +69,8 @@ tests/test_streamline_unit.py
 tests/test_sync_cli.py
 tests/test_utils.py
 
+# tests/fixtures/annot_types/(Ealbini 2017) On regarding constructive emotions.pdf
+# tests/fixtures/annot_types/input.pdf
 tests/fixtures/consecutive_links/expected.ndjson
 tests/fixtures/consecutive_links/input.ndjson
 tests/fixtures/filter_and_pages/expected.ndjson
@@ -124,9 +126,9 @@ tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013).md
 ### --- Support tools ---
 
 # tools/concat_files.py
-tools/discover_pdfs.py
+# tools/discover_pdfs.py
 tools/print_hashes.py
-tools/time_extraction.py
+# tools/time_extraction.py
 
 ### --- Windows 11 server (running on Parallels VM) ---
 
@@ -142,7 +144,7 @@ tools/time_extraction.py
 
 # Obsidian/docs/Fleeting-Notes-Processing-Checklist.md
 # Obsidian/docs/Query-Candidates.md
-Obsidian/docs/The-Studio-Manual.md
+# Obsidian/docs/The-Studio-Manual.md
 # Obsidian/docs/TODO-Obsidian.md
 
 ### --- Obsidian tooling for The Studio, the Zettelkasten which uses the PDF annotations ---
