@@ -3,7 +3,7 @@ import time
 from pathlib import Path
 import pytest
 
-from pdf_annot.pdf_registry import build_pdf_index, PdfInfo
+from pdf_annot.pdf_registry import build_pdf_index, is_controlled_pdf_name, PdfInfo
 from pdf_annot.utils import crc32_az7
 
 
@@ -84,3 +84,49 @@ def test_empty_dir(pdf_dir: Path):
 def test_nonexistent_dir(tmp_path: Path):
     idx = build_pdf_index([str(tmp_path / "nonexistent")])
     assert len(idx) == 0
+
+
+def test_is_controlled_pdf_name_accepts_well_formed():
+    for name in [
+        "(Das 2000b) Title.pdf",
+        "(Albini 2013) On dealing with destructive emotions.pdf",
+        "(De Preester+Van De Vijver 2005) Body image and body schema.pdf",
+        "(Müller 2011) Ein Titel.pdf",
+        "(Fink 2012) Title.PDF",  # extension is case-insensitive
+    ]:
+        assert is_controlled_pdf_name(name), name
+
+
+def test_is_controlled_pdf_name_rejects_old_system_ids():
+    # The year gate is the discriminator between old-system and new-system
+    # references (AUDIT.md A5, F9). Without it these pass as a different identity.
+    for name in [
+        "(Smilek2011) Title.pdf",
+        "(Gollwitzer-Schwarz+Sheeran2006b) Title.pdf",
+        "(OnlyAuthors) Title.pdf",
+    ]:
+        assert not is_controlled_pdf_name(name), name
+
+
+def test_is_controlled_pdf_name_rejects_other_shapes():
+    for name in [
+        "(Alpha 2020)Name.pdf",  # no space after the id
+        "(Alpha 2020).pdf",  # no title at all
+        "Smith+Doe - 2015 - Title.pdf",  # legacy dash format
+        "ignoreme.pdf",  # no id
+        "(Alpha 2020 Title.pdf",  # unclosed id
+        "(Alpha 2020) Title.txt",  # not a PDF
+    ]:
+        assert not is_controlled_pdf_name(name), name
+
+
+def test_build_pdf_index_skips_old_system_names(pdf_dir: Path):
+    old = pdf_dir / "(Smilek2011) Attention and awareness.pdf"
+    _write_dummy_pdf(old)
+
+    new = pdf_dir / "(Smilek 2011) Attention and awareness.pdf"
+    _write_dummy_pdf(new)
+
+    idx = build_pdf_index([str(pdf_dir)])
+    assert list(idx) == ["(smilek 2011)"]
+    assert idx["(smilek 2011)"].abs_path == str(new)

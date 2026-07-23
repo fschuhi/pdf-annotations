@@ -158,6 +158,59 @@ def pdf_id_from_filename(full_path: str) -> str:
 
 
 # -----------------------------------------------------------------------------
+# Id validation
+# -----------------------------------------------------------------------------
+
+# "(Authors Year)": one or more author names joined by "+", then a single space,
+# then the year. Author names may contain internal spaces, so the space before
+# the year is the LAST space in the id -- anchoring the year at the end is what
+# makes that unambiguous. Parentheses are excluded inside the id (AUDIT.md P4).
+_PDF_ID_RE = re.compile(r"^\((?P<authors>[^()\s](?:[^()]*[^()\s])?) (?P<year>\d{4}[a-z]?)\)$")
+
+
+def is_valid_pdf_id(pdf_id: str) -> bool:
+    """
+    Is this a well-formed new-system PDF id, i.e. "(Authors Year)"?
+
+    Single definition of id validity, shared by the PDF-side gate
+    (pdf_registry.is_controlled_pdf_name) and the notes-side gate
+    (notes_db.is_controlled_md_name) so that the two cannot drift apart
+    (AUDIT.md A5, findings F9 and F17).
+
+    The year is the discriminator between old-system and new-system ids. An old
+    id such as "(Smilek2011)" parses as an author named "Smilek2011" with no
+    year, which hashes to a different identity and so silently becomes a
+    different work.
+
+    Rules:
+      - one or more author names joined by "+", then one space, then the year
+      - the year is four digits with an optional lowercase disambiguation letter
+      - author names may contain internal spaces: "De Preester", "Van De Vijver"
+        and "Anyen Rinpoche" are single surnames, not two authors
+      - no padding around "+", and no parentheses inside the id
+
+    Examples:
+      - (Fink 2012)                         -> valid
+      - (Das 2000b)                         -> valid
+      - (De Preester+Van De Vijver 2005)    -> valid (spaces inside surnames)
+      - (Gollwitzer-Schwarz+Sheeran 2006b)  -> valid
+      - (Smilek2011)                        -> not valid (no space before the year)
+      - (OnlyAuthors)                       -> not valid (no year)
+      - (Guenther 1984A)                    -> not valid (uppercase letter)
+      - (Fink  2012)                        -> not valid (two spaces)
+      - (Deroche + Sheehy 2022)             -> not valid (padding around "+")
+
+    This validates only; it never repairs. parse_filename stays deliberately
+    permissive so that rejected names can still be described in diagnostics.
+    """
+    m = _PDF_ID_RE.match(pdf_id)
+    if not m:
+        return False
+    # Each "+"-joined segment must be a non-empty name with no padding.
+    return all(name and name == name.strip() for name in m.group("authors").split("+"))
+
+
+# -----------------------------------------------------------------------------
 # File I/O
 # -----------------------------------------------------------------------------
 

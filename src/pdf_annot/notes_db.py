@@ -9,8 +9,33 @@ from typing import Dict, Iterable, Iterator, List, Mapping, Optional, Tuple, Map
 
 from .frontmatter import parse_note, upsert_fields
 from .env import Env
+from .utils import is_valid_pdf_id
 
-CONTROLLED_MD_RE = re.compile(r"^\((?P<id>.+?)\)\.md$", re.IGNORECASE)
+_CONTROLLED_MD_RE = re.compile(r"^\((?P<id>.+?)\)\.md$", re.IGNORECASE)
+
+
+def is_controlled_md_name(filename: str) -> Optional[str]:
+    """
+    Return the PDF id of a bibnote filename, or None if it is not a bibnote.
+
+    Shape belongs to this gate: a bibnote filename is the id and nothing else,
+    so "(Keating 1995) v2.md" is not one. Validity of the id itself belongs to
+    utils.is_valid_pdf_id, which the PDF-side gate
+    (pdf_registry.is_controlled_pdf_name) also uses, so the two cannot drift
+    apart (AUDIT.md A5, findings F9 and F17).
+
+    Examples:
+      - (Keating 1995).md      -> "(Keating 1995)"
+      - (Smilek2011).md        -> None (old-system id: no space before the year)
+      - (Keating 1995) v2.md   -> None (the id is not the whole filename)
+      - Keating 1995.md        -> None (no parentheses)
+    """
+    m = _CONTROLLED_MD_RE.match(filename)
+    if not m:
+        return None
+    pdf_id = f"({m.group('id')})"
+    return pdf_id if is_valid_pdf_id(pdf_id) else None
+
 
 # Annotation block markers
 ANNOT_SEP = '<hr class="pdf-annot-sep">'
@@ -27,10 +52,25 @@ class ProvidesLogging(Protocol):
 
 
 class DuplicateNoteIdError(Exception):
-    def __init__(self, pdf_id: str, paths: List[str]) -> None:
-        super().__init__(f"Duplicate note id '{pdf_id}' for paths: {paths}")
-        self.pdf_id = pdf_id
-        self.paths = paths
+    """
+    Raised when two or more notes share the same id (case-insensitive).
+
+    Carries every colliding id, not just the first one the walk happened to hit,
+    so a single run reports the whole problem instead of one id per run
+    (AUDIT.md F8). pdf_id and paths name the first collision in sorted order and
+    are derived from duplicates, so the two cannot disagree; the sort keeps the
+    choice stable, since walk order is filesystem order.
+    """
+
+    def __init__(self, duplicates: Mapping[str, List[str]]) -> None:
+        self.duplicates: Dict[str, List[str]] = {key: sorted(paths) for key, paths in sorted(duplicates.items())}
+        self.pdf_id = next(iter(self.duplicates))
+        self.paths = self.duplicates[self.pdf_id]
+        report = "\n".join(
+            "  {}\n{}".format(pdf_id, "\n".join(f"    {path}" for path in paths))
+            for pdf_id, paths in self.duplicates.items()
+        )
+        super().__init__(f"Duplicate note ids detected ({len(self.duplicates)}):\n{report}")
 
 
 @dataclass(frozen=True)
@@ -79,10 +119,9 @@ class NotesDB(Mapping[str, NoteInfo]):
             for name in filenames:
                 if not name.lower().endswith(".md"):
                     continue
-                m = CONTROLLED_MD_RE.match(name)
-                if not m:
+                pdf_id_raw = is_controlled_md_name(name)
+                if pdf_id_raw is None:
                     continue
-                pdf_id_raw = f"({m.group('id')})"
                 pdf_id_norm = pdf_id_raw.lower()
                 abs_path = os.path.join(dirpath, name)
                 try:
@@ -109,12 +148,17 @@ class NotesDB(Mapping[str, NoteInfo]):
                 )
                 by_id.setdefault(pdf_id_norm, []).append(note)
 
-        # Detect duplicates
+        # Detect duplicates -- collect every colliding id before failing (AUDIT.md F8)
         index: Dict[str, NoteInfo] = {}
+        duplicates: Dict[str, List[str]] = {}
         for k, notes in by_id.items():
             if len(notes) > 1:
-                raise DuplicateNoteIdError(k, [n.abs_path for n in notes])
+                duplicates[k] = [n.abs_path for n in notes]
+                continue
             index[k] = notes[0]
+
+        if duplicates:
+            raise DuplicateNoteIdError(duplicates)
 
         return cls(vault_root, index)
 

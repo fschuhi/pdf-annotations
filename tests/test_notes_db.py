@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from pdf_annot.notes_db import CONTROLLED_MD_RE, DuplicateNoteIdError, NotesDB
+from pdf_annot.notes_db import DuplicateNoteIdError, NotesDB, is_controlled_md_name
 
 
 def write(p: Path, s: str) -> None:
@@ -16,12 +16,21 @@ def write(p: Path, s: str) -> None:
     p.write_text(s, encoding="utf-8")
 
 
-def test_controlled_name_regex():
-    assert CONTROLLED_MD_RE.match("(Keating 1995).md")
-    assert CONTROLLED_MD_RE.match("(Sciortino+Kayser 2021).md")
-    assert not CONTROLLED_MD_RE.match("(Keating 1995) v2.md")
-    assert not CONTROLLED_MD_RE.match("Keating 1995.md")
-    assert not CONTROLLED_MD_RE.match("(Keating 1995).md.bak")
+def test_controlled_name_gate():
+    assert is_controlled_md_name("(Keating 1995).md") == "(Keating 1995)"
+    assert is_controlled_md_name("(Sciortino+Kayser 2021).md") == "(Sciortino+Kayser 2021)"
+    assert is_controlled_md_name("(Keating 1995) v2.md") is None
+    assert is_controlled_md_name("Keating 1995.md") is None
+    assert is_controlled_md_name("(Keating 1995).md.bak") is None
+
+
+def test_controlled_name_gate_shares_the_id_predicate():
+    # Same rules as the PDF-side gate, because it is the same predicate (AUDIT.md A5).
+    assert is_controlled_md_name("(De Preester+Van De Vijver 2005).md") == "(De Preester+Van De Vijver 2005)"
+    assert is_controlled_md_name("(M\u00fcller 2011).md") == "(M\u00fcller 2011)"
+    assert is_controlled_md_name("(Smilek2011).md") is None
+    assert is_controlled_md_name("(OnlyAuthors).md") is None
+    assert is_controlled_md_name("(Guenther 1984A).md") is None
 
 
 def test_build_notes_db_and_detect_duplicates(tmp_path: Path):

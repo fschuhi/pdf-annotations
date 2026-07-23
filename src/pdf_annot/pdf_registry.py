@@ -3,16 +3,37 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Mapping, Optional
 
-from .utils import crc32_az7, parse_filename
+from .utils import crc32_az7, is_valid_pdf_id, parse_filename
 
 
 class DuplicatePdfIdError(Exception):
-    def __init__(self, pdf_id: str, paths: List[str]):
-        super().__init__(f"Duplicate PDF id detected for {pdf_id!r}: {paths}")
-        self.pdf_id = pdf_id
-        self.paths = paths
+    """
+    Raised when two or more PDFs map to the same normalized id.
+
+    Carries every colliding id, not just the first one the walk happened to hit,
+    so a single run reports the whole problem instead of one id per run
+    (AUDIT.md F8).
+
+    pdf_id and paths name the first collision in sorted order. They exist because
+    resolve.py formats them into DUPLICATE_MSG, and a pdf:// alert is about the
+    one click that failed, so it stays singular by design
+    (TARGET_ARCHITECTURE.md section 3.4). They are derived from duplicates rather
+    than passed alongside it, so the two cannot disagree, and the sort keeps the
+    choice stable: walk order is filesystem order and would otherwise name a
+    different id from run to run.
+    """
+
+    def __init__(self, duplicates: Mapping[str, List[str]]) -> None:
+        self.duplicates: Dict[str, List[str]] = {key: sorted(paths) for key, paths in sorted(duplicates.items())}
+        self.pdf_id = next(iter(self.duplicates))
+        self.paths = self.duplicates[self.pdf_id]
+        report = "\n".join(
+            "  {}\n{}".format(pdf_id, "\n".join(f"    {path}" for path in paths))
+            for pdf_id, paths in self.duplicates.items()
+        )
+        super().__init__(f"Duplicate PDF ids detected ({len(self.duplicates)}):\n{report}")
 
 
 @dataclass(frozen=True)
@@ -41,11 +62,20 @@ def _is_pdf_ext(name: str) -> bool:
 def is_controlled_pdf_name(filename_with_ext: str) -> bool:
     """
     Controlled PDFs:
-      - Must start with '(' then an id, then ')', then a space, then the rest (non-empty preferred)
+      - Must start with a well-formed id "(Authors Year)", then a space, then the rest
       - Must end with .pdf (case-insensitive)
+
+    The id itself is validated by utils.is_valid_pdf_id, which the notes-side gate
+    (notes_db.is_controlled_md_name) also uses, so the two cannot drift apart
+    (AUDIT.md A5, findings F9 and F17).
+
     Examples:
       - (Das 2000b) Title.pdf        -> controlled
-      - (OnlyAuthors) Title.pdf      -> controlled (year may be empty)
+      - (Smilek2011) Title.pdf       -> not controlled: an old-system id. Without the
+                                        year gate it parses as an author named
+                                        "Smilek2011" with no year, hashes differently,
+                                        and so silently becomes a different work.
+      - (OnlyAuthors) Title.pdf      -> not controlled (no year)
       - (Alpha 2020)Name.pdf         -> not controlled (missing space after ')')
       - Smith+Doe - 2015 - Title.pdf -> not controlled (legacy format)
     """
@@ -60,7 +90,9 @@ def is_controlled_pdf_name(filename_with_ext: str) -> bool:
     except ValueError:
         return False
     # Must be followed by a space and at least something after it (paper name can technically be empty, but we expect a space)
-    return len(name) > close_idx + 1 and name[close_idx + 1] == " "
+    if not (len(name) > close_idx + 1 and name[close_idx + 1] == " "):
+        return False
+    return is_valid_pdf_id(name[: close_idx + 1])
 
 
 def _posix_relpath_if_under(path: str, root: Optional[str]) -> Optional[str]:
@@ -130,7 +162,8 @@ def build_pdf_index(roots: List[str], *, dropbox_root: Optional[str] = None) -> 
     Walk given roots and build an index of controlled PDFs.
     - Only bracket-format controlled names are included.
     - Keys are normalized pdf_id for case-insensitive lookups (lowercase).
-    - Raises DuplicatePdfIdError if multiple files map to the same normalized id.
+    - Raises DuplicatePdfIdError if multiple files map to the same normalized id;
+      every colliding id is collected first, so one run reports them all.
     """
     index: Dict[str, PdfInfo] = {}
     collisions: Dict[str, List[str]] = {}
@@ -148,9 +181,6 @@ def build_pdf_index(roots: List[str], *, dropbox_root: Optional[str] = None) -> 
             index[key] = info
 
     if collisions:
-        # Report the first duplicate with all paths
-        for key, paths in collisions.items():
-            if len(paths) > 1:
-                raise DuplicatePdfIdError(key, paths)
+        raise DuplicatePdfIdError(collisions)
 
     return index

@@ -14,7 +14,11 @@
 ## Tooling
 
 - **Batch `pdf_ctime`:** Any opening of a PDF with Anima saves the current page to the PDF, i.e. `pdf_mtime` will change. This in itself needs to be thought-through, but even if we stick to those mechanics, it's nice to have the time when the page was created. Thus: create a tool which adds `pdf_ctime` from `pdf_mtime` to the frontmatter... or is there a _creation_ date saved with the file? That would be the better idea, because _some_ of the PDFs have already been touched by Anima (or PDF-Xchange-PDF, if I worked with them). Note that in Total Commander sometimes the creation date is _after_ the modified date (?). The tool is run once.
-- **Fix old IDs:** Pre-`pdf-annotations` PDF IDs look like `[(Smilek2011)]` or `[(Gollwitzer-Schwarz+Sheeran2006b)]` (authored by Gollwitzer-Schwarz and co-authored by Sheeran, which have another paper in the collection from the same year, thus b). New IDs are `[(Smilek 2011)]` `Gollwitzer-Schwarz+Sheeran 2006b)]`. Thus: create a tool which goes through all Obsidian pages and replace old IDs with new IDs. It doesn't matter if there is actually such a new ID (or if there was such an old ID); the replacement is simply by pattern.
+- **Fix old IDs:** Analysis moved to `LINK_REFACTOR.md`, which supersedes the "create a tool" framing here -- the job turned out to be two PyCharm regexes and a `make run`. Deferred until the `AUDIT.md` agenda is complete, and blocked on putting the vault under version control.
+- **Put the vault under version control:** There is no git repository and no versioned backup for the Obsidian vault. `LINK_REFACTOR.md` treats this as blocking, since three of its four steps are bulk writes across 244 irreplaceable notes, but it earns its keep independently of that job.
+- **Pin `black` in `requirements.txt`:** It is unpinned while `pre-commit` runs it, so a version bump can reformat unrelated files and produce a diff containing more than the change being made -- which collides with `CRITICAL_RULES.md` Rule 2. Noticed 2026-07-23: two black versions disagree about one `textwrap.dedent` block in `tests/test_notes_db.py`.
+- **Rename `(Anyen Rinpoche+Graboski 2012)`:** "Rinpoche" is a title, not a surname, so the id should be `(Anyen+Graboski 2012)`. Not a filesystem rename: the id *is* the identity, so `crc32_az7` yields a new `pdf_hash`, the bibnote must be renamed to match, and every `pdf://` link inside its annotation block points at the old hash until that block is regenerated.
+- **Identify the invisible character in `(Liljenberg 2012) A critical study of the thirteen later translations of the Dzogchen mind series.pdf`:** A normalization scan flagged the filename as non-ASCII although it reads as plain ASCII. Not in the id -- V2 came back empty -- so it is cosmetic, somewhere in the title.
 
 ## Frontmatter
 
@@ -28,6 +32,7 @@
 ## UX
 
 - **Highlight Color as Metadata**: Add a `highlight_color` field to the PDF metadata to allow for color-coded highlighting in Obsidian. Will affect the `ndjson` files and the callout colors.
+- **Duplicate ids are not an "unexpected error":** `sync.main`'s broad handler reports `DuplicatePdfIdError` and `DuplicateNoteIdError` as "FATAL ERROR: An unexpected error occurred", which misdescribes a standing, user-fixable condition. A targeted `except` for the two would say so properly. Deliberately left out of `AUDIT.md` A5, because `sync.py` is not a file that item opens and ride-alongs never go standalone.
 
 ## Testing
 
