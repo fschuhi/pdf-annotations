@@ -21,6 +21,9 @@ TODO.md
 # Production-readiness audit: findings ledger, implementation agenda, open decisions.
 AUDIT.md
 
+# Link refactoring for old Entry Page links, originated from "Fix old IDs" in `TODO.md`
+LINK_REFACTOR.md
+
 ### --- Build & Python Configuration ---
 Makefile
 requirements.txt
