@@ -8,11 +8,11 @@
 
 ## 📍 Current Session Pointer
 
-A7 and A8 landed 2026-07-24. V2 discharged, V1 partially done. D1 decided in favour of (a) DELETE and is now executed. Remaining agenda: A9 and A10, plus A1b, which rides with A9/D2.
+A9 landed 2026-07-24. The audit's dead freight is gone: Dropbox-relative registry state, the unused hash command and legacy dash parser, inactive configuration profiles and field aliases, and the `atomic_writes` knob. Registry and diagnostic discovery now share one case-insensitive PDF walker, including `.PDF` files. A10 is next; it closes the audit's documentation work before its outcomes are harvested into `HISTORY.md`.
 
 **What's next:**
 
-1. **A9 (`AUDIT.md`) -- remove dead freight.** Batch removal across registry, utils and env: `dropbox_root`, `PdfInfo.dropbox_rel_path`, `_posix_relpath_if_under`, `hash_text`, `pdf_id_from_filename`, the dash-format branch in `parse_filename`, the `[envs]` indirection and `CLI.default_env`. PRECONDITION, and A8 demonstrated why it is not optional: grep the **working tree** for importers, never the filesdump -- V1 already found `tools/print_hashes.py` importing `utils.pdf_id_from_filename`, which forces a decision about that function rather than a straight deletion. A1b (remove the `io.atomic_writes` knob, blocked by two `test_env.py` assertions) and ride-along F6 (the two PDF walkers) attach here. Then A10, doc edits only. `HISTORY.md` is written after A10 and takes D1's retirement entry from the A8 record, including its SHA.
+1. **A10 (`AUDIT.md`) -- doc edits only.** Update `TARGET_ARCHITECTURE.md` with resolver configuration lookup and the `PDF_ANNOT_ENV_PATH` precedence; add the live sync call path and source-of-truth philosophy to `README.md`. Then harvest the audit's durable outcomes into `HISTORY.md`, including D1's plan/apply retirement entry and its resurrection SHA.
 2. **Batch `pdf_ctime`:** (`TODO.md`) Create a tool that adds the creation time of a PDF as frontmatter `pdf_ctime`. No longer blocked -- A3 has landed, and `frontmatter.as_timestamp` is the normalizer to reuse wherever `pdf_ctime` and `pdf_mtime` get compared.
 3. **Add `pdf_ctime` in frontmatter generation:** (`TODO.md`) A newly created page adds `pdf_ctime` from the beginning, i.e. before opening the PDF with Anima both `pdf_ctime` and `pdf_mtime` are the same.
 

@@ -98,7 +98,7 @@ notes_root = "/Users/me/Obsidian/Zettelkasten/References"
 pdf_dirs = ["/Users/me/Documents/Papers"]
 
 [io]
-atomic_writes = true
+create_missing_dirs = true
 ```
 
 ### 3. Run Sync
@@ -145,7 +145,7 @@ Configuration management via TOML files.
 from pdf_annot.env import load_env
 
 env = load_env("pdf_annot.toml")
-# Access: env.paths.notes_root, env.annotations.default_info_text
+# Access: env.paths.notes_root, env.paths.pdf_dirs
 ```
 
 #### `src/pdf_annot/sync.py`
@@ -273,7 +273,6 @@ make test           # Run tests (quiet)
 make test-verbose   # Run tests with output
 
 # Utilities
-make hash ARGS="(Author Year)"  # Get 7-char hash for PDF ID
 make discover-pdfs              # List all PDFs visible to config
 make showtree                   # Display project structure
 make filesdump                  # Create context dump for LLMs
@@ -298,9 +297,6 @@ The test suite includes extraction quality regression tests using real academic 
 ### Utilities
 
 ```bash
-# Get the 7-char hash for a PDF ID
-make hash ARGS="(Albini 2013)"
-
 # Discover all PDFs visible to the config
 make discover-pdfs
 ```
