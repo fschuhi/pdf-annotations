@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+DEFAULT_INFO_TEXT = "(annotations from the PDF below)"
+
 
 @dataclass
 class UpdateResult:
@@ -53,13 +55,13 @@ def extract_info_text(note_text: str) -> str:
         note_text: Full note content
 
     Returns:
-        The info text if found, otherwise the default text
+        The info text if found, otherwise the default text.
     """
     pattern = r'<span class="pdf-annot-info">([^<]+)</span>'
     match = re.search(pattern, note_text)
     if match:
         return match.group(1)
-    return "(annotations from the PDF below)"
+    return DEFAULT_INFO_TEXT
 
 
 def replace_annotation_block(note_text: str, new_block: str) -> str:

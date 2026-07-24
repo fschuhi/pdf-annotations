@@ -11,9 +11,6 @@ except Exception as e:  # pragma: no cover
 
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
-# --- NEW: Define the default here ---
-DEFAULT_INFO_TEXT = "(annotations from the PDF below)"
-
 
 def _expand_path(value: Any) -> Optional[Path]:
     if value is None or value == "":
@@ -71,50 +68,12 @@ class Paths(BaseModel):
         return out
 
 
-class Frontmatter(BaseModel):
-    """
-    Front-matter configuration defaults.
-    """
-
-    title_field: str = Field(default="pdf_title", description="YAML key for PDF title.")
-    size_field: str = Field(default="pdf_size", description="YAML key for PDF file size in bytes.")
-    has_annots_field: str = Field(
-        default="has_annotations", description="YAML key for boolean flag: any annotations present."
-    )
-    last_run_field: str = Field(
-        default="last_run_at", description="YAML key for ISO 8601 timestamp of last workflow run."
-    )
-
-
 class IO(BaseModel):
     """
     I/O behavior flags.
     """
 
-    atomic_writes: bool = Field(default=True, description="Write files atomically where possible.")
     create_missing_dirs: bool = Field(default=True, description="Create configured directories if they do not exist.")
-
-
-class CLI(BaseModel):
-    """
-    CLI-related defaults.
-    """
-
-    default_env: Optional[str] = Field(
-        default=None,
-        description="Optional profile name; useful if you add multiple env profiles later.",
-    )
-
-
-# --- NEW: Annotation settings model ---
-class Annotations(BaseModel):
-    """
-    Settings related to annotation processing and rendering.
-    """
-
-    default_info_text: str = Field(
-        default=DEFAULT_INFO_TEXT, description="Default text for the info span in new notes."
-    )
 
 
 class Env(BaseModel):
@@ -123,18 +82,11 @@ class Env(BaseModel):
 
     Attributes:
         paths: Filesystem locations (notes_root, pdf_dirs, backup_dir, temp_dir).
-        frontmatter: Defaults for YAML front matter field names.
-        io: Behavior flags for file I/O.
-        cli: CLI defaults (optional).
-        annotations: Annotation rendering settings.
+        io: Directory-creation behavior.
     """
 
     paths: Paths
-    frontmatter: Frontmatter = Field(default_factory=Frontmatter)
     io: IO = Field(default_factory=IO)
-    cli: CLI = Field(default_factory=CLI)
-    # --- NEW: Add annotations to Env ---
-    annotations: Annotations = Field(default_factory=Annotations)
 
     model_config = {"frozen": True}  # make it effectively immutable after creation
 
@@ -171,12 +123,11 @@ class Env(BaseModel):
 
 def load_env(
     source: Optional[Path | str | Mapping[str, Any]] = None,
-    profile: Optional[str] = None,
     env_var: str = "PDF_ANNOT_ENV_PATH",
     default_filenames: tuple[str, ...] = ("pdf_annot.toml", "pdf-annotations.toml"),
 ) -> Env:
     """
-    Load an Env from a TOML file, a mapping, or defaults.
+    Load an Env from a TOML file or a mapping.
 
     Resolution order:
       1) Mapping passed directly.
@@ -186,7 +137,7 @@ def load_env(
     """
     if isinstance(source, Mapping):
         data = _mapping_to_data(source)
-        return _build_env_from_data(data, profile=profile)
+        return _build_env_from_data(data)
 
     path = None
 
@@ -213,26 +164,17 @@ def load_env(
     with path.open("rb") as f:
         toml_data = tomllib.load(f)
 
-    return _build_env_from_data(toml_data, profile=profile)
+    return _build_env_from_data(toml_data)
 
 
 def _mapping_to_data(mapping: Mapping[str, Any]) -> dict[str, Any]:
     return dict(mapping)
 
 
-def _build_env_from_data(data: Mapping[str, Any], profile: Optional[str]) -> Env:
-    if profile:
-        envs = data.get("envs")
-        if not isinstance(envs, Mapping) or profile not in envs:
-            raise KeyError(f"Profile '{profile}' not found under [envs] in configuration.")
-        data = envs[profile]
-
+def _build_env_from_data(data: Mapping[str, Any]) -> Env:
     grouped = {
         "paths": {},
-        "frontmatter": {},
         "io": {},
-        "cli": {},
-        "annotations": {},  # --- NEW ---
     }
 
     # Copy grouped keys if present
@@ -246,14 +188,7 @@ def _build_env_from_data(data: Mapping[str, Any], profile: Optional[str]) -> Env
         "pdf_dirs": ("paths", "pdf_dirs"),
         "backup_dir": ("paths", "backup_dir"),
         "temp_dir": ("paths", "temp_dir"),
-        "title_field": ("frontmatter", "title_field"),
-        "size_field": ("frontmatter", "size_field"),
-        "has_annots_field": ("frontmatter", "has_annots_field"),
-        "last_run_field": ("frontmatter", "last_run_field"),
-        "atomic_writes": ("io", "atomic_writes"),
         "create_missing_dirs": ("io", "create_missing_dirs"),
-        "default_env": ("cli", "default_env"),
-        "default_info_text": ("annotations", "default_info_text"),  # --- NEW ---
     }
 
     for k, v in data.items():
@@ -264,10 +199,7 @@ def _build_env_from_data(data: Mapping[str, Any], profile: Optional[str]) -> Env
     try:
         return Env(
             paths=Paths(**grouped["paths"]),
-            frontmatter=Frontmatter(**grouped["frontmatter"]),
             io=IO(**grouped["io"]),
-            cli=CLI(**grouped["cli"]),
-            annotations=Annotations(**grouped["annotations"]),  # --- NEW ---
         )
     # --- FIX: Renamed 'e' to 've' to avoid shadowing ---
     except ValidationError as ve:

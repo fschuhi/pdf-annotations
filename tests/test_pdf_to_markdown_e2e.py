@@ -10,6 +10,7 @@ from pdf_annot.extract import main as extract_main
 from pdf_annot.streamline_annotations import main as streamline_main
 from pdf_annot.ndjson_to_md_block import render_block
 from pdf_annot.env import load_env, Env, Paths, IO
+from pdf_annot.notes import DEFAULT_INFO_TEXT
 
 # Define fixture paths
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -123,9 +124,7 @@ def test_complete_extraction_pipeline(setup_e2e_pipeline: dict):
     with open(actual_streamlined_ndjson_path, "r", encoding="utf-8") as f:
         streamlined_objs = [json.loads(line) for line in f if line.strip()]
 
-    # Get default text from the env
-    default_info_text = env.annotations.default_info_text
-    actual_markdown = render_block(streamlined_objs, pdf_id_hash="VQGPEHE", info_text=default_info_text)
+    actual_markdown = render_block(streamlined_objs, pdf_id_hash="VQGPEHE", info_text=DEFAULT_INFO_TEXT)
 
     # 6. --- Load Expected Results ---
     expected_raw_data = ndjson_to_list(expected_raw_ndjson_path.read_text("utf-8"))

@@ -14,7 +14,7 @@ from pdf_annot.frontmatter import upsert_fields, parse_note, as_timestamp
 from pdf_annot.ndjson_to_md_block import render_block
 from pdf_annot.extract import extract_annotations_to_list
 from pdf_annot.streamline_annotations import streamline_annotations_list
-from pdf_annot.notes import extract_info_text, replace_annotation_block, UpdateResult
+from pdf_annot.notes import DEFAULT_INFO_TEXT, extract_info_text, replace_annotation_block, UpdateResult
 from pdf_annot.utils import atomic_write_file
 
 
@@ -110,7 +110,7 @@ def sync_pdf_to_note(
         except FileNotFoundError:
             note_exists = False
             note_text = ""  # Start with an empty note
-            existing_info_text = env.annotations.default_info_text
+            existing_info_text = DEFAULT_INFO_TEXT
 
         # 1a. Decline-guards: a missing note is created from scratch, but an
         # existing one must be diagnosable before we write into it.

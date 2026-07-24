@@ -22,14 +22,12 @@ def test_load_from_mapping_creates_notes_root(tmp_path: Path):
     env = load_env(data)
     assert isinstance(env, Env)
     assert env.paths.notes_root.exists()
-    assert env.io.atomic_writes is True  # default
 
 
 def test_load_from_file_flat_and_grouped(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     toml = textwrap.dedent(
         f"""
         notes_root = "{str(tmp_path / "vault")}"
-        atomic_writes = true
         create_missing_dirs = true
         """
     )
@@ -38,7 +36,6 @@ def test_load_from_file_flat_and_grouped(tmp_path: Path, monkeypatch: pytest.Mon
 
     env = load_env(cfg)
     assert env.paths.notes_root.exists()
-    assert env.io.atomic_writes is True
 
     # Now test grouped style
     grouped = textwrap.dedent(
