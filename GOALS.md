@@ -8,11 +8,11 @@
 
 ## 📍 Current Session Pointer
 
-**Where we are:** Implementing the `AUDIT.md` act ledger. A1a, A2, A3 and A4 landed 2026-07-22; A5 with ride-along F8 landed 2026-07-23, and A6 the same day; A7 landed 2026-07-24. V2 discharged, V1 partially done. D1 decided in favour of (a) DELETE. Remaining agenda: A8-A10 plus A1b, which rides with A9/D2. Two open decisions block nothing: D5 (per-call extraction cost) and D6 (Unicode normalization of ids).
+A7 and A8 landed 2026-07-24. V2 discharged, V1 partially done. D1 decided in favour of (a) DELETE and is now executed. Remaining agenda: A9 and A10, plus A1b, which rides with A9/D2.
 
 **What's next:**
 
-1. **A8 (`AUDIT.md`) -- resolve the plan/apply fork; first half landed 2026-07-24.** The `--dry-run` half is done (see `TODO.md`), which retires F20. What remains is the deletion D1 decided: remove the `notes_db.py` plan/apply layer (~300 lines) plus its two tests and the `PdfMock` helper in `test_notes_db.py`, then record the retirement in `HISTORY.md` with the commit reference. The `notes_db.py` copy of `ANNOT_SEP` dies with it, taking the `TODO.md` "three places" item down to two. Then A9, where V1's `print_hashes.py` finding forces a decision about `pdf_id_from_filename`, and A10.
+1. **A9 (`AUDIT.md`) -- remove dead freight.** Batch removal across registry, utils and env: `dropbox_root`, `PdfInfo.dropbox_rel_path`, `_posix_relpath_if_under`, `hash_text`, `pdf_id_from_filename`, the dash-format branch in `parse_filename`, the `[envs]` indirection and `CLI.default_env`. PRECONDITION, and A8 demonstrated why it is not optional: grep the **working tree** for importers, never the filesdump -- V1 already found `tools/print_hashes.py` importing `utils.pdf_id_from_filename`, which forces a decision about that function rather than a straight deletion. A1b (remove the `io.atomic_writes` knob, blocked by two `test_env.py` assertions) and ride-along F6 (the two PDF walkers) attach here. Then A10, doc edits only. `HISTORY.md` is written after A10 and takes D1's retirement entry from the A8 record, including its SHA.
 2. **Batch `pdf_ctime`:** (`TODO.md`) Create a tool that adds the creation time of a PDF as frontmatter `pdf_ctime`. No longer blocked -- A3 has landed, and `frontmatter.as_timestamp` is the normalizer to reuse wherever `pdf_ctime` and `pdf_mtime` get compared.
 3. **Add `pdf_ctime` in frontmatter generation:** (`TODO.md`) A newly created page adds `pdf_ctime` from the beginning, i.e. before opening the PDF with Anima both `pdf_ctime` and `pdf_mtime` are the same.
 
