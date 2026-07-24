@@ -11,6 +11,8 @@ structured, frontmatter-rich Markdown notes.
 
 This is not just a file converter; it is the "drumbeat" of a Zettelkasten workflow. The goal is to manage a library of 1600+ academic papers and books, transforming static PDF highlights into a living network of ideas.
 
+The PDF is the single source of truth for highlights and comments. The bibnote is a derived service: it supports cross-book search, Dataview process tracking, and raw material for citations and writing. Extraction is necessarily heuristic and will never be perfect by design; when the PDF and its derived note disagree, the PDF is authoritative.
+
 **Core Philosophy:**
 
 - **Idempotency**: Only update notes when the PDF actually changes.
@@ -22,7 +24,7 @@ This is not just a file converter; it is the "drumbeat" of a Zettelkasten workfl
 
 ## Architecture
 
-The system follows a strict "Extract → Streamline → Render" pipeline to ensure clean data.
+The system follows a strict "Extract -> Streamline -> Render" pipeline to ensure clean data.
 
 ```mermaid
 graph LR
@@ -132,6 +134,8 @@ The main entry point is `src/pdf_annot/sync.py`. When run, it automatically:
 4. **Detects changes** by comparing PDF mtime/size with note frontmatter (fast — no PDF parsing).
 5. **Calls `sync_pdf_to_note`** only for new or changed PDFs.
 
+The live production path inside `sync_pdf_to_note` is deliberately direct: `build_pdf_index` supplies `PdfInfo`; `NotesDB` is a read-only note index; then sync calls `extract_annotations_to_list`, `streamline_annotations_list`, `render_block`, `extract_info_text`, and `replace_annotation_block` before making its one protected write through `atomic_write_file`. This call path is the actual sync contract. `NotesDB` does not plan or apply note updates, and no dormant alternate update path exists.
+
 This function handles the extraction, streamlining, rendering, and atomic updating. This workflow is tested end-to-end
 in `tests/test_core_workflow.py`.
 
@@ -198,7 +202,9 @@ Indexing systems for discovering controlled PDFs (bracket format) and existing M
 
 #### `src/pdf_annot/resolve.py`
 
-Resolver CLI: maps a `crc32_az7` hash (as it appears in a `pdf://<HASH>` URL) to a fully-qualified PDF path. This is the public interface consumed by the macOS PDF viewer (Anima) as a subprocess -- the contract is the CLI surface (stdout / stderr / exit code), frozen in `TARGET_ARCHITECTURE.md`. It reuses `build_pdf_index` and imports nothing heavy (no PyMuPDF), so per-click latency stays low. Must be run with the working directory set to the project root, so `load_env` finds `pdf_annot.toml`.
+Resolver CLI: maps a `crc32_az7` hash (as it appears in a `pdf://<HASH>` URL) to a fully-qualified PDF path. This is the public interface consumed by the macOS PDF viewer (Anima) as a subprocess -- the contract is the CLI surface (stdout / stderr / exit code), frozen in `TARGET_ARCHITECTURE.md`. It reuses `build_pdf_index` and imports nothing heavy (no PyMuPDF), so per-click latency stays low.
+
+The resolver calls `load_env()` without an explicit source. Configuration resolution is therefore: an explicit source when one is passed by a caller, then `PDF_ANNOT_ENV_PATH` when that environment variable is set, then `pdf_annot.toml` or `pdf-annotations.toml` in the current working directory. The Anima bridge must run the resolver with the project root as its working directory so the normal project `pdf_annot.toml` is found. `PDF_ANNOT_ENV_PATH` has higher precedence than that CWD lookup; if it is inherited by Anima's subprocess environment, it silently selects that file instead.
 
 ```bash
 # Prints the absolute path on success (exit 0); a one-line reason on stderr otherwise (exit 1)
@@ -213,7 +219,7 @@ pdf-annot-resolve VQGPEHE
 
 This project generates hash-based `pdf://` links (e.g., `pdf://VQGPEHE?page=1`). Clicking one opens the referenced PDF at the requested page.
 
-* **macOS (current):** the link is handled natively by the PDF viewer (Anima) together with `pdf_annot.resolve`, which turns the hash into a path. The resolver is stateless -- it rebuilds its index from the filesystem on every click, so there is no cache to refresh. See `TARGET_ARCHITECTURE.md` for the full contract.
+* **macOS (current):** the link is handled natively by the PDF viewer (Anima) together with `pdf_annot.resolve`, which turns the hash into a path. The resolver is stateless -- it rebuilds its index from the filesystem on every click, so there is no cache to refresh. See `TARGET_ARCHITECTURE.md` for the historical contract and acceptance record.
 * **Windows (legacy):** a helper application in `windows_server/` intercepts `pdf://` URLs (via Parallels) and opens the PDF in PDF-XChange. See `windows_server/README.md` for setup. This path is retained for the Windows machine only.
 
 ### PDF ID and Hash
