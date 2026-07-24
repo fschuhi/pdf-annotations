@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import sys
-import io
 import json
 import argparse
 import re
@@ -110,8 +109,18 @@ def process_objects(objs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             pending = None
 
     for obj in objs:
+        # annotType arrives as a list from NDJSON (JSON has no tuple type) and as a
+        # tuple from Annotation.to_dict, which passes PyMuPDF's annot.type through
+        # unchanged. Both are valid input: accepting only list would silently drop
+        # every annotation on the production path, which is what the deleted NDJSON
+        # round-trip in streamline_annotations_list used to paper over.
         annot_type = obj.get("annotType")
-        keep = isinstance(annot_type, list) and annot_type and isinstance(annot_type[0], int) and annot_type[0] == 8
+        keep = (
+            isinstance(annot_type, (list, tuple))
+            and annot_type
+            and isinstance(annot_type[0], int)
+            and annot_type[0] == 8
+        )
         if not keep:
             prev_was_link = False
             continue
@@ -197,31 +206,21 @@ def streamline_annotations_list(raw_annotations: List[Dict[str, Any]]) -> List[D
     Returns:
         List of streamlined annotation dictionaries
     """
-    # Convert to NDJSON format
-    input_ndjson = "\n".join(json.dumps(ann, ensure_ascii=False) for ann in raw_annotations)
-
-    # Process through streamline pipeline
-    src = io.StringIO(input_ndjson)
-    dst = io.StringIO()
-    process_stream(src, dst)
-
-    # Parse back to list
-    streamlined = [json.loads(line) for line in dst.getvalue().splitlines() if line.strip()]
-    return streamlined
+    return process_objects(raw_annotations)
 
 
 # ===============================================================
 #  Stream processing (for CLI)
 # ===============================================================
 def process_stream(instream: TextIO, outstream: TextIO) -> int:
-    pending: Optional[Dict[str, Any]] = None
-    prev_was_link: bool = False
-    line_no = 0
+    """
+    Thin NDJSON wrapper around `process_objects`: parse -> call -> dump.
 
-    def flush_pending(p: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-        if p is not None:
-            outstream.write(compact_json(p) + "\n")
-        return None
+    The streamline logic itself lives in `process_objects` and only there;
+    this function owns the NDJSON envelope and nothing else.
+    """
+    objs: List[Dict[str, Any]] = []
+    line_no = 0
 
     for raw_line in instream:
         line_no += 1
@@ -230,78 +229,14 @@ def process_stream(instream: TextIO, outstream: TextIO) -> int:
             continue
 
         try:
-            obj = json.loads(raw_line)
+            objs.append(json.loads(raw_line))
         except json.JSONDecodeError as e:
             sys.stderr.write(f"Error: malformed JSON on line {line_no}: {e}\n")
             return 1
 
-        annot_type = obj.get("annotType")
-        keep = isinstance(annot_type, list) and annot_type and isinstance(annot_type[0], int) and annot_type[0] == 8
-        if not keep:
-            prev_was_link = False
-            continue
+    for out_obj in process_objects(objs):
+        outstream.write(compact_json(out_obj) + "\n")
 
-        info = obj.get("info") or {}
-
-        extracted_text_norm = normalize_text(info.get("extractedText"))
-        content_norm = normalize_text(info.get("content"))
-        title = normalize_text(info.get("title"))
-        creation_date = normalize_text(info.get("creationDate"))
-        mod_date = normalize_text(info.get("modDate"))
-
-        page_num = obj.get("pageNum")
-        if not isinstance(page_num, int):
-            try:
-                page_num = int(page_num)
-            except Exception:
-                page_num = 0
-
-        if is_link(content_norm):
-            if prev_was_link:
-                continue
-
-            if pending is not None:
-                if not extracted_text_norm:
-                    prev_was_link = True
-                    continue
-                pending["highlightText"] = merge_highlight_with_link(pending["highlightText"], extracted_text_norm)
-                prev_was_link = True
-                continue
-
-            pending = make_output_obj(
-                highlight_text=extracted_text_norm,
-                comment_text="",
-                header="",
-                page_num=page_num,
-                author=title,
-                creation_date=creation_date,
-                mod_date=mod_date,
-            )
-            prev_was_link = True
-            continue
-
-        # Non-link: flush previous pending first
-        pending = flush_pending(pending)
-
-        header = extract_heading_label(content_norm)
-        if header is not None:
-            comment_text = ""
-        else:
-            header = ""
-            comment_text = content_norm
-
-        pending = make_output_obj(
-            highlight_text=extracted_text_norm,
-            comment_text=comment_text,
-            header=header,
-            page_num=page_num,
-            author=title,
-            creation_date=creation_date,
-            mod_date=mod_date,
-        )
-        prev_was_link = False
-
-    pending = flush_pending(pending)
     return 0
 
 

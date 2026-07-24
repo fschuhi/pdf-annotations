@@ -122,6 +122,22 @@ class TestLinkLogicWithObjects:
         assert len(out) == 1
         assert out[0]["highlightText"] == "B"
 
+    def test_gate_accepts_tuple_annot_type(self):
+        """
+        The gate must accept a tuple, not just a list.
+
+        NDJSON always yields a list, but the production path does not go through
+        JSON: `Annotation.to_dict` passes PyMuPDF's `annot.type` through unchanged,
+        which is a tuple. A list-only gate drops every annotation silently and the
+        rendered block comes out empty -- the failure the deleted NDJSON round-trip
+        in `streamline_annotations_list` used to mask (AUDIT.md A7).
+        """
+        obj = make_input(content="note", extracted="Hello")
+        obj["annotType"] = (8, "Highlight")
+        out = run_objs([obj])
+        assert len(out) == 1
+        assert out[0]["highlightText"] == "Hello"
+
     def test_merge_across_pages(self):
         objs = [
             make_input(page_num=0, content="note", extracted="Part 1 of"),
