@@ -8,7 +8,7 @@ CRITICAL_RULES.md
 
 LLM_INSTRUCTIONS.md
 manifest.lst
-tmp/project-tree.txt
+tmp/project_tree.txt
 
 README.md
 GOALS.md
@@ -19,10 +19,10 @@ TODO.md
 # docs/TARGET_ARCHITECTURE.md
 
 # Historical production-readiness audit: findings ledger, implementation agenda, open decisions.
-# docs/AUDIT.md
+docs/AUDIT.md
 
 # Link refactoring for old Entry Page links, originated from "Fix old IDs" in `TODO.md`
-LINK_REFACTOR.md
+# LINK_REFACTOR.md
 
 ### --- Build & Python Configuration ---
 Makefile
@@ -58,6 +58,7 @@ src/pdf_annot/utils.py
 tests/test_core_workflow.py
 tests/test_env.py
 tests/test_extract.py
+tests/test_fasching_extraction.py
 tests/test_frontmatter.py
 tests/test_notes_db.py
 tests/test_pdf_registry.py
@@ -72,12 +73,14 @@ tests/test_utils.py
 # tests/fixtures/annot_types/input.pdf
 tests/fixtures/consecutive_links/expected.ndjson
 tests/fixtures/consecutive_links/input.ndjson
+tests/fixtures/fasching_extraction/expected_extracted_texts.json
+# tests/fixtures/fasching_extraction/input.pdf
 tests/fixtures/filter_and_pages/expected.ndjson
 tests/fixtures/filter_and_pages/input.ndjson
 tests/fixtures/headers/expected.ndjson
-tests/fixtures/headers/input.ndjson
 # tests/fixtures/highlight_scrambled_bug/(Dalbini 2016) On disregarding constructive emotions.pdf
 # tests/fixtures/highlight_scrambled_bug/input.pdf
+tests/fixtures/headers/input.ndjson
 tests/fixtures/link_merge/expected.ndjson
 tests/fixtures/link_merge/input.ndjson
 tests/fixtures/malformed/input.ndjson

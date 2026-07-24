@@ -1,6 +1,6 @@
 # AUDIT.md -- Production-Readiness Audit of `src/pdf_annot/`
 
-Status: audit complete (2026-07-21). Findings dispositioned, implementation agenda ready. Landed so far: A1a, A2, A3, A4 (2026-07-22); A5 with ride-along F8, and A6 (2026-07-23); A7, A8, and A9 (2026-07-24).
+Status: frozen record. Findings analysis completed 2026-07-21; the implementation agenda closed 2026-07-24 with A10. Landed: A1a, A2, A3, A4 (2026-07-22); A5 with ride-along F8, and A6 (2026-07-23); A7, A8, A9, and A10 (2026-07-24). Durable outcomes are harvested into `HISTORY.md`; this document is out of the standard filesdump and is not maintained further.
 
 This document is self-contained in the spirit of `TARGET_ARCHITECTURE.md`: implementation sessions should not require conversational context beyond this file plus the project filesdump. `CRITICAL_RULES.md` applies to all work derived from this document -- in particular Rule 3 (Discuss -> Approve -> Implement), Rule 4 (step-by-step), and Rule 5 (tests are the spec).
 
