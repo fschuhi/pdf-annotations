@@ -9,7 +9,7 @@ from typing import Optional
 
 from pdf_annot.env import load_env, Env
 from pdf_annot.pdf_registry import build_pdf_index, PdfInfo
-from pdf_annot.notes_db import NotesDB
+from pdf_annot.notes_db import build_notes_index
 from pdf_annot.frontmatter import upsert_fields, parse_note, as_timestamp
 from pdf_annot.ndjson_to_md_block import render_block
 from pdf_annot.extract import extract_annotations_to_list
@@ -206,7 +206,7 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        # 1. Setup: Load Env, Build PDF Registry and NotesDB
+        # 1. Setup: Load Env, build the PDF and note indexes
         print(f"Loading configuration from: {args.config or 'default'}")
         env = load_env(source=args.config)
 
@@ -214,7 +214,7 @@ def main() -> int:
         pdf_index = build_pdf_index([str(p) for p in env.paths.pdf_dirs])
 
         print(f"Scanning for notes in: {env.paths.notes_root}")
-        notes_db = NotesDB.from_env(env)
+        notes_db = build_notes_index(str(env.paths.notes_root))
 
         print(f"Found {len(pdf_index)} PDFs and {len(notes_db)} notes. Starting sync...")
         if args.dry_run:

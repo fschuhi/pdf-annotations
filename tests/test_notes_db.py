@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from pdf_annot.notes_db import DuplicateNoteIdError, NotesDB, is_controlled_md_name
+from pdf_annot.notes_db import DuplicateNoteIdError, build_notes_index, is_controlled_md_name
 
 
 def write(p: Path, s: str) -> None:
@@ -32,7 +32,7 @@ def test_controlled_name_gate_shares_the_id_predicate():
     assert is_controlled_md_name("(Guenther 1984A).md") is None
 
 
-def test_build_notes_db_and_detect_duplicates(tmp_path: Path):
+def test_build_notes_index_and_detect_duplicates(tmp_path: Path):
     vault = tmp_path / "vault"
     vault.mkdir()
     write(vault / "(Das 2000b).md", "Body\n")
@@ -48,7 +48,7 @@ def test_build_notes_db_and_detect_duplicates(tmp_path: Path):
             """
         ),
     )
-    db = NotesDB.build(str(vault))
+    db = build_notes_index(str(vault))
     assert len(db) == 2
     assert "(das 2000b)" in db
     assert db["(keating 1995)"].pdf_title == "Open Mind, Open Heart"
@@ -58,4 +58,4 @@ def test_build_notes_db_and_detect_duplicates(tmp_path: Path):
     (vault / "Sub").mkdir()
     write(vault / "Sub" / "(das 2000b).md", "Another\n")
     with pytest.raises(DuplicateNoteIdError):
-        NotesDB.build(str(vault))
+        build_notes_index(str(vault))

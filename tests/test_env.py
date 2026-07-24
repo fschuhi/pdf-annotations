@@ -6,7 +6,6 @@ import textwrap
 import pytest
 
 from pdf_annot.env import Env, load_env
-from pdf_annot.notes_db import NotesDB
 
 
 # =============================================================================
@@ -191,27 +190,3 @@ def test_load_env_from_tmp_file(tmp_path: Path):
     assert env.paths.notes_root.exists()
     assert env.paths.backup_dir.exists()  # baks is created by load_env
     assert env.paths.pdf_dirs and all(p.exists() for p in env.paths.pdf_dirs)
-
-
-def test_notesdb_from_env_integration(tmp_path: Path):
-    """Test that NotesDB.from_env() works with a loaded Env."""
-    vault = tmp_path / "vault"
-    # We don't need to create vault; load_env will do it.
-
-    cfg = tmp_path / "test_config.toml"
-    cfg.write_text(
-        f"""
-    [paths]
-    notes_root = "{vault}"
-    [io]
-    create_missing_dirs = true
-    """
-    )
-
-    env = load_env(cfg)
-    # env.paths.notes_root should exist now
-    assert env.paths.notes_root.exists()
-
-    db = NotesDB.from_env(env)
-    assert isinstance(db, NotesDB)
-    assert db.root == str(vault.resolve())

@@ -4,10 +4,9 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass
-from typing import Dict, Iterable, Iterator, List, Mapping, Optional, Tuple
+from typing import Dict, List, Mapping, Optional
 
 from .frontmatter import parse_note
-from .env import Env
 from .utils import is_valid_pdf_id
 
 _CONTROLLED_MD_RE = re.compile(r"^\((?P<id>.+?)\)\.md$", re.IGNORECASE)
@@ -71,100 +70,75 @@ class NoteInfo:
     body: str
 
 
-class NotesDB(Mapping[str, NoteInfo]):
+def build_notes_index(notes_root: str) -> Dict[str, NoteInfo]:
     """
-    Lightweight index of Markdown notes named exactly "(ID).md".
+    Walk notes_root and build an index of bibnotes, mirroring pdf_registry.build_pdf_index.
 
-    * ID matching is case-insensitive; keys are normalized (e.g., "(keating 1995)").
-    * Only files whose basename is exactly "(ID).md" are included; variants like "(ID) v2.md" are ignored.
-    * Stores per-note metadata (path, mtime, size) and parsed front matter.
-    * Read-only: this class indexes and reads, it never writes. Note mutation
-      belongs to sync.py, which composes it via notes.py (AUDIT.md A8; the
-      plan/apply layer that once lived here is retired -- see HISTORY.md).
-    Raises:
-    DuplicateNoteIdError: when two or more notes share the same ID (case-insensitive).
+    - Only files whose basename is exactly "(ID).md" are included; variants like
+      "(ID) v2.md" are ignored.
+    - Keys are the normalized (lowercased) pdf_id, so callers must lowercase the
+      id they look up. sync.py already does.
+    - Values carry per-note metadata (path, mtime, size) plus parsed front matter.
+    - Raises DuplicateNoteIdError when two or more notes share an id
+      (case-insensitive); every colliding id is collected first, so one run
+      reports them all (AUDIT.md F8).
+
+    Read-only by construction: this module indexes and reads, it never writes.
+    Note mutation belongs to sync.py, which composes it via notes.py (AUDIT.md
+    A8; the plan/apply layer that once lived here is retired -- see HISTORY.md).
+
+    There is deliberately no NotesDB class. What survived A8 was a Mapping
+    subclass that re-exposed the dict interface it already wrapped, and whose
+    only behaviour of its own was lowercasing the key on lookup -- a rule the
+    one production caller already honours at the call site. A plain dict is the
+    index; this module is the database. Do not re-add a container to hold it.
     """
+    notes_root = os.path.abspath(notes_root)
+    by_id: Dict[str, List[NoteInfo]] = {}
 
-    def __init__(self, root: str, index: Dict[str, NoteInfo]) -> None:
-        self.root = os.path.abspath(root)
-        self._index = index
-
-    @classmethod
-    def from_env(cls, env: "Env") -> "NotesDB":
-        """
-        Build a NotesDB using env.paths.notes_root.
-        This is just a convenience wrapper around build().
-        """
-        return cls.build(str(env.paths.notes_root))
-
-    @classmethod
-    def build(cls, vault_root: str) -> "NotesDB":
-        vault_root = os.path.abspath(vault_root)
-        by_id: Dict[str, List[NoteInfo]] = {}
-
-        for dirpath, _, filenames in os.walk(vault_root):
-            for name in filenames:
-                if not name.lower().endswith(".md"):
-                    continue
-                pdf_id_raw = is_controlled_md_name(name)
-                if pdf_id_raw is None:
-                    continue
-                pdf_id_norm = pdf_id_raw.lower()
-                abs_path = os.path.join(dirpath, name)
-                try:
-                    st = os.stat(abs_path)
-                except OSError:
-                    # Skip unreadable files but could be logged by caller
-                    continue
-
-                with open(abs_path, "r", encoding="utf-8") as f:
-                    text = f.read()
-                pn = parse_note(text)
-
-                fm = pn.front_matter
-                note = NoteInfo(
-                    pdf_id=pdf_id_raw,
-                    abs_path=abs_path,
-                    filename=name,
-                    mtime=st.st_mtime,
-                    size=st.st_size,
-                    front_matter=fm,
-                    pdf_title=(fm.get("pdf_title") if isinstance(fm.get("pdf_title"), str) else None),
-                    pdf_size=(fm.get("pdf_size") if isinstance(fm.get("pdf_size"), int) else None),
-                    body=pn.body,
-                )
-                by_id.setdefault(pdf_id_norm, []).append(note)
-
-        # Detect duplicates -- collect every colliding id before failing (AUDIT.md F8)
-        index: Dict[str, NoteInfo] = {}
-        duplicates: Dict[str, List[str]] = {}
-        for k, notes in by_id.items():
-            if len(notes) > 1:
-                duplicates[k] = [n.abs_path for n in notes]
+    for dirpath, _, filenames in os.walk(notes_root):
+        for name in filenames:
+            if not name.lower().endswith(".md"):
                 continue
-            index[k] = notes[0]
+            pdf_id_raw = is_controlled_md_name(name)
+            if pdf_id_raw is None:
+                continue
+            pdf_id_norm = pdf_id_raw.lower()
+            abs_path = os.path.join(dirpath, name)
+            try:
+                st = os.stat(abs_path)
+            except OSError:
+                # Skip unreadable files but could be logged by caller
+                continue
 
-        if duplicates:
-            raise DuplicateNoteIdError(duplicates)
+            with open(abs_path, "r", encoding="utf-8") as f:
+                text = f.read()
+            pn = parse_note(text)
 
-        return cls(vault_root, index)
+            fm = pn.front_matter
+            note = NoteInfo(
+                pdf_id=pdf_id_raw,
+                abs_path=abs_path,
+                filename=name,
+                mtime=st.st_mtime,
+                size=st.st_size,
+                front_matter=fm,
+                pdf_title=(fm.get("pdf_title") if isinstance(fm.get("pdf_title"), str) else None),
+                pdf_size=(fm.get("pdf_size") if isinstance(fm.get("pdf_size"), int) else None),
+                body=pn.body,
+            )
+            by_id.setdefault(pdf_id_norm, []).append(note)
 
-    # Mapping interface
-    def __len__(self) -> int:
-        return len(self._index)
+    # Detect duplicates -- collect every colliding id before failing (AUDIT.md F8)
+    index: Dict[str, NoteInfo] = {}
+    duplicates: Dict[str, List[str]] = {}
+    for k, notes in by_id.items():
+        if len(notes) > 1:
+            duplicates[k] = [n.abs_path for n in notes]
+            continue
+        index[k] = notes[0]
 
-    def __iter__(self) -> Iterator[str]:
-        return iter(self._index)
+    if duplicates:
+        raise DuplicateNoteIdError(duplicates)
 
-    def __getitem__(self, key: str) -> NoteInfo:
-        return self._index[key.lower()]
-
-    # Convenience
-    def ids(self) -> Iterable[str]:
-        return (info.pdf_id for info in self._index.values())
-
-    def values(self) -> Iterable[NoteInfo]:  # type: ignore[override]
-        return self._index.values()
-
-    def items(self) -> Iterable[Tuple[str, NoteInfo]]:  # type: ignore[override]
-        return self._index.items()
+    return index
