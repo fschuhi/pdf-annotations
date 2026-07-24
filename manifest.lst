@@ -2,11 +2,6 @@
 # The files in this manifest are the relevant files for understanding how the project hangs together.
 # Files which are commented out are not included in the `filesdump.txt`.)
 
-# SESSION SCOPE: pruned 2026-07-23 for the A7 session (one streamline state machine).
-# Everything the streamline refactor does not touch is commented out with the marker [A7-out].
-# To restore the full project view, delete the "# " in front of every [A7-out] line.
-# The manifest is deliberately session-scoped now: re-widen it when the agenda moves past A7.
-
 ### --- Context & Meta ---
 # ⚠️ NON-NEGOTIABLE collaboration rules - READ FIRST
 CRITICAL_RULES.md
@@ -40,60 +35,50 @@ pyproject.toml
 ### --- configuration for the PDF annotations tool ---
 
 # pdf_annot.toml
-# [A7-out] the streamliner reads no config; it imports only stdlib.
-# pdf_annot.example.toml
+pdf_annot.example.toml
 
 ### --- macOS PDF annotations tool ---
 
-# Kept: the refactor target, the shape of what goes in, the consumer of what comes out,
-# and the one production caller of `streamline_annotations_list`.
-
-# `Annotation.to_dict` defines the raw dict shape the state machine parses
 src/pdf_annot/annotation.py
-# `render_block` consumes the streamlined objects -- the output contract to preserve
+src/pdf_annot/env.py
+src/pdf_annot/extract.py
+src/pdf_annot/frontmatter.py
 src/pdf_annot/ndjson_to_md_block.py
+src/pdf_annot/notes.py
+src/pdf_annot/notes_db.py
+src/pdf_annot/pdf_discovery.py
+src/pdf_annot/pdf_registry.py
+src/pdf_annot/resolve.py
 src/pdf_annot/streamline_annotations.py
-# the production call site: `streamline_annotations_list(raw_annotations_list)`
 src/pdf_annot/sync.py
-
-# [A7-out] not on the streamline path
-# src/pdf_annot/env.py
-# src/pdf_annot/extract.py
-# src/pdf_annot/frontmatter.py
-# src/pdf_annot/notes.py
-# src/pdf_annot/notes_db.py
-# src/pdf_annot/pdf_discovery.py
-# src/pdf_annot/pdf_registry.py
-# src/pdf_annot/resolve.py
-# src/pdf_annot/utils.py
+src/pdf_annot/utils.py
 
 ### --- testing the PDF annotations tool ---
 
-# These three are the spec for A7: they must pass unchanged.
+tests/test_annotations.py
+tests/test_core_workflow.py
+tests/test_env.py
+tests/test_extract.py
+tests/test_frontmatter.py
+tests/test_notes_db.py
+tests/test_pdf_registry.py
+tests/test_pdf_to_markdown_e2e.py
+tests/test_resolve.py
 tests/test_streamline_integration.py
 tests/test_streamline_unit.py
-tests/test_pdf_to_markdown_e2e.py
+tests/test_sync_cli.py
+tests/test_utils.py
 
-# [A7-out] green already, and untouched by the refactor
-# tests/test_annotations.py
-# tests/test_core_workflow.py
-# tests/test_env.py
-# tests/test_extract.py
-# tests/test_frontmatter.py
-# tests/test_notes_db.py
-# tests/test_pdf_registry.py
-# tests/test_resolve.py
-# tests/test_sync_cli.py
-# tests/test_utils.py
-
-# --- streamliner fixtures: these ARE the specification ---
-
+# tests/fixtures/annot_types/(Ealbini 2017) On regarding constructive emotions.pdf
+# tests/fixtures/annot_types/input.pdf
 tests/fixtures/consecutive_links/expected.ndjson
 tests/fixtures/consecutive_links/input.ndjson
 tests/fixtures/filter_and_pages/expected.ndjson
 tests/fixtures/filter_and_pages/input.ndjson
 tests/fixtures/headers/expected.ndjson
 tests/fixtures/headers/input.ndjson
+# tests/fixtures/highlight_scrambled_bug/(Dalbini 2016) On disregarding constructive emotions.pdf
+# tests/fixtures/highlight_scrambled_bug/input.pdf
 tests/fixtures/link_merge/expected.ndjson
 tests/fixtures/link_merge/input.ndjson
 tests/fixtures/malformed/input.ndjson
@@ -105,52 +90,44 @@ tests/fixtures/pdf_to_markdown_e2e/final_streamlined.ndjson
 tests/fixtures/simple/expected.ndjson
 tests/fixtures/simple/input.ndjson
 
-# tests/fixtures/annot_types/(Ealbini 2017) On regarding constructive emotions.pdf
-# tests/fixtures/annot_types/input.pdf
-# tests/fixtures/highlight_scrambled_bug/(Dalbini 2016) On disregarding constructive emotions.pdf
-# tests/fixtures/highlight_scrambled_bug/input.pdf
-
-# --- [A7-out] workflow fixtures: they exercise sync, not the streamliner ---
-
-# tests/fixtures/workflow_all_pdfs_loop/goldens/(Albini 2013).md
-# tests/fixtures/workflow_all_pdfs_loop/seeds/(Albini 2013).md
+tests/fixtures/workflow_all_pdfs_loop/goldens/(Albini 2013).md
+tests/fixtures/workflow_all_pdfs_loop/seeds/(Albini 2013).md
 # tests/fixtures/workflow_all_pdfs_loop/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 
-# tests/fixtures/workflow_complete_update/goldens/(Albini 2013).md
-# tests/fixtures/workflow_complete_update/seeds/(Albini 2013).md
+tests/fixtures/workflow_complete_update/goldens/(Albini 2013).md
+tests/fixtures/workflow_complete_update/seeds/(Albini 2013).md
 # tests/fixtures/workflow_complete_update/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 
-# tests/fixtures/workflow_declines/goldens/(Albini 2013).md
-# tests/fixtures/workflow_declines/goldens/(Balbini 2014).md
-# tests/fixtures/workflow_declines/seeds/(Albini 2013).md
+tests/fixtures/workflow_declines/goldens/(Albini 2013).md
+tests/fixtures/workflow_declines/goldens/(Balbini 2014).md
+tests/fixtures/workflow_declines/seeds/(Albini 2013).md
 # tests/fixtures/workflow_declines/seeds/(Albini 2013) On dealing with destructive emotions.pdf
-# tests/fixtures/workflow_declines/seeds/(Balbini 2014).md
+tests/fixtures/workflow_declines/seeds/(Balbini 2014).md
 # tests/fixtures/workflow_declines/seeds/(Balbini 2014) On dealing with constructive emotions.pdf
 
-# tests/fixtures/workflow_manual_edits/goldens/(Albini 2013).md
-# tests/fixtures/workflow_manual_edits/goldens/(Calbini 2015).md
-# tests/fixtures/workflow_manual_edits/seeds/(Albini 2013).md
-# tests/fixtures/workflow_manual_edits/seeds/(Calbini 2015).md
+tests/fixtures/workflow_manual_edits/goldens/(Albini 2013).md
+tests/fixtures/workflow_manual_edits/goldens/(Calbini 2015).md
+tests/fixtures/workflow_manual_edits/seeds/(Albini 2013).md
+tests/fixtures/workflow_manual_edits/seeds/(Calbini 2015).md
 # tests/fixtures/workflow_manual_edits/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 # tests/fixtures/workflow_manual_edits/seeds/(Calbini 2015) On disregarding destructive emotions.pdf
 
-# tests/fixtures/workflow_new_pdfs/goldens/(Albini 2013).md
-# tests/fixtures/workflow_new_pdfs/goldens/(Balbini 2014).md
+tests/fixtures/workflow_new_pdfs/goldens/(Albini 2013).md
+tests/fixtures/workflow_new_pdfs/goldens/(Balbini 2014).md
 # tests/fixtures/workflow_new_pdfs/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 # tests/fixtures/workflow_new_pdfs/seeds/(Balbini 2014) On dealing with constructive emotions.pdf
 
-# tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013).md
+tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013).md
 # tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 
-# tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013).md
+tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013).md
 # tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 
 ### --- Support tools ---
 
 # tools/concat_files.py
 # tools/discover_pdfs.py
-# [A7-out] needed for A9, where V1 found it calls `utils.pdf_id_from_filename`
-# tools/print_hashes.py
+tools/print_hashes.py
 # tools/time_extraction.py
 
 ### --- Windows 11 server (running on Parallels VM) ---
