@@ -9,7 +9,7 @@ RUN_WITH_PATH = $(ACTIVATE) && PYTHONPATH=src
 SETUP_STAMP = $(VENV_DIR)/.setup_stamp
 
 # --- Phony targets ---
-.PHONY: all setup test test-verbose run dry-run extract streamline hash discover-pdfs discover-pdf-names discover-pdf-folders time-extraction clean showtree gentree filesdump filesdump-compact help
+.PHONY: all setup test test-verbose run dry-run extract streamline discover-pdfs discover-pdf-names discover-pdf-folders time-extraction clean showtree gentree filesdump filesdump-compact help
 
 # Default target runs 'setup'
 all: setup
@@ -51,9 +51,6 @@ run: $(SETUP_STAMP) ## Run the main sync workflow (pass ARGS="-c ...")
 
 dry-run: $(SETUP_STAMP) ## Preview the sync workflow without writing any files (pass ARGS="-c ...")
 	$(RUN_WITH_PATH) python -m pdf_annot.sync --dry-run $(ARGS)
-
-hash: $(SETUP_STAMP) ## Calculate 7-char hash for a string or filename (ARGS="...")
-	$(RUN_WITH_PATH) python tools/print_hashes.py $(ARGS)
 
 extract: $(SETUP_STAMP) ## Run extraction on the fixture PDF (dev test)
 	$(RUN_WITH_PATH) python -m pdf_annot.extract -p tests/fixtures/pdf_to_markdown_e2e/input.pdf

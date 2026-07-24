@@ -41,13 +41,6 @@ def crc32_az7(text: str) -> str:
     return "".join(chars)
 
 
-def hash_text(authors: str) -> str:
-    """
-    Convenience wrapper for author strings to the 7-letter A–Z fingerprint.
-    """
-    return crc32_az7(authors)
-
-
 # -----------------------------------------------------------------------------
 # Filename parsing
 # -----------------------------------------------------------------------------
@@ -81,10 +74,8 @@ class ParsedFilename:
         return "()"
 
 
-# Patterns:
-# - Bracket format: "(Authors Year[letter]) Rest of title.pdf"
-#   Authors may be "A" or "A+B+C". Year can be "2015" or "2015a".
-# - Dash format: "Authors - 2015[a] - Title.pdf"
+# Bracket format: "(Authors Year[letter]) Rest of title.pdf".
+# Authors may be "A" or "A+B+C". Year can be "2015" or "2015a".
 _BRACKET_RE = re.compile(
     r"""
     ^\(
@@ -113,14 +104,15 @@ def _split_bracket(bracket: str) -> Tuple[str, str]:
 
 def parse_filename(full_path: str) -> ParsedFilename:
     """
-    Parse either:
-      - "(Authors Year) Paper name.pdf"
-      - "Authors - Year - Paper name.pdf"
+    Parse a bracket-format filename:
+
+      "(Authors Year) Paper name.pdf"
+
     Returns a ParsedFilename with fields filled as in the VBA example.
     """
     # Normalize path separators
     path, filename_with_ext = os.path.split(full_path)
-    filename, ext = os.path.splitext(filename_with_ext)
+    filename, _ext = os.path.splitext(filename_with_ext)
 
     pdf_title = ""
     authors = ""
@@ -133,12 +125,6 @@ def parse_filename(full_path: str) -> ParsedFilename:
             rest = m.group("rest").strip()
             authors, year = _split_bracket(bracket)
             pdf_title = rest
-    else:
-        parts = filename.split(" - ")
-        if len(parts) >= 3:
-            authors = parts[0].strip()
-            year = parts[1].strip()
-            pdf_title = " - ".join(p.strip() for p in parts[2:])
 
     return ParsedFilename(
         path=path,
@@ -148,13 +134,6 @@ def parse_filename(full_path: str) -> ParsedFilename:
         authors=authors,
         year=year,
     )
-
-
-def pdf_id_from_filename(full_path: str) -> str:
-    """
-    Convenience: return the '(Authors Year)' id from a file path.
-    """
-    return parse_filename(full_path).pdf_id
 
 
 # -----------------------------------------------------------------------------

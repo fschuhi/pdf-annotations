@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Mapping, Optional
+from pathlib import Path
+from typing import Dict, Iterable, List, Mapping
 
 from .utils import crc32_az7, is_valid_pdf_id, parse_filename
 
@@ -47,7 +48,6 @@ class PdfInfo:
 
     # Paths and filesystem
     abs_path: str  # absolute path to the PDF (native separators)
-    dropbox_rel_path: Optional[str]  # POSIX-style path relative to dropbox_root, if provided
     size: int  # file size in bytes
     mtime: float  # mtime (epoch seconds)
 
@@ -95,25 +95,7 @@ def is_controlled_pdf_name(filename_with_ext: str) -> bool:
     return is_valid_pdf_id(name[: close_idx + 1])
 
 
-def _posix_relpath_if_under(path: str, root: Optional[str]) -> Optional[str]:
-    if not root:
-        return None
-    # Normalize and test ancestry
-    abs_path = os.path.abspath(path)
-    abs_root = os.path.abspath(root)
-    try:
-        rel = os.path.relpath(abs_path, abs_root)
-    except ValueError:
-        # Different drives on Windows or other relpath issues
-        return None
-    # If path is outside root, relpath will start with '..'
-    if rel.startswith(".."):
-        return None
-    # Convert to POSIX-style separators
-    return rel.replace(os.sep, "/")
-
-
-def pdf_info_from_path(path: str, *, dropbox_root: Optional[str] = None) -> Optional[PdfInfo]:
+def pdf_info_from_path(path: str) -> PdfInfo | None:
     """
     Build PdfInfo from a single file path.
     Returns None if the file is not a controlled PDF by name.
@@ -133,7 +115,6 @@ def pdf_info_from_path(path: str, *, dropbox_root: Optional[str] = None) -> Opti
 
     st = os.stat(path)
     abs_path = os.path.abspath(path)
-    dropbox_rel = _posix_relpath_if_under(abs_path, dropbox_root)
 
     return PdfInfo(
         pdf_id=pdf_id,
@@ -142,22 +123,31 @@ def pdf_info_from_path(path: str, *, dropbox_root: Optional[str] = None) -> Opti
         authors=pf.authors,
         year=pf.year,
         abs_path=abs_path,
-        dropbox_rel_path=dropbox_rel,
         size=st.st_size,
         mtime=st.st_mtime,
         filename_with_ext=filename_with_ext,
     )
 
 
-def _iter_pdf_files(roots: Iterable[str]) -> Iterable[str]:
+def iter_pdf_files(roots: Iterable[str | Path]) -> Iterable[str]:
+    """
+    Yield every real PDF file under roots, recursively.
+
+    Extension matching is case-insensitive. This is the one shared definition
+    used by both the production registry and diagnostic discovery tooling, so
+    `make discover-pdfs` cannot omit an uppercase `.PDF` that sync will see.
+    """
     for root in roots:
         for dirpath, _dirnames, filenames in os.walk(root):
-            for fn in filenames:
-                if _is_pdf_ext(fn):
-                    yield os.path.join(dirpath, fn)
+            for filename in filenames:
+                if not _is_pdf_ext(filename):
+                    continue
+                path = os.path.join(dirpath, filename)
+                if os.path.isfile(path):
+                    yield path
 
 
-def build_pdf_index(roots: List[str], *, dropbox_root: Optional[str] = None) -> Dict[str, PdfInfo]:
+def build_pdf_index(roots: List[str]) -> Dict[str, PdfInfo]:
     """
     Walk given roots and build an index of controlled PDFs.
     - Only bracket-format controlled names are included.
@@ -168,8 +158,8 @@ def build_pdf_index(roots: List[str], *, dropbox_root: Optional[str] = None) -> 
     index: Dict[str, PdfInfo] = {}
     collisions: Dict[str, List[str]] = {}
 
-    for path in _iter_pdf_files(roots):
-        info = pdf_info_from_path(path, dropbox_root=dropbox_root)
+    for path in iter_pdf_files(roots):
+        info = pdf_info_from_path(path)
         if info is None:
             continue
         key = info.pdf_id.lower()

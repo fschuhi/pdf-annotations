@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 import pytest
 
+from pdf_annot.pdf_discovery import iter_pdfs_in_dirs
 from pdf_annot.pdf_registry import build_pdf_index, is_controlled_pdf_name, PdfInfo
 from pdf_annot.utils import crc32_az7
 
@@ -50,6 +51,28 @@ def test_build_pdf_index_basic(pdf_dir: Path):
     assert info2.pdf_title == "Other title"
     assert info2.abs_path == str(p2)
     assert info2.pdf_hash == crc32_az7(k2)
+
+
+def test_discovery_and_registry_include_mixed_case_pdf_extensions(pdf_dir: Path):
+    """
+    Discovery must report the same extension variants that sync can index.
+
+    Total Commander on Windows can leave a collection containing `.PDF` files.
+    The registry already treated extensions case-insensitively, while discovery
+    used Path.rglob("*.pdf") and could omit those files on macOS. Both paths now
+    share one walker, so this fixture proves that lower- and upper-case forms
+    remain visible in both places.
+    """
+    lower_case = pdf_dir / "(Albini 2013) Lower case.pdf"
+    upper_case = pdf_dir / "(Das 2000b) Upper case.PDF"
+    _write_dummy_pdf(lower_case)
+    _write_dummy_pdf(upper_case)
+
+    index = build_pdf_index([str(pdf_dir)])
+    discovered_names = {path.name for path in iter_pdfs_in_dirs([pdf_dir])}
+
+    assert set(index) == {"(albini 2013)", "(das 2000b)"}
+    assert discovered_names == {lower_case.name, upper_case.name}
 
 
 def test_build_pdf_index_mtime_size(pdf_dir: Path):

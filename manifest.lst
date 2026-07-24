@@ -126,7 +126,6 @@ tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013).md
 
 # tools/concat_files.py
 # tools/discover_pdfs.py
-tools/print_hashes.py
 # tools/time_extraction.py
 
 ### --- Windows 11 server (running on Parallels VM) ---

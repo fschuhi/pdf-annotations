@@ -3,10 +3,8 @@ from __future__ import annotations
 
 from pdf_annot.utils import (
     crc32_az7,
-    hash_text,
     is_valid_pdf_id,
     parse_filename,
-    pdf_id_from_filename,
 )
 
 
@@ -26,10 +24,6 @@ def test_crc32_az7_basic_stability():
         assert crc32_az7(text) == expected
 
 
-def test_hash_text_alias():
-    assert hash_text("Smith+Doe") == crc32_az7("Smith+Doe")
-
-
 def test_parse_filename_bracket_format():
     pf = parse_filename("(Smith+Doe 2015a) Some Paper.pdf")
     assert pf.authors == "Smith+Doe"
@@ -38,25 +32,6 @@ def test_parse_filename_bracket_format():
     assert pf.filename.endswith(".pdf")
     assert pf.pdf_id == "(Smith+Doe 2015a)"
     assert pf.authors_array == ["Smith", "Doe"]
-
-
-def test_parse_filename_dash_format_basic():
-    pf = parse_filename("Smith+Doe - 2015 - Some Paper.pdf")
-    assert pf.authors == "Smith+Doe"
-    assert pf.year == "2015"
-    assert pf.pdf_title == "Some Paper"
-    assert pf.pdf_id == "(Smith+Doe 2015)"
-
-
-def test_parse_filename_dash_format_extra_dashes_in_title():
-    pf = parse_filename("Smith+Doe - 2015a - Some Paper - Extended - Title.pdf")
-    assert pf.authors == "Smith+Doe"
-    assert pf.year == "2015a"
-    assert pf.pdf_title == "Some Paper - Extended - Title"
-
-
-def test_pdf_id_from_filename_helpers():
-    assert pdf_id_from_filename("(Roe 1999) Title.pdf") == "(Roe 1999)"
 
 
 def test_parse_filename_missing_pieces():
