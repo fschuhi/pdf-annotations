@@ -18,11 +18,11 @@ TODO.md
 # Historical plan to combine `anima` and `pdf-annotations` for a fully macOS-native workflow. Complete 2026-07-19.
 # docs/TARGET_ARCHITECTURE.md
 
-# Production-readiness audit: findings ledger, implementation agenda, open decisions.
-AUDIT.md
+# Historical production-readiness audit: findings ledger, implementation agenda, open decisions.
+# docs/AUDIT.md
 
 # Link refactoring for old Entry Page links, originated from "Fix old IDs" in `TODO.md`
-# LINK_REFACTOR.md
+LINK_REFACTOR.md
 
 ### --- Build & Python Configuration ---
 Makefile
@@ -143,7 +143,7 @@ tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013).md
 # Obsidian/docs/Fleeting-Notes-Processing-Checklist.md
 # Obsidian/docs/Query-Candidates.md
 # Obsidian/docs/The-Studio-Manual.md
-# Obsidian/docs/TODO-Obsidian.md
+Obsidian/docs/TODO-Obsidian.md
 
 ### --- Obsidian tooling for The Studio, the Zettelkasten which uses the PDF annotations ---
 
