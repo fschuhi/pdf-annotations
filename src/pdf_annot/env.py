@@ -28,17 +28,11 @@ class Paths(BaseModel):
         default_factory=list,
         description="One or more directories containing PDFs to scan.",
     )
-    backup_dir: Optional[Path] = Field(None, description="Optional directory to store backups (e.g., .bak files).")
     temp_dir: Optional[Path] = Field(None, description="Optional directory for temporary test artifacts.")
 
     @field_validator("notes_root", mode="before")
     @classmethod
     def _norm_notes_root(cls, v: Any) -> Any:
-        return _expand_path(v)
-
-    @field_validator("backup_dir", mode="before")
-    @classmethod
-    def _norm_backup_dir(cls, v: Any) -> Any:
         return _expand_path(v)
 
     @field_validator("temp_dir", mode="before")
@@ -81,7 +75,7 @@ class Env(BaseModel):
     Top-level configuration object passed explicitly to APIs.
 
     Attributes:
-        paths: Filesystem locations (notes_root, pdf_dirs, backup_dir, temp_dir).
+        paths: Filesystem locations (notes_root, pdf_dirs, temp_dir).
         io: Directory-creation behavior.
     """
 
@@ -98,13 +92,6 @@ class Env(BaseModel):
                 self.paths.notes_root.mkdir(parents=True, exist_ok=True)
             else:
                 raise ValueError(f"notes_root does not exist: {self.paths.notes_root}")
-
-        # Ensure backup_dir exists if set
-        if self.paths.backup_dir is not None and not self.paths.backup_dir.exists():
-            if self.io.create_missing_dirs:
-                self.paths.backup_dir.mkdir(parents=True, exist_ok=True)
-            else:
-                raise ValueError(f"backup_dir does not exist: {self.paths.backup_dir}")
 
         # Ensure temp_dir exists if set
         if self.paths.temp_dir is not None and not self.paths.temp_dir.exists():
@@ -186,7 +173,6 @@ def _build_env_from_data(data: Mapping[str, Any]) -> Env:
     flat_to_group = {
         "notes_root": ("paths", "notes_root"),
         "pdf_dirs": ("paths", "pdf_dirs"),
-        "backup_dir": ("paths", "backup_dir"),
         "temp_dir": ("paths", "temp_dir"),
         "create_missing_dirs": ("io", "create_missing_dirs"),
     }

@@ -86,22 +86,6 @@ def test_missing_pdf_dir_is_error(tmp_path: Path):
     assert "pdf_dir not found or not a directory" in str(exc.value)
 
 
-def test_backup_dir_created_when_allowed(tmp_path: Path):
-    cfg = tmp_path / "env.toml"
-    cfg.write_text(
-        f"""
-         [paths]
-        notes_root = "{str(tmp_path / "vault")}"
-        backup_dir = "{str(tmp_path / "baks")}"
-        [io]
-        create_missing_dirs = true
-        """,
-        encoding="utf-8",
-    )
-    env = load_env(cfg)
-    assert env.paths.backup_dir and env.paths.backup_dir.exists()
-
-
 def test_temp_dir_created_when_allowed(tmp_path: Path):
     """Test that temp_dir is created when create_missing_dirs is true."""
     cfg = tmp_path / "env.toml"
@@ -164,11 +148,9 @@ def test_temp_dir_optional(tmp_path: Path):
 
 def test_load_env_from_tmp_file(tmp_path: Path):
     """Test loading from a TOML file created in tmp_path."""
-    # We need to create the dirs the config *points* to,
-    # but not the dirs it's *meant to create*.
+    # We need to create the dirs the config *points* to.
     vault = tmp_path / "vault"
     pdfs = tmp_path / "pdfs"
-    baks = tmp_path / "baks"  # This one will be created by load_env
 
     # We only need to pre-create dirs that load_env validates
     vault.mkdir()
@@ -180,7 +162,6 @@ def test_load_env_from_tmp_file(tmp_path: Path):
     [paths]
     notes_root = "{vault}"
     pdf_dirs = ["{pdfs}"]
-    backup_dir = "{baks}"
     [io]
     create_missing_dirs = true
     """
@@ -188,5 +169,4 @@ def test_load_env_from_tmp_file(tmp_path: Path):
 
     env = load_env(cfg)
     assert env.paths.notes_root.exists()
-    assert env.paths.backup_dir.exists()  # baks is created by load_env
     assert env.paths.pdf_dirs and all(p.exists() for p in env.paths.pdf_dirs)

@@ -129,12 +129,12 @@ This project uses a curated "manifest" approach to manage context for AI collabo
 The main entry point is `src/pdf_annot/sync.py`. When run, it automatically:
 
 1. **Loads configuration** (e.g., `pdf_annot.toml`) to get `pdf_dirs` and `notes_root`.
-2. **Builds registries** for all PDFs (`PdfRegistry`) and all notes (`NotesDB`).
+2. **Builds indexes** of all controlled PDFs (`build_pdf_index`) and all bibnotes (`build_notes_index`).
 3. **Loops over every PDF** and compares it to its corresponding note.
 4. **Detects changes** by comparing PDF mtime/size with note frontmatter (fast — no PDF parsing).
 5. **Calls `sync_pdf_to_note`** only for new or changed PDFs.
 
-The live production path inside `sync_pdf_to_note` is deliberately direct: `build_pdf_index` supplies `PdfInfo`; `NotesDB` is a read-only note index; then sync calls `extract_annotations_to_list`, `streamline_annotations_list`, `render_block`, `extract_info_text`, and `replace_annotation_block` before making its one protected write through `atomic_write_file`. This call path is the actual sync contract. `NotesDB` does not plan or apply note updates, and no dormant alternate update path exists.
+The live production path inside `sync_pdf_to_note` is deliberately direct: `build_pdf_index` supplies `PdfInfo`; `build_notes_index` supplies `NoteInfo` and is read-only by construction; then sync calls `extract_annotations_to_list`, `streamline_annotations_list`, `render_block`, `extract_info_text`, and `replace_annotation_block` before making its one protected write through `atomic_write_file`. This call path is the actual sync contract. Neither index plans nor applies note updates, and no dormant alternate update path exists. Both builders return a plain dict keyed by the lowercased `pdf_id`, so callers normalize the id they look up; there is deliberately no container class on either side, because the module is the index.
 
 This function handles the extraction, streamlining, rendering, and atomic updating. This workflow is tested end-to-end
 in `tests/test_core_workflow.py`.

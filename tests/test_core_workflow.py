@@ -56,9 +56,7 @@ def setup_workflow(request):
         env = load_env(config_file)
     else:
         # Generate a default Env in memory
-        paths_config = Paths(
-            notes_root=runtime_temp_dir, pdf_dirs=[runtime_temp_dir], temp_dir=runtime_temp_dir, backup_dir=None
-        )
+        paths_config = Paths(notes_root=runtime_temp_dir, pdf_dirs=[runtime_temp_dir], temp_dir=runtime_temp_dir)
         io_config = IO(create_missing_dirs=True)  # This is the important default
 
         # This will create the runtime_temp_dir
