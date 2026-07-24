@@ -230,6 +230,91 @@ def test_sync_has_no_direct_note_write():
     assert "write_text(" not in source, msg
 
 
+@pytest.mark.parametrize("setup_workflow", ["workflow_manual_edits"], indirect=True)
+def test_dry_run_previews_the_update_without_writing(setup_workflow: dict):
+    """
+    A dry run reports what a real run would do and leaves the note untouched.
+
+    This fixture genuinely changes something: Albini is in sync and is skipped,
+    Calbini has moved on and would be rewritten. Under --dry-run the whole path
+    still executes -- extraction, streamlining, rendering, composition -- and
+    only the final write is skipped, so the report has to name Calbini while the
+    file on disk stays exactly as the seed left it (AUDIT.md A8, finding F20).
+
+    The spy carries `wraps=` for the same reason as the F18 test above: if the
+    guard ever regresses, the real write happens and *both* assertions fail,
+    instead of a bare mock swallowing the call and letting the byte comparison
+    pass for the wrong reason.
+    """
+    env: Env = setup_workflow["env"]
+    config_path: Path = setup_workflow["config_path"]
+
+    cli_args = ["pdf-annot-sync", "-c", str(config_path), "--dry-run"]
+    stdout_capture = io.StringIO()
+
+    with patch("pdf_annot.sync.atomic_write_file", wraps=real_atomic_write_file) as write_spy:
+        with contextlib.redirect_stdout(stdout_capture), patch.object(sys, "argv", cli_args):
+            return_code = sync_main()
+
+    assert return_code == 0, "A dry run reports; it does not fail"
+    assert write_spy.call_count == 0, "A dry run must never reach the writer"
+
+    output = stdout_capture.getvalue()
+    assert "DRY RUN -- no files will be written." in output
+    assert "SKIPPED: (Albini 2013).md" in output
+    assert "WOULD UPDATE: (Calbini 2015).md" in output
+    assert "UPDATED: (Calbini 2015).md" not in output, "A preview must not claim it updated anything"
+    assert "Dry run complete -- nothing was written." in output
+    assert "Would update: 1" in output
+    assert "Errors:   0" in output
+
+    # Compared against the seed, not the golden: the golden is the *result* of a
+    # real run, which is precisely what must not have happened here. Byte-identity
+    # also proves pdf_mtime was left alone, so the next real run still sees the
+    # PDF as changed -- a preview that armed the gate shut would be worse than none.
+    seed_calbini = FIXTURES_DIR / "workflow_manual_edits" / "seeds" / "(Calbini 2015).md"
+    runtime_calbini = env.paths.notes_root / "(Calbini 2015).md"
+    assert runtime_calbini.read_bytes() == seed_calbini.read_bytes(), "Dry run must leave the note untouched"
+
+
+@pytest.mark.parametrize("setup_workflow", ["workflow_new_pdfs"], indirect=True)
+def test_dry_run_does_not_create_missing_notes(setup_workflow: dict):
+    """
+    A dry run over PDFs that have no note yet creates nothing on disk.
+
+    The test above covers the merge path, where a note exists and would be
+    rewritten. This covers the creation path, where note_path points at a file
+    that does not exist yet. The guard has to hold there too: at collection
+    scale, a preview that fell through would populate the vault with new
+    bibnotes instead of describing them.
+    """
+    env: Env = setup_workflow["env"]
+    config_path: Path = setup_workflow["config_path"]
+
+    note_paths = [env.paths.notes_root / "(Albini 2013).md", env.paths.notes_root / "(Balbini 2014).md"]
+    for note_path in note_paths:
+        assert not note_path.exists(), f"Fixture precondition: {note_path.name} must not exist yet"
+
+    cli_args = ["pdf-annot-sync", "-c", str(config_path), "--dry-run"]
+    stdout_capture = io.StringIO()
+
+    with patch("pdf_annot.sync.atomic_write_file", wraps=real_atomic_write_file) as write_spy:
+        with contextlib.redirect_stdout(stdout_capture), patch.object(sys, "argv", cli_args):
+            return_code = sync_main()
+
+    assert return_code == 0, "A dry run reports; it does not fail"
+    assert write_spy.call_count == 0, "A dry run must never reach the writer"
+
+    output = stdout_capture.getvalue()
+    assert "WOULD UPDATE: (Albini 2013).md" in output
+    assert "WOULD UPDATE: (Balbini 2014).md" in output
+    assert "Would update: 2" in output
+    assert "Errors:   0" in output
+
+    for note_path in note_paths:
+        assert not note_path.exists(), f"Dry run must not create {note_path.name}"
+
+
 def test_decline_reason_conditions():
     """
     The decline predicate in isolation: two conditions, in order.

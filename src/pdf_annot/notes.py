@@ -31,6 +31,10 @@ class UpdateResult:
     # None means the note was not declined. A decline is not an error: sync did
     # the right thing by not guessing, so `success` stays True.
     declined: Optional[str] = None
+    # True when this result came from a preview run: everything was computed,
+    # nothing was written. `note_updated` then reads as "would have been
+    # updated" rather than "was updated" (AUDIT.md A8, finding F20).
+    dry_run: bool = False
 
     @property
     def success(self) -> bool:

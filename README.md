@@ -150,7 +150,7 @@ env = load_env("pdf_annot.toml")
 
 #### `src/pdf_annot/sync.py`
 
-The core workflow logic and `main` CLI entry point. Performs a cheap mtime/size check before any PDF parsing, so unchanged files are skipped instantly.
+The core workflow logic and `main` CLI entry point. Performs a cheap mtime/size check before any PDF parsing, so unchanged files are skipped instantly. `--dry-run` is full-fidelity: it computes everything -- extraction, streamlining, rendering, composition -- and skips only the final write, so a preview reports exactly what a real run would do and leaves `pdf_mtime` untouched, which keeps the change gate armed for the run that follows.
 
 ```python
 from pdf_annot.sync import sync_pdf_to_note
@@ -266,6 +266,7 @@ make setup          # Create venv, install deps, generate config
 
 # Core Workflow
 make run            # Sync all PDFs to notes
+make dry-run        # Preview the sync without writing anything
 
 # Testing
 make test           # Run tests (quiet)

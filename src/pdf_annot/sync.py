@@ -73,7 +73,9 @@ def _decline_reason(note_text: str) -> Optional[str]:
     return None
 
 
-def sync_pdf_to_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_iso: str) -> UpdateResult:
+def sync_pdf_to_note(
+    env: Env, pdf_info: PdfInfo, note_path: Path, current_time_iso: str, *, dry_run: bool = False
+) -> UpdateResult:
     """
     Process a single PDF-note pair through the complete workflow.
     Steps:
@@ -84,7 +86,7 @@ def sync_pdf_to_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_
     5. Build frontmatter updates
     6. Streamline annotations
     7. Render markdown block
-    8. Update note atomically
+    8. Update note atomically, unless dry_run
 
     Args:
 
@@ -92,6 +94,9 @@ def sync_pdf_to_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_
         pdf_info: PDF metadata from registry
         note_path: Path to the note file (in the runtime temp dir)
         current_time_iso: ISO timestamp for last_run_at
+        dry_run: Compute everything, write nothing. The preview walks the identical
+            path -- extraction, streamlining, rendering, composition -- and diverges
+            only at the final write, so what it reports is what a real run would do.
 
     Returns:
         UpdateResult with details about what changed
@@ -118,12 +123,17 @@ def sync_pdf_to_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_
                     annotation_block_changed=False,
                     note_updated=False,
                     declined=decline_reason,
+                    dry_run=dry_run,
                 )
 
         # 2. Quick gate: skip if PDF hasn't changed (no PDF parsing needed)
         if not _pdf_has_changed(note_text, pdf_info):
             return UpdateResult(
-                note_path=note_path, frontmatter_changed=False, annotation_block_changed=False, note_updated=False
+                note_path=note_path,
+                frontmatter_changed=False,
+                annotation_block_changed=False,
+                note_updated=False,
+                dry_run=dry_run,
             )
 
         # 3. PDF has changed — do the expensive extraction
@@ -160,15 +170,17 @@ def sync_pdf_to_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_
         # 8. Replace annotation block in note
         updated_note_text = replace_annotation_block(text_with_updated_fm, annotation_block)
 
-        # 9. Write updated note atomically
-        # TODO: This logic should respect dry_run
-        atomic_write_file(note_path, updated_note_text)
+        # 9. Write updated note atomically -- the one write on this path, and so
+        # the one place a preview run has to diverge.
+        if not dry_run:
+            atomic_write_file(note_path, updated_note_text)
 
         return UpdateResult(
             note_path=note_path,
             frontmatter_changed=True,
             annotation_block_changed=True,  # If we extracted, we updated
             note_updated=True,
+            dry_run=dry_run,
         )
 
     except Exception as e:
@@ -178,6 +190,7 @@ def sync_pdf_to_note(env: Env, pdf_info: PdfInfo, note_path: Path, current_time_
             annotation_block_changed=False,
             note_updated=False,
             error=str(e),
+            dry_run=dry_run,
         )
 
 
@@ -204,6 +217,8 @@ def main() -> int:
         notes_db = NotesDB.from_env(env)
 
         print(f"Found {len(pdf_index)} PDFs and {len(notes_db)} notes. Starting sync...")
+        if args.dry_run:
+            print("DRY RUN -- no files will be written.")
         print("-" * 30)
 
         # 2. Loop: Iterate over all PDFs and sync
@@ -220,7 +235,7 @@ def main() -> int:
                 note_path = env.paths.notes_root / f"{pdf_info.pdf_id}.md"
 
             # This is where the core logic happens
-            result = sync_pdf_to_note(env, pdf_info, note_path, current_time_iso)
+            result = sync_pdf_to_note(env, pdf_info, note_path, current_time_iso, dry_run=args.dry_run)
 
             # 3. Report: Log the result for this file
             if not result.success:
@@ -230,7 +245,12 @@ def main() -> int:
                 print(f"⚠️ DECLINED: {note_path.name} -- {result.declined}")
                 stats["declined"] += 1
             elif result.note_updated:
-                print(f"✅ UPDATED: {note_path.name}")
+                # Reported from the result, not from argv: the result is what knows
+                # whether anything was actually written.
+                if result.dry_run:
+                    print(f"🔍 WOULD UPDATE: {note_path.name}")
+                else:
+                    print(f"✅ UPDATED: {note_path.name}")
                 stats["updated"] += 1
             else:
                 # No error and not updated means skipped
@@ -239,8 +259,8 @@ def main() -> int:
 
         # 4. Summary
         print("-" * 30)
-        print("Sync complete.")
-        print(f"  Updated:  {stats['updated']}")
+        print("Dry run complete -- nothing was written." if args.dry_run else "Sync complete.")
+        print(f"  {'Would update:' if args.dry_run else 'Updated: '} {stats['updated']}")
         print(f"  Skipped:  {stats['skipped']}")
         print(f"  Declined: {stats['declined']}")
         print(f"  Errors:   {stats['errors']}")

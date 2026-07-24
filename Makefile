@@ -9,7 +9,7 @@ RUN_WITH_PATH = $(ACTIVATE) && PYTHONPATH=src
 SETUP_STAMP = $(VENV_DIR)/.setup_stamp
 
 # --- Phony targets ---
-.PHONY: all setup test test-verbose run extract streamline hash discover-pdfs discover-pdf-names discover-pdf-folders time-extraction clean showtree gentree filesdump filesdump-compact help
+.PHONY: all setup test test-verbose run dry-run extract streamline hash discover-pdfs discover-pdf-names discover-pdf-folders time-extraction clean showtree gentree filesdump filesdump-compact help
 
 # Default target runs 'setup'
 all: setup
@@ -48,6 +48,9 @@ test-verbose: $(SETUP_STAMP) ## Run tests with verbose output
 
 run: $(SETUP_STAMP) ## Run the main sync workflow (pass ARGS="-c ...")
 	$(RUN_WITH_PATH) python -m pdf_annot.sync $(ARGS)
+
+dry-run: $(SETUP_STAMP) ## Preview the sync workflow without writing any files (pass ARGS="-c ...")
+	$(RUN_WITH_PATH) python -m pdf_annot.sync --dry-run $(ARGS)
 
 hash: $(SETUP_STAMP) ## Calculate 7-char hash for a string or filename (ARGS="...")
 	$(RUN_WITH_PATH) python tools/print_hashes.py $(ARGS)
