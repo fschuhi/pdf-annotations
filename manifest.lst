@@ -2,6 +2,18 @@
 # The files in this manifest are the relevant files for understanding how the project hangs together.
 # Files which are commented out are not included in the `filesdump.txt`.)
 
+# SESSION SCOPE: pruned 2026-07-24 for the A8 session (resolve the plan/apply fork; D1 = DELETE).
+# Everything A8 does not need is commented out with the marker [A8-out].
+# To restore the full project view, delete the "# " in front of every [A8-out] line.
+# The manifest is deliberately session-scoped now: re-widen it when the agenda moves past A8.
+#
+# READ THIS BEFORE TRUSTING A SCOPE MARKER: [A8-out] means "not needed to do A8".
+# It does NOT mean "untouched by A8". The A7 manifest made that stronger claim about
+# tests/test_extract.py and was wrong -- that file called the function A7 changed, with
+# the one data shape that broke it, and it was the only test standing in front of a
+# silent production failure. If a session is about to change a function's behaviour,
+# grep the whole repo for its callers rather than trusting this file's commentary.
+
 ### --- Context & Meta ---
 # ⚠️ NON-NEGOTIABLE collaboration rules - READ FIRST
 CRITICAL_RULES.md
@@ -13,7 +25,11 @@ tmp/project-tree.txt
 README.md
 GOALS.md
 TODO.md
-# HISTORY.md
+
+# A8 writes the plan/apply retirement entry here (D1: pattern name, retirement date,
+# commit reference for resurrection), so the session needs to see the existing format.
+# Normally out of the dump to save tokens -- comment it out again after A8.
+HISTORY.md
 
 # Historical plan to combine `anima` and `pdf-annotations` for a fully macOS-native workflow. Complete 2026-07-19.
 # docs/TARGET_ARCHITECTURE.md
@@ -35,76 +51,61 @@ pyproject.toml
 ### --- configuration for the PDF annotations tool ---
 
 # pdf_annot.toml
-pdf_annot.example.toml
+# [A8-out] A8 changes no config surface; that is D2/A9 territory.
+# pdf_annot.example.toml
 
 ### --- macOS PDF annotations tool ---
 
-src/pdf_annot/annotation.py
-src/pdf_annot/env.py
-src/pdf_annot/extract.py
-src/pdf_annot/frontmatter.py
-src/pdf_annot/ndjson_to_md_block.py
-src/pdf_annot/notes.py
+# Kept: the deletion target, the direct path that survives it, the production caller
+# that owns `--dry-run`, and the two modules the dormant planner duplicates.
+
+# the ~300-line plan/apply layer D1 decided to DELETE; also holds the third ANNOT_SEP copy
 src/pdf_annot/notes_db.py
-src/pdf_annot/pdf_discovery.py
-src/pdf_annot/pdf_registry.py
-src/pdf_annot/resolve.py
-src/pdf_annot/streamline_annotations.py
+# the surviving direct path: `replace_annotation_block`, `extract_info_text`, `UpdateResult`
+src/pdf_annot/notes.py
+# the production caller: owns the argparse `--dry-run` that currently parses and does nothing (F20)
 src/pdf_annot/sync.py
+# `atomic_write_file` (ported here by A1a) vs `notes_db._atomic_write_file`, which dies with A8
 src/pdf_annot/utils.py
+# what `notes_db`'s frontmatter planner duplicates: `upsert_fields`, `parse_note`, `as_timestamp`
+src/pdf_annot/frontmatter.py
+# included on precaution: if `NotesDB` or the planner reaches into `Env`, the session needs this.
+# This is the cheapest line to cut if the dump still feels too heavy.
+src/pdf_annot/env.py
+
+# [A8-out] not on the plan/apply path
+# src/pdf_annot/annotation.py
+# src/pdf_annot/extract.py
+# src/pdf_annot/ndjson_to_md_block.py
+# src/pdf_annot/pdf_discovery.py
+# src/pdf_annot/pdf_registry.py
+# src/pdf_annot/resolve.py
+# src/pdf_annot/streamline_annotations.py
 
 ### --- testing the PDF annotations tool ---
 
-tests/test_annotations.py
-tests/test_core_workflow.py
-tests/test_env.py
-tests/test_extract.py
-tests/test_frontmatter.py
+# These four are the spec for A8: the first loses tests with the layer it covers,
+# the other three must pass unchanged.
 tests/test_notes_db.py
-tests/test_pdf_registry.py
-tests/test_pdf_to_markdown_e2e.py
-tests/test_resolve.py
-tests/test_streamline_integration.py
-tests/test_streamline_unit.py
 tests/test_sync_cli.py
+tests/test_core_workflow.py
 tests/test_utils.py
 
-# tests/fixtures/annot_types/(Ealbini 2017) On regarding constructive emotions.pdf
-# tests/fixtures/annot_types/input.pdf
-tests/fixtures/consecutive_links/expected.ndjson
-tests/fixtures/consecutive_links/input.ndjson
-tests/fixtures/filter_and_pages/expected.ndjson
-tests/fixtures/filter_and_pages/input.ndjson
-tests/fixtures/headers/expected.ndjson
-tests/fixtures/headers/input.ndjson
-# tests/fixtures/highlight_scrambled_bug/(Dalbini 2016) On disregarding constructive emotions.pdf
-# tests/fixtures/highlight_scrambled_bug/input.pdf
-tests/fixtures/link_merge/expected.ndjson
-tests/fixtures/link_merge/input.ndjson
-tests/fixtures/malformed/input.ndjson
-tests/fixtures/pdf_to_markdown_e2e/expected_markdown.md
-tests/fixtures/pdf_to_markdown_e2e/expected_raw.ndjson
-tests/fixtures/pdf_to_markdown_e2e/expected_streamlined.ndjson
-tests/fixtures/pdf_to_markdown_e2e/final_streamlined.ndjson
-# tests/fixtures/pdf_to_markdown_e2e/input.pdf
-tests/fixtures/simple/expected.ndjson
-tests/fixtures/simple/input.ndjson
+# [A8-out] green already, and not expected to be reached by the deletion --
+# but see the warning at the top of this file before relying on that.
+# tests/test_annotations.py
+# tests/test_env.py
+# tests/test_extract.py
+# tests/test_frontmatter.py
+# tests/test_pdf_registry.py
+# tests/test_pdf_to_markdown_e2e.py
+# tests/test_resolve.py
+# tests/test_streamline_integration.py
+# tests/test_streamline_unit.py
 
-tests/fixtures/workflow_all_pdfs_loop/goldens/(Albini 2013).md
-tests/fixtures/workflow_all_pdfs_loop/seeds/(Albini 2013).md
-# tests/fixtures/workflow_all_pdfs_loop/seeds/(Albini 2013) On dealing with destructive emotions.pdf
+# --- workflow fixtures: these ARE the specification for the write path ---
 
-tests/fixtures/workflow_complete_update/goldens/(Albini 2013).md
-tests/fixtures/workflow_complete_update/seeds/(Albini 2013).md
-# tests/fixtures/workflow_complete_update/seeds/(Albini 2013) On dealing with destructive emotions.pdf
-
-tests/fixtures/workflow_declines/goldens/(Albini 2013).md
-tests/fixtures/workflow_declines/goldens/(Balbini 2014).md
-tests/fixtures/workflow_declines/seeds/(Albini 2013).md
-# tests/fixtures/workflow_declines/seeds/(Albini 2013) On dealing with destructive emotions.pdf
-tests/fixtures/workflow_declines/seeds/(Balbini 2014).md
-# tests/fixtures/workflow_declines/seeds/(Balbini 2014) On dealing with constructive emotions.pdf
-
+# free-text preservation, the audit's first priority axis
 tests/fixtures/workflow_manual_edits/goldens/(Albini 2013).md
 tests/fixtures/workflow_manual_edits/goldens/(Calbini 2015).md
 tests/fixtures/workflow_manual_edits/seeds/(Albini 2013).md
@@ -112,22 +113,65 @@ tests/fixtures/workflow_manual_edits/seeds/(Calbini 2015).md
 # tests/fixtures/workflow_manual_edits/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 # tests/fixtures/workflow_manual_edits/seeds/(Calbini 2015) On disregarding destructive emotions.pdf
 
+# note creation: `_compose_new_note_text` territory, i.e. the code being deleted
 tests/fixtures/workflow_new_pdfs/goldens/(Albini 2013).md
 tests/fixtures/workflow_new_pdfs/goldens/(Balbini 2014).md
 # tests/fixtures/workflow_new_pdfs/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 # tests/fixtures/workflow_new_pdfs/seeds/(Balbini 2014) On dealing with constructive emotions.pdf
 
-tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013).md
+# A2 decline-guard semantics, which D1 says must survive whichever branch wins
+tests/fixtures/workflow_declines/goldens/(Albini 2013).md
+tests/fixtures/workflow_declines/goldens/(Balbini 2014).md
+tests/fixtures/workflow_declines/seeds/(Albini 2013).md
+tests/fixtures/workflow_declines/seeds/(Balbini 2014).md
+# tests/fixtures/workflow_declines/seeds/(Albini 2013) On dealing with destructive emotions.pdf
+# tests/fixtures/workflow_declines/seeds/(Balbini 2014) On dealing with constructive emotions.pdf
+
+# a full synced bibnote, for the shape of the output
+tests/fixtures/workflow_complete_update/goldens/(Albini 2013).md
+tests/fixtures/workflow_complete_update/seeds/(Albini 2013).md
+# tests/fixtures/workflow_complete_update/seeds/(Albini 2013) On dealing with destructive emotions.pdf
+
+# [A8-out] these exercise discovery and the change gate, not the write path
+# tests/fixtures/workflow_all_pdfs_loop/goldens/(Albini 2013).md
+# tests/fixtures/workflow_all_pdfs_loop/seeds/(Albini 2013).md
+# tests/fixtures/workflow_all_pdfs_loop/seeds/(Albini 2013) On dealing with destructive emotions.pdf
+
+# tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013).md
 # tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 
-tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013).md
+# tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013).md
 # tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013) On dealing with destructive emotions.pdf
+
+# [A8-out] streamliner fixtures: A7 landed 2026-07-24, nothing here is in play
+# tests/fixtures/annot_types/(Ealbini 2017) On regarding constructive emotions.pdf
+# tests/fixtures/annot_types/input.pdf
+# tests/fixtures/consecutive_links/expected.ndjson
+# tests/fixtures/consecutive_links/input.ndjson
+# tests/fixtures/filter_and_pages/expected.ndjson
+# tests/fixtures/filter_and_pages/input.ndjson
+# tests/fixtures/headers/expected.ndjson
+# tests/fixtures/headers/input.ndjson
+# tests/fixtures/highlight_scrambled_bug/(Dalbini 2016) On disregarding constructive emotions.pdf
+# tests/fixtures/highlight_scrambled_bug/input.pdf
+# tests/fixtures/link_merge/expected.ndjson
+# tests/fixtures/link_merge/input.ndjson
+# tests/fixtures/malformed/input.ndjson
+# tests/fixtures/pdf_to_markdown_e2e/expected_markdown.md
+# tests/fixtures/pdf_to_markdown_e2e/expected_raw.ndjson
+# tests/fixtures/pdf_to_markdown_e2e/expected_streamlined.ndjson
+# tests/fixtures/pdf_to_markdown_e2e/final_streamlined.ndjson
+# tests/fixtures/pdf_to_markdown_e2e/input.pdf
+# tests/fixtures/simple/expected.ndjson
+# tests/fixtures/simple/input.ndjson
 
 ### --- Support tools ---
 
+# [A8-out] all three are A9 business: V1 still owes a grep of `concat_files.py`, and
+# `print_hashes.py` is the one that forces A9's `pdf_id_from_filename` decision.
 # tools/concat_files.py
 # tools/discover_pdfs.py
-tools/print_hashes.py
+# tools/print_hashes.py
 # tools/time_extraction.py
 
 ### --- Windows 11 server (running on Parallels VM) ---
