@@ -21,7 +21,7 @@ TODO.md
 # Historical production-readiness audit: findings ledger, implementation agenda, open decisions.
 # docs/AUDIT.md
 
-# Calibrate Claude using GPT-5.6-Terra progress on A9 and A10 (from `AUDIT.md`)
+# Historical calibration of Claude using GPT-5.6-Terra progress on A9 and A10 (from `AUDIT.md`)
 # **Result**: State what a piece of code currently does before stating a finding about it. Otherwise the finding has nothing to attach to.
 # docs/CALIBRATION_PROMPT.md
 # docs/GPT-5.6-Terra (A9 pickup).md
@@ -148,8 +148,8 @@ tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013).md
 
 # Obsidian/docs/Fleeting-Notes-Processing-Checklist.md
 # Obsidian/docs/Query-Candidates.md
-Obsidian/docs/The-Studio-Manual.md
-Obsidian/docs/TODO-Obsidian.md
+# Obsidian/docs/The-Studio-Manual.md
+# Obsidian/docs/TODO-Obsidian.md
 
 ### --- Obsidian tooling for The Studio, the Zettelkasten which uses the PDF annotations ---
 
