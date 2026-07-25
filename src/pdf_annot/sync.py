@@ -156,6 +156,13 @@ def sync_pdf_to_note(
             "pdf_textboxes": pdf_stats.get("pdf_textboxes"),
         }
 
+        # A brand-new bibnote gets pdf_ctime seeded from pdf_mtime. An existing
+        # note's pdf_ctime is deliberately left out of full_updates so that
+        # upsert_fields preserves whatever value it already carries -- from
+        # here on, only pdf_mtime is meant to move forward.
+        if not note_exists:
+            full_updates["pdf_ctime"] = pdf_mtime_iso
+
         # 5. Apply updates to frontmatter
         _, text_with_updated_fm = upsert_fields(note_text, full_updates)
 

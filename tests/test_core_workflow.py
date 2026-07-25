@@ -167,6 +167,15 @@ def test_complete_update_workflow(setup_workflow: dict):
 
     self_verify_golden(note_path, golden_path)
 
+    # pdf_ctime is not part of the fields self_verify_golden checks (see its
+    # docstring), because it is not comparable across environments for a
+    # brand-new note. Here the note already existed before this run, so its
+    # pdf_ctime comes verbatim from the seed's frontmatter -- fully controlled
+    # by this fixture, not by any real filesystem timestamp -- and must not
+    # move even though pdf_mtime just did.
+    updated_ctime = parse_note(note_path.read_text(encoding="utf-8")).front_matter.get("pdf_ctime")
+    assert updated_ctime == "2025-10-15T09:00:00", "pdf_ctime should be preserved unchanged from the seed"
+
 
 @pytest.mark.parametrize("setup_workflow", ["workflow_all_pdfs_loop"], indirect=True)
 def test_all_pdfs_with_loop(setup_workflow: dict):
@@ -331,6 +340,20 @@ def test_workflow_new_pdfs(setup_workflow: dict):
     parsed_balbini = parse_note(note_path_balbini.read_text(encoding="utf-8"))
     assert parsed_balbini.front_matter.get("has_annotations") is False, "Balbini PDF should have has_annotations: false"
 
+    # pdf_ctime cannot be pinned to a fixed golden value here: for a brand-new
+    # note it is read straight off the real PDF's filesystem mtime, which git
+    # checkout leaves non-deterministic across machines (same reason pdf_mtime
+    # itself is excluded from self_verify_golden's fields_to_check). What we
+    # can assert regardless of environment is the actual invariant: a new
+    # note's pdf_ctime equals its own pdf_mtime.
+    parsed_albini = parse_note(note_path_albini.read_text(encoding="utf-8"))
+    assert parsed_albini.front_matter.get("pdf_ctime") == parsed_albini.front_matter.get(
+        "pdf_mtime"
+    ), "New note's pdf_ctime should equal its pdf_mtime"
+    assert parsed_balbini.front_matter.get("pdf_ctime") == parsed_balbini.front_matter.get(
+        "pdf_mtime"
+    ), "New note's pdf_ctime should equal its pdf_mtime"
+
 
 @pytest.mark.parametrize("setup_workflow", ["workflow_manual_edits"], indirect=True)
 def test_workflow_manual_edits(setup_workflow: dict):
@@ -390,6 +413,10 @@ def self_verify_golden(updated_note_path: Path, golden_path: Path):
     golden_parsed = parse_note(golden_text)
 
     # --- FIX: Check only the important fields, skip the timestamp ---
+    # pdf_ctime is deliberately excluded here, same as pdf_mtime: for a
+    # newly-created note both are read straight off the real PDF's filesystem
+    # mtime, which git checkout leaves non-deterministic across machines. Each
+    # test asserts the pdf_ctime invariant it actually needs explicitly instead.
     fields_to_check = ["pdf_id", "pdf_title", "pdf_size", "pdf_hash", "has_annotations"]
 
     for key in fields_to_check:

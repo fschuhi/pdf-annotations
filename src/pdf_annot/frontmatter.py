@@ -141,6 +141,7 @@ def upsert_fields(text: str, updates: Dict[str, object]) -> Tuple[bool, str]:
         "pdf_size",
         "pdf_hash",
         "has_annotations",
+        "pdf_ctime",
         "pdf_mtime",
         "last_run_at",
         "pdf_pages",

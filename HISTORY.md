@@ -27,3 +27,7 @@
 ## Vault under version control
 
 - git repository, not pushed (2026-07-25).
+
+## `pdf_ctime` Frontmatter Field
+
+- `pdf_ctime` added (2026-07-25): one-time batch tool (`tools/add_pdf_ctime.py`) backfilled ~200 existing bibnotes from `pdf_mtime`; `sync.py`/`frontmatter.py` now seed it for every new bibnote and leave it untouched on existing ones.
