@@ -19,10 +19,13 @@ TODO.md
 # docs/TARGET_ARCHITECTURE.md
 
 # Historical production-readiness audit: findings ledger, implementation agenda, open decisions.
-docs/AUDIT.md
+# docs/AUDIT.md
 
-# Link refactoring for old Entry Page links, originated from "Fix old IDs" in `TODO.md`
-# LINK_REFACTOR.md
+# Calibrate Claude using GPT-5.6-Terra progress on A9 and A10 (from `AUDIT.md`)
+# **Result**: State what a piece of code currently does before stating a finding about it. Otherwise the finding has nothing to attach to.
+# docs/CALIBRATION_PROMPT.md
+# docs/GPT-5.6-Terra (A9 pickup).md
+# docs/GPT-5.6-Terra (A10 and closure).md
 
 ### --- Build & Python Configuration ---
 Makefile
@@ -145,7 +148,7 @@ tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013).md
 
 # Obsidian/docs/Fleeting-Notes-Processing-Checklist.md
 # Obsidian/docs/Query-Candidates.md
-# Obsidian/docs/The-Studio-Manual.md
+Obsidian/docs/The-Studio-Manual.md
 Obsidian/docs/TODO-Obsidian.md
 
 ### --- Obsidian tooling for The Studio, the Zettelkasten which uses the PDF annotations ---
