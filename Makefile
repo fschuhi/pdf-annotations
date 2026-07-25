@@ -9,8 +9,7 @@ RUN_WITH_PATH = $(ACTIVATE) && PYTHONPATH=src
 SETUP_STAMP = $(VENV_DIR)/.setup_stamp
 
 # --- Phony targets ---
-.PHONY: all setup test test-verbose run dry-run extract streamline discover-pdfs discover-pdf-names discover-pdf-folders time-extraction clean showtree gentree filesdump filesdump-compact help
-
+.PHONY: all setup test test-verbose run dry-run extract streamline discover-pdfs discover-pdf-names discover-pdf-folders time-extraction clean showtree gentree filesdump filesdump-compact help add_pdf_ctime
 # Default target runs 'setup'
 all: setup
 
@@ -69,6 +68,9 @@ discover-pdf-folders: $(SETUP_STAMP) ## List all PDFs (just the unique folders)
 
 time-extraction: $(SETUP_STAMP) ## Time annotation extraction per PDF, read-only (ARGS="--top 0")
 	@$(RUN_WITH_PATH) python tools/time_extraction.py --env pdf_annot.toml $(ARGS)
+
+add_pdf_ctime: $(SETUP_STAMP) ## One-time: insert pdf_ctime (copy of pdf_mtime) into every bibnote
+	$(RUN_WITH_PATH) python tools/add_pdf_ctime.py --env pdf_annot.toml
 
 # --- Utility Targets ---
 
