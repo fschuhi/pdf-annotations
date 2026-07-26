@@ -8,6 +8,9 @@ notes_root = "~/notes/pdf-annotations"
 # OPTIONAL: one or more directories containing PDFs to scan
 # pdf_dirs = ["~/Documents/Papers", "~/Dropbox/Research"]
 
+# OPTIONAL: sidecar directory containing the first-PDF-page images
+# thumbnails_dir = "~/Documents/Thumnbails"
+
 # OPTIONAL: directory for temporary files during testing/development
 # Useful for test runs to isolate temporary artifacts
 # temp_dir = "~/notes/.tmp"

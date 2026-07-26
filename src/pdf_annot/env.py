@@ -29,6 +29,7 @@ class Paths(BaseModel):
         description="One or more directories containing PDFs to scan.",
     )
     temp_dir: Optional[Path] = Field(None, description="Optional directory for temporary test artifacts.")
+    thumbnails_dir: Optional[Path] = Field(None, description="Optional directory for PDF page-1 thumbnail images.")
 
     @field_validator("notes_root", mode="before")
     @classmethod
@@ -38,6 +39,11 @@ class Paths(BaseModel):
     @field_validator("temp_dir", mode="before")
     @classmethod
     def _norm_temp_dir(cls, v: Any) -> Any:
+        return _expand_path(v)
+
+    @field_validator("thumbnails_dir", mode="before")
+    @classmethod
+    def _norm_thumbnails_dir(cls, v: Any) -> Any:
         return _expand_path(v)
 
     @field_validator("pdf_dirs", mode="before")
@@ -99,6 +105,13 @@ class Env(BaseModel):
                 self.paths.temp_dir.mkdir(parents=True, exist_ok=True)
             else:
                 raise ValueError(f"temp_dir does not exist: {self.paths.temp_dir}")
+
+        # Ensure thumbnails_dir exists if set
+        if self.paths.thumbnails_dir is not None and not self.paths.thumbnails_dir.exists():
+            if self.io.create_missing_dirs:
+                self.paths.thumbnails_dir.mkdir(parents=True, exist_ok=True)
+            else:
+                raise ValueError(f"thumbnails_dir does not exist: {self.paths.thumbnails_dir}")
 
         # pdf_dirs are optional; if provided, they must exist (we do not create them)
         for p in self.paths.pdf_dirs:
@@ -174,6 +187,7 @@ def _build_env_from_data(data: Mapping[str, Any]) -> Env:
         "notes_root": ("paths", "notes_root"),
         "pdf_dirs": ("paths", "pdf_dirs"),
         "temp_dir": ("paths", "temp_dir"),
+        "thumbnails_dir": ("paths", "thumbnails_dir"),
         "create_missing_dirs": ("io", "create_missing_dirs"),
     }
 
