@@ -1,15 +1,25 @@
 # --- Variables ---
+
 VENV_DIR = .venv
 VENV_ACTIVATE = $(VENV_DIR)/bin/activate
 ACTIVATE = . $(VENV_ACTIVATE)
 PIP = $(ACTIVATE) && pip
+
 # RUN_WITH_PATH sets PYTHONPATH to find the 'src' directory (src-layout)
 RUN_WITH_PATH = $(ACTIVATE) && PYTHONPATH=src
+
 # The sentinel file to check if setup is complete
 SETUP_STAMP = $(VENV_DIR)/.setup_stamp
 
+# Folder containing the old PDF paper collection
+PDF_COLLECTION_OLD = $(HOME)/Dropbox/Papers/Collection
+
+# Folder containing the **NEW** PDF paper collection
+PDF_COLLECTION_NEW = $(HOME)/Dropbox/work/Obsidian/_main/Papers/Collection/PDFs
+
 # --- Phony targets ---
-.PHONY: all setup test test-verbose run dry-run extract streamline discover-pdfs discover-pdf-names discover-pdf-folders time-extraction clean showtree gentree filesdump filesdump-compact help add_pdf_ctime
+
+.PHONY: all setup test test-verbose run dry-run extract streamline discover-pdfs discover-pdf-names discover-pdf-folders time-extraction clean showtree gentree filesdump filesdump-compact help add_pdf_ctime show-pdf-info-old show-pdf-info-new
 # Default target runs 'setup'
 all: setup
 
@@ -71,6 +81,22 @@ time-extraction: $(SETUP_STAMP) ## Time annotation extraction per PDF, read-only
 
 add_pdf_ctime: $(SETUP_STAMP) ## One-time: insert pdf_ctime (copy of pdf_mtime) into every bibnote
 	$(RUN_WITH_PATH) python tools/add_pdf_ctime.py --env pdf_annot.toml
+
+show-pdf-info-old: $(SETUP_STAMP) ## Report pages/highlights/textboxes for every PDF in the **OLD** paper collection
+	@find "$(PDF_COLLECTION_OLD)" -type f -iname '*.pdf' > tmp/show_pdf_info_filelist_old.txt
+	$(RUN_WITH_PATH) python tools/show_pdf_info.py \
+		--file-list tmp/show_pdf_info_filelist_old.txt \
+		--base-folder "$(PDF_COLLECTION_OLD)" \
+		--annotations \
+		--output tmp/show_pdf_info_old.out
+
+show-pdf-info-new: $(SETUP_STAMP) ## Report pages/highlights/textboxes for every PDF in the **NEW** paper collection
+	@find "$(PDF_COLLECTION_NEW)" -type f -iname '*.pdf' > tmp/show_pdf_info_filelist_new.txt
+	$(RUN_WITH_PATH) python tools/show_pdf_info.py \
+		--file-list tmp/show_pdf_info_filelist_new.txt \
+		--base-folder "$(PDF_COLLECTION_NEW)" \
+		--annotations \
+		--output tmp/show_pdf_info_new.out
 
 # --- Utility Targets ---
 
