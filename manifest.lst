@@ -54,10 +54,12 @@ src/pdf_annot/pdf_registry.py
 src/pdf_annot/resolve.py
 src/pdf_annot/streamline_annotations.py
 src/pdf_annot/sync.py
+src/pdf_annot/thumbnails.py
 src/pdf_annot/utils.py
 
 ### --- testing the PDF annotations tool ---
 
+tests/test_backfill_thumbnails.py
 tests/test_core_workflow.py
 tests/test_env.py
 tests/test_extract.py
@@ -70,6 +72,9 @@ tests/test_resolve.py
 tests/test_streamline_integration.py
 tests/test_streamline_unit.py
 tests/test_sync_cli.py
+tests/test_sync_thumbnails.py
+tests/test_thumbnail_header.py
+tests/test_thumbnails.py
 tests/test_utils.py
 
 # tests/fixtures/annot_types/(Ealbini 2017) On regarding constructive emotions.pdf

@@ -8,11 +8,10 @@
 
 ## 📍 Current Session Pointer
 
-A10 landed 2026-07-24. The production-readiness audit is now fully closed: its durable outcomes are harvested into `HISTORY.md`, `README.md` records the live sync path and source-of-truth philosophy, and `TARGET_ARCHITECTURE.md` remains unchanged as a completed historical design and acceptance artefact.
+Page-1 thumbnails landed 2026-07-26: `sync.py` auto-adds them for new/changed bibnotes, `tools/backfill_thumbnails.py` retrofitted the existing ~1600-book corpus. See `HISTORY.md`.
 
 **What's next:**
-1. On the bibnote, have a bigger thumbnail that shows as image the first page of the PDF, see `TODO.md`.
-2. Review and prioritize the backlog in `TODO.md`.
+1. Review and prioritize the backlog in `TODO.md`.
 
 Everything else sits in `TODO.md` until it earns a place here.
 

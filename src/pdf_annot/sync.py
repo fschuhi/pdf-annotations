@@ -10,11 +10,18 @@ from typing import Optional
 from pdf_annot.env import load_env, Env
 from pdf_annot.pdf_registry import build_pdf_index, PdfInfo
 from pdf_annot.notes_db import build_notes_index
-from pdf_annot.frontmatter import upsert_fields, parse_note, as_timestamp
+from pdf_annot.frontmatter import upsert_fields, parse_note, format_note, as_timestamp
 from pdf_annot.ndjson_to_md_block import render_block
 from pdf_annot.extract import extract_annotations_to_list
 from pdf_annot.streamline_annotations import streamline_annotations_list
-from pdf_annot.notes import DEFAULT_INFO_TEXT, extract_info_text, replace_annotation_block, UpdateResult
+from pdf_annot.notes import (
+    DEFAULT_INFO_TEXT,
+    extract_info_text,
+    replace_annotation_block,
+    ensure_thumbnail_header,
+    UpdateResult,
+)
+from pdf_annot.thumbnails import thumbnail_path_for, render_thumbnail
 from pdf_annot.utils import atomic_write_file
 
 
@@ -166,6 +173,28 @@ def sync_pdf_to_note(
         # 5. Apply updates to frontmatter
         _, text_with_updated_fm = upsert_fields(note_text, full_updates)
 
+        # 5b. Thumbnail: render page 1 if configured and not already there, then
+        # add the span to the body -- but only once the image is confirmed to
+        # exist, so a failed render never leaves a note pointing at a missing
+        # file. Gated on thumbnails_dir being set at all (nothing to do for
+        # anyone not opting in) and on dry_run (rendering writes a real JPEG to
+        # disk, a side effect the "compute everything, write nothing" preview
+        # contract does not cover -- see thumbnail_error below for the trade-off).
+        thumbnail_error: Optional[str] = None
+        if env.paths.thumbnails_dir is not None and not dry_run:
+            thumbnail_dest = thumbnail_path_for(pdf_info.pdf_id, env.paths.thumbnails_dir)
+            thumbnail_ready = thumbnail_dest.exists()
+            if not thumbnail_ready:
+                thumb_result = render_thumbnail(Path(pdf_info.abs_path), thumbnail_dest)
+                thumbnail_ready = thumb_result.success
+                if not thumbnail_ready:
+                    thumbnail_error = thumb_result.error
+
+            if thumbnail_ready:
+                parsed_for_header = parse_note(text_with_updated_fm)
+                updated_body = ensure_thumbnail_header(parsed_for_header.body, pdf_info.pdf_id)
+                text_with_updated_fm = format_note(parsed_for_header.front_matter, updated_body)
+
         # 6. Streamline annotations
         streamlined_annotations = streamline_annotations_list(raw_annotations_list)
 
@@ -187,6 +216,7 @@ def sync_pdf_to_note(
             frontmatter_changed=True,
             annotation_block_changed=True,  # If we extracted, we updated
             note_updated=True,
+            thumbnail_error=thumbnail_error,
             dry_run=dry_run,
         )
 
@@ -257,7 +287,10 @@ def main() -> int:
                 if result.dry_run:
                     print(f"🔍 WOULD UPDATE: {note_path.name}")
                 else:
-                    print(f"✅ UPDATED: {note_path.name}")
+                    line = f"✅ UPDATED: {note_path.name}"
+                    if result.thumbnail_error:
+                        line += f" (thumbnail failed: {result.thumbnail_error})"
+                    print(line)
                 stats["updated"] += 1
             else:
                 # No error and not updated means skipped

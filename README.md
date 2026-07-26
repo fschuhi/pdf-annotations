@@ -134,7 +134,7 @@ The main entry point is `src/pdf_annot/sync.py`. When run, it automatically:
 4. **Detects changes** by comparing PDF mtime/size with note frontmatter (fast — no PDF parsing).
 5. **Calls `sync_pdf_to_note`** only for new or changed PDFs.
 
-The live production path inside `sync_pdf_to_note` is deliberately direct: `build_pdf_index` supplies `PdfInfo`; `build_notes_index` supplies `NoteInfo` and is read-only by construction; then sync calls `extract_annotations_to_list`, `streamline_annotations_list`, `render_block`, `extract_info_text`, and `replace_annotation_block` before making its one protected write through `atomic_write_file`. This call path is the actual sync contract. Neither index plans nor applies note updates, and no dormant alternate update path exists. Both builders return a plain dict keyed by the lowercased `pdf_id`, so callers normalize the id they look up; there is deliberately no container class on either side, because the module is the index.
+The live production path inside `sync_pdf_to_note` is deliberately direct: `build_pdf_index` supplies `PdfInfo`; `build_notes_index` supplies `NoteInfo` and is read-only by construction; then sync calls `extract_annotations_to_list`, `streamline_annotations_list`, `render_block`, `extract_info_text`, and `replace_annotation_block` before making its one protected write through `atomic_write_file`. When `thumbnails_dir` is configured, `thumbnails.render_thumbnail` and `notes.ensure_thumbnail_header` run between the frontmatter update and the annotation-block render, gated on the JPEG not already existing on disk and skipped entirely under `--dry-run` (rendering is a real disk write, which a preview cannot honestly show without performing). This call path is the actual sync contract. Neither index plans nor applies note updates, and no dormant alternate update path exists. Both builders return a plain dict keyed by the lowercased `pdf_id`, so callers normalize the id they look up; there is deliberately no container class on either side, because the module is the index.
 
 This function handles the extraction, streamlining, rendering, and atomic updating. This workflow is tested end-to-end
 in `tests/test_core_workflow.py`.
@@ -196,6 +196,17 @@ changed, updated_text = upsert_fields(note_text, {"pdf_title": "New"})
 
 Handles extraction of custom info text (preserves user edits) and rendering of the annotation block.
 
+#### `src/pdf_annot/thumbnails.py`
+
+Renders a PDF's first page to a JPEG via PyMuPDF, sized for the `<span class="pdf-thumbnail">` markup in the note body. `thumbnail_path_for` is the pure naming rule (by `pdf_id`, not `pdf_hash` -- hashes are Anima-internal and have no reason to surface here). `render_thumbnail` always renders and never raises; failure is reported through `ThumbnailResult.error` instead. Display width, render scale, and JPEG quality are module constants, tuned by eye rather than exposed in `pdf_annot.toml`.
+
+```python
+from pdf_annot.thumbnails import thumbnail_path_for, render_thumbnail
+
+dest = thumbnail_path_for(pdf_info.pdf_id, env.paths.thumbnails_dir)
+result = render_thumbnail(Path(pdf_info.abs_path), dest)
+```
+
 #### `src/pdf_annot/pdf_registry.py` & `notes_db.py`
 
 Indexing systems for discovering controlled PDFs (bracket format) and existing Markdown notes.
@@ -250,6 +261,8 @@ pdf_highlights: 6
 pdf_textboxes: 0
 ---
 
+<span class="pdf-thumbnail"><img src="(Albini 2013).jpg" width="250"></span>
+
 <hr class="pdf-annot-sep">
 
 <span class="pdf-annot-info">below the automatically generated annotations from the PDF</span>
@@ -284,6 +297,7 @@ make discover-pdfs              # List all PDFs visible to config
 make showtree                   # Display project structure
 make filesdump                  # Create context dump for LLMs
 make time-extraction            # Time extraction per PDF (read-only)
+make backfill-thumbnail-example # Regenerate the (Wallis 2017a) thumbnail -- quick sanity check
 ```
 
 ---

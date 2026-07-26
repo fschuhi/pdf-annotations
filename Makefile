@@ -19,7 +19,7 @@ PDF_COLLECTION_NEW = $(HOME)/Dropbox/work/Obsidian/_main/Papers/Collection/PDFs
 
 # --- Phony targets ---
 
-.PHONY: all setup test test-verbose run dry-run extract streamline discover-pdfs discover-pdf-names discover-pdf-folders time-extraction clean showtree gentree filesdump filesdump-compact help add_pdf_ctime show-pdf-info-old show-pdf-info-new
+.PHONY: all setup test test-verbose run dry-run extract streamline discover-pdfs discover-pdf-names discover-pdf-folders time-extraction clean showtree gentree filesdump filesdump-compact help add_pdf_ctime show-pdf-info-old show-pdf-info-new backfill-thumbnails backfill-thumbnails-example
 # Default target runs 'setup'
 all: setup
 
@@ -97,6 +97,12 @@ show-pdf-info-new: $(SETUP_STAMP) ## Report pages/highlights/textboxes for every
 		--base-folder "$(PDF_COLLECTION_NEW)" \
 		--annotations \
 		--output tmp/show_pdf_info_new.out
+
+backfill-thumbnails: $(SETUP_STAMP) ## One-time: add page-1 thumbnails to existing bibnotes missing one
+	$(RUN_WITH_PATH) python tools/backfill_thumbnails.py --env pdf_annot.toml $(ARGS)
+
+backfill-thumbnail-example: $(SETUP_STAMP) ## Regenerate the thumbnail for (Wallis 2017a), always forced
+	$(RUN_WITH_PATH) python tools/backfill_thumbnails.py --env pdf_annot.toml --pdf-id "(Wallis 2017a)" --force
 
 # --- Utility Targets ---
 
