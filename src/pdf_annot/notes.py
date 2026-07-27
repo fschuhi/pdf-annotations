@@ -16,17 +16,18 @@ from pdf_annot.thumbnails import DISPLAY_WIDTH_PX
 
 DEFAULT_INFO_TEXT = "(annotations from the PDF below)"
 
-# The two workflow buttons are added manually, via an Obsidian Dataview
-# template call -- this tool never writes them. This is the literal text of
-# that line, used only to detect whether it's already present, so the
-# thumbnail span can be positioned relative to it.
-BUTTONS_LINE = "`BUTTON[time-spent-increment]` `BUTTON[resume-pdf]`"
+# The resume-pdf button: always added for a brand-new bibnote, regardless of
+# has_annotations, because a PDF with zero annotations renders no pdf://
+# link anywhere in its block -- without this, there is no way to open it
+# from the note at all. Only ever added at creation time; existing bibnotes
+# are never touched by a button, so there is nothing to detect for them.
+RESUME_BUTTON_LINE = "`BUTTON[resume-pdf]`"
 
-# The thumbnail span, immediately after the frontmatter (or after the
-# buttons line, if present). {{}} escapes a literal brace for .format();
-# DISPLAY_WIDTH_PX is filled in now, at import time, so the img width stays
-# a single source of truth shared with thumbnails.py rather than a second
-# hardcoded number here.
+# The thumbnail span, immediately after the frontmatter for an existing
+# bibnote, or after the resume-pdf button for a brand-new one. {{}} escapes
+# a literal brace for .format(); DISPLAY_WIDTH_PX is filled in now, at
+# import time, so the img width stays a single source of truth shared with
+# thumbnails.py rather than a second hardcoded number here.
 THUMBNAIL_SPAN_TEMPLATE = f'<span class="pdf-thumbnail"><img src="{{pdf_id}}.jpg" width="{DISPLAY_WIDTH_PX}"></span>'
 
 # What marks a bibnote as already having a thumbnail span, for idempotency.
@@ -42,35 +43,32 @@ def has_thumbnail_header(body: str) -> bool:
     return THUMBNAIL_MARKER in body
 
 
-def _split_leading_buttons_line(body: str) -> tuple[bool, str]:
+def new_bibnote_header(pdf_id: str, *, with_thumbnail: bool) -> str:
     """
-    If body's first line is exactly BUTTONS_LINE, return (True, rest) with
-    rest being everything after that line and any blank line(s) directly
-    beneath it. Otherwise (False, body) unchanged.
+    The fixed header for a brand-new bibnote: the resume-pdf button, always,
+    plus the thumbnail span beneath it when with_thumbnail is True (i.e. a
+    thumbnail was configured and rendered successfully for it).
 
-    Only checks the first line: the buttons are expected immediately after
-    the frontmatter, from the Dataview template call. A BUTTONS_LINE that
-    shows up further down (e.g. pasted into the free text) is not treated
-    as "the" buttons line.
+    Only for sync.py's new-note path (note_exists is False) -- a new note's
+    shape is fully known in advance, so there is nothing to detect. Existing
+    bibnotes are never retrofitted with a button; see ensure_thumbnail_header
+    for what they get instead.
     """
-    lines = body.split("\n")
-    if lines and lines[0].strip() == BUTTONS_LINE:
-        remainder = lines[1:]
-        while remainder and remainder[0].strip() == "":
-            remainder.pop(0)
-        return True, "\n".join(remainder)
-    return False, body
+    if with_thumbnail:
+        span_line = THUMBNAIL_SPAN_TEMPLATE.format(pdf_id=pdf_id)
+        return f"{RESUME_BUTTON_LINE}\n\n{span_line}\n\n"
+    return f"{RESUME_BUTTON_LINE}\n"
 
 
 def ensure_thumbnail_header(body: str, pdf_id: str) -> str:
     """
-    Insert the thumbnail span into body, unless it's already there.
+    Insert the thumbnail span into an existing bibnote's body, unless it's
+    already there.
 
-    Two cases:
-      - Buttons already present (added manually) -> blank line, span, blank
-        line, then whatever followed the buttons.
-      - No buttons (including every brand-new bibnote) -> span, blank line,
-        then body unchanged. Buttons are never added here; see BUTTONS_LINE.
+    Existing bibnotes never get a button -- only a brand-new bibnote does,
+    via new_bibnote_header, called separately by sync.py's new-note path.
+    So this always does the same thing: prepend the span, with a blank
+    line before and after.
 
     Idempotent: calling this twice on the same body is a no-op the second
     time, matching the "nothing to do if already present" requirement in
@@ -80,10 +78,7 @@ def ensure_thumbnail_header(body: str, pdf_id: str) -> str:
     if has_thumbnail_header(body):
         return body
     span_line = THUMBNAIL_SPAN_TEMPLATE.format(pdf_id=pdf_id)
-    has_buttons, rest = _split_leading_buttons_line(body)
-    if has_buttons:
-        return f"{BUTTONS_LINE}\n\n{span_line}\n\n{rest}"
-    return f"\n{span_line}\n\n{rest}"
+    return f"\n{span_line}\n\n{body}"
 
 
 @dataclass
@@ -156,8 +151,14 @@ def replace_annotation_block(note_text: str, new_block: str) -> str:
     separator = '<hr class="pdf-annot-sep">'
 
     if separator not in note_text:
-        # No existing annotation block, append it
-        return note_text + "\n" + new_block
+        # No existing annotation block yet, append it. rstrip first: the
+        # header template (new_bibnote_header / ensure_thumbnail_header)
+        # already leaves note_text ending in a blank line, so appending
+        # "\n" + new_block unconditionally on top of that stacked a second
+        # one -- only ever visible the first time a bibnote gets its
+        # annotation block, which is why it went unnoticed until a
+        # zero-annotation new bibnote made it obvious.
+        return note_text.rstrip("\n") + "\n\n" + new_block
 
     # Split before separator and replace everything from separator onward
     before_sep, _ = note_text.split(separator, 1)

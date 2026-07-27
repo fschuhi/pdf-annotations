@@ -12,6 +12,8 @@ RUN_WITH_PATH = $(ACTIVATE) && PYTHONPATH=src
 SETUP_STAMP = $(VENV_DIR)/.setup_stamp
 
 # Folder containing the old PDF paper collection
+# NOTE: This is deprecated, beccause all PDFs from the old collection have teen transferred to the new one
+# Per 2026-07-26, **all 1600+ PDFs have bibnotes**.
 PDF_COLLECTION_OLD = $(HOME)/Dropbox/Papers/Collection
 
 # Folder containing the **NEW** PDF paper collection

@@ -19,6 +19,7 @@ from pdf_annot.notes import (
     extract_info_text,
     replace_annotation_block,
     ensure_thumbnail_header,
+    new_bibnote_header,
     UpdateResult,
 )
 from pdf_annot.thumbnails import thumbnail_path_for, render_thumbnail
@@ -173,13 +174,14 @@ def sync_pdf_to_note(
         # 5. Apply updates to frontmatter
         _, text_with_updated_fm = upsert_fields(note_text, full_updates)
 
-        # 5b. Thumbnail: render page 1 if configured and not already there, then
-        # add the span to the body -- but only once the image is confirmed to
-        # exist, so a failed render never leaves a note pointing at a missing
-        # file. Gated on thumbnails_dir being set at all (nothing to do for
-        # anyone not opting in) and on dry_run (rendering writes a real JPEG to
-        # disk, a side effect the "compute everything, write nothing" preview
-        # contract does not cover -- see thumbnail_error below for the trade-off).
+        # 5b. Thumbnail (and, for a brand-new bibnote, the resume-pdf button).
+        # Both nested under one gate: thumbnails_dir configured at all, and
+        # not dry_run (rendering writes a real JPEG to disk, a side effect
+        # the "compute everything, write nothing" preview contract does not
+        # cover). This is the guarantee every pre-thumbnail golden fixture
+        # relies on: with no thumbnails_dir set, sync.py's behavior for a
+        # bare config is unchanged from before this feature existed --
+        # neither the button nor the span is independent of that.
         thumbnail_error: Optional[str] = None
         if env.paths.thumbnails_dir is not None and not dry_run:
             thumbnail_dest = thumbnail_path_for(pdf_info.pdf_id, env.paths.thumbnails_dir)
@@ -190,7 +192,15 @@ def sync_pdf_to_note(
                 if not thumbnail_ready:
                     thumbnail_error = thumb_result.error
 
-            if thumbnail_ready:
+            if not note_exists:
+                # A brand-new bibnote's header is fully known in advance: the
+                # resume-pdf button always (regardless of has_annotations),
+                # plus the span beneath it if one is ready. Existing bibnotes
+                # are never touched by a button.
+                parsed_for_header = parse_note(text_with_updated_fm)
+                new_body = new_bibnote_header(pdf_info.pdf_id, with_thumbnail=thumbnail_ready)
+                text_with_updated_fm = format_note(parsed_for_header.front_matter, new_body)
+            elif thumbnail_ready:
                 parsed_for_header = parse_note(text_with_updated_fm)
                 updated_body = ensure_thumbnail_header(parsed_for_header.body, pdf_info.pdf_id)
                 text_with_updated_fm = format_note(parsed_for_header.front_matter, updated_body)

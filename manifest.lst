@@ -135,6 +135,8 @@ tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013).md
 
 ### --- Support tools ---
 
+# tools/add_pdf_ctime.py
+tools/backfill_thumbnails.py
 # tools/concat_files.py
 # tools/discover_pdfs.py
 tools/show_pdf_info.py
