@@ -162,7 +162,8 @@ tools/show_pdf_info.py
 ### --- Obsidian tooling for The Studio, the Zettelkasten which uses the PDF annotations ---
 
 # Obsidian/Scripts/active_workbenches.js
-# Obsidian/Scripts/open_pdf_resume.js
-# Obsidian/Scripts/next_in_chain.js
+# Obsidian/Scripts/bibnote_overview.js
 # Obsidian/Scripts/fleeting_block_markers.js
+# Obsidian/Scripts/next_in_chain.js
+# Obsidian/Scripts/open_pdf_resume.js
 # Obsidian/Scripts/workbench_list.js
