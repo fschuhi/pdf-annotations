@@ -1,4 +1,3 @@
-
 // open_pdf_resume.js
 
 // 1. Notice how we deleted "const app = ...".
@@ -31,7 +30,7 @@ const content = await app.vault.read(file);
 const regex = /<span class="pdf-annot-date">(\d{2}\.\d{2}\.\d{2} \d{2}:\d{2})<\/span>.*?page=(\d+)/g;
 let match;
 let latestDate = 0;
-let lastPage = 1;
+let lastPage = null; // null means "no annotation found yet"
 
 while ((match = regex.exec(content)) !== null) {
     const [day, month, shortYear, hour, min] = match[1].split(/[. :]/);
@@ -43,10 +42,16 @@ while ((match = regex.exec(content)) !== null) {
     }
 }
 
-new Notice(`Resuming on page: ${lastPage}`);
+// 5. Open the PDF — only jump to a page if we actually found an annotation
+let finalUrl;
 
-// 5. Open the PDF
-const finalUrl = `pdf://${pdfHash}?page=${lastPage}`;
+if (lastPage !== null) {
+    new Notice(`Resuming on page: ${lastPage}`);
+    finalUrl = `pdf://${pdfHash}?page=${lastPage}`;
+} else {
+    new Notice("No annotations found — opening without a page number");
+    finalUrl = `pdf://${pdfHash}`;
+}
 
 // Create a temporary link and click it
 const a = document.createElement("a");
