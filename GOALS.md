@@ -11,7 +11,8 @@
 Page-1 thumbnails landed 2026-07-26: `sync.py` auto-adds them for new/changed bibnotes, `tools/backfill_thumbnails.py` retrofitted the existing ~1600-book corpus. See `HISTORY.md`.
 
 **What's next:**
-1. Review and prioritize the backlog in `TODO.md`.
+1. Add the "synopsis" from `~/Obsidian/Papers/Collection/Synopsis` (probably add this path to the `pdf_annot.toml`) to a bibnote, below the `<span class="pdf-thumbnail"...`. The beginning of the synopsis is separated by an empty line from the thumbnail; there is one empty line after the synopsis. The name of the synopsis file is `<pdf_id>.txt`. Do not add anything in case the size of the file is `0`. The synopsis is put into a `>[!abstract]` callout. The first line of the callout is "Synopsis", followed by `>` and the first paragraph of the synopsis, a new line consisting of `>` for whitespace, then a new line starting with `>` and the second paragraph of the synopsis, and so on. The synopses can contain `<br>` and other formattings. I'm interested in capturing the correct behaviour in tests first, because we will add multiple lines for bibnotes, which is difficult to roll back.
+2. Review and prioritize the backlog in `TODO.md`.
 
 Everything else sits in `TODO.md` until it earns a place here.
 

@@ -33,3 +33,6 @@ project-tree.txt
 # toml (users's local copy, leading / indicates ignore "only in root")
 /pdf_annot.toml
 /pdf-annotations.toml
+
+*.xlsx
+*.xlsm
