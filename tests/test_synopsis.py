@@ -56,6 +56,16 @@ def test_mixed_case_and_variant_tags_collapse_too():
     assert format_synopsis_callout(raw) == expected
 
 
+def test_whitespace_between_break_tags_still_collapses_to_one_break():
+    """A space (or other whitespace) directly between two break-like tags
+    must not break the run -- otherwise the tags are still collapsed
+    pairwise but the gap between them survives as a stray near-empty
+    paragraph of its own."""
+    raw = "First paragraph.<br> <br>Second paragraph."
+    expected = f"{SYNOPSIS_HEADER}\n> First paragraph.\n>\n> Second paragraph."
+    assert format_synopsis_callout(raw) == expected
+
+
 def test_leading_and_trailing_blank_lines_and_whitespace_are_stripped():
     raw = "\n\n  First paragraph.  \n\nSecond paragraph.\n\n"
     expected = f"{SYNOPSIS_HEADER}\n> First paragraph.\n>\n> Second paragraph."
@@ -83,6 +93,16 @@ def test_blank_line_without_br_still_separates_paragraphs():
 def test_br_at_start_and_end_vanishes_after_final_trim():
     raw = "<br/>First paragraph.<br/>"
     expected = f"{SYNOPSIS_HEADER}\n> First paragraph."
+    assert format_synopsis_callout(raw) == expected
+
+
+def test_whitespace_next_to_a_break_tag_does_not_leak_into_the_paragraph():
+    """A break tag immediately followed by leading whitespace on the next
+    paragraph (e.g. an attribution line like " --Martin Aylward") must have
+    that whitespace stripped -- only the whole-string strip existed before,
+    which never touched interior paragraphs."""
+    raw = "First paragraph.<br> --Second paragraph, with a leading space."
+    expected = f"{SYNOPSIS_HEADER}\n> First paragraph.\n>\n> --Second paragraph, with a leading space."
     assert format_synopsis_callout(raw) == expected
 
 

@@ -24,10 +24,13 @@ from pathlib import Path
 # (Thrangu 2003).
 SYNOPSIS_HEADER = ">[!abstract] Synopsis (ISBNdb.com)"
 
-# Matches one or more consecutive break-like tags -- <br>, <br/>, <hr>,
-# <hr/>, any case, with or without the trailing slash -- collapsing a run
-# of any length down to a single logical break.
-_BREAK_TAG_RUN = re.compile(r"(?:<\s*/?\s*(?:br|hr)\s*/?\s*>)+", re.IGNORECASE)
+# Matches one or more break-like tags -- <br>, <br/>, <hr>, <hr/>, any
+# case, with or without the trailing slash -- optionally separated by
+# whitespace (including newlines), collapsing a run of any length down to
+# a single logical break. Without the trailing \s*, "<br> <br>" would not
+# count as one run and would leak a stray near-empty paragraph between
+# the two tags.
+_BREAK_TAG_RUN = re.compile(r"(?:<\s*/?\s*(?:br|hr)\s*/?\s*>\s*)+", re.IGNORECASE)
 
 
 def synopsis_path_for(pdf_id: str, synopses_dir: Path) -> Path:
@@ -54,12 +57,16 @@ def format_synopsis_callout(raw_text: str) -> str:
          its own right.
       2. Rejoin the surviving lines with "\\n".
       3. Collapse any run of break-like tags (<br/>, <br>, <hr/>, <hr>, any
-         case) into a single "<br/>".
+         case), optionally separated by whitespace, into a single "<br/>".
       4. Replace every "<br/>" with "\\n" -- this is what actually creates
          paragraph breaks.
       5. Strip the whole result once more, in case a break tag sat right at
          the very start or end.
-      6. Render: each surviving line becomes "> {line}"; every line except
+      6. Split into paragraphs on "\\n" and strip each paragraph
+         individually -- a break tag followed by leading/trailing
+         whitespace (e.g. " --Martin Aylward") must not leak into the
+         rendered callout.
+      7. Render: each surviving line becomes "> {line}"; every line except
          the last is followed by a bare ">" (a blank callout-continuation
          line), so Obsidian's lazy-continuation keeps the whole thing one
          callout block. Joined with "\\n", header line first.
@@ -82,7 +89,7 @@ def format_synopsis_callout(raw_text: str) -> str:
     joined = joined.replace("<br/>", "\n")
     joined = joined.strip()
 
-    paragraphs = joined.split("\n")
+    paragraphs = [p.strip() for p in joined.split("\n")]
     rendered = []
     for i, paragraph in enumerate(paragraphs):
         rendered.append(f"> {paragraph}")
