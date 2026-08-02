@@ -21,7 +21,7 @@ PDF_COLLECTION_NEW = $(HOME)/Dropbox/work/Obsidian/_main/Papers/Collection/PDFs
 
 # --- Phony targets ---
 
-.PHONY: all setup test test-verbose run dry-run extract streamline discover-pdfs discover-pdf-names discover-pdf-folders time-extraction clean showtree gentree filesdump filesdump-compact help add_pdf_ctime show-pdf-info-old show-pdf-info-new backfill-thumbnails backfill-thumbnails-example
+.PHONY: all setup test test-verbose run dry-run extract streamline discover-pdfs discover-pdf-names discover-pdf-folders time-extraction clean showtree gentree filesdump filesdump-compact help add_pdf_ctime show-pdf-info-old show-pdf-info-new backfill-thumbnails backfill-thumbnails-example fill-synopses
 # Default target runs 'setup'
 all: setup
 
@@ -105,6 +105,9 @@ backfill-thumbnails: $(SETUP_STAMP) ## One-time: add page-1 thumbnails to existi
 
 backfill-thumbnail-example: $(SETUP_STAMP) ## Regenerate the thumbnail for (Wallis 2017a), always forced
 	$(RUN_WITH_PATH) python tools/backfill_thumbnails.py --env pdf_annot.toml --pdf-id "(Wallis 2017a)" --force
+
+fill-synopses: $(SETUP_STAMP) ## Insert ISBNdb synopses into bibnotes that don't have one yet (pass ARGS="--pdf-id ...")
+	$(RUN_WITH_PATH) python tools/fill_synopses.py --env pdf_annot.toml $(ARGS)
 
 # --- Utility Targets ---
 

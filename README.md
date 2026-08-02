@@ -192,9 +192,9 @@ YAML frontmatter parsing and manipulation. Safely updates PDF-specific fields wh
 changed, updated_text = upsert_fields(note_text, {"pdf_title": "New"})
 ```
 
-#### `src/pdf_annot/notes.py` & `ndjson_to_md_block.py`
+#### `src/pdf_annot/notes.py`
 
-Handles extraction of custom info text (preserves user edits) and rendering of the annotation block.
+Handles extraction of custom info text (preserves user edits), rendering of the annotation block, and body-level insertion for the thumbnail span and the synopsis callout (`ensure_thumbnail_header`, `ensure_synopsis_block`), each idempotent and gated on its own marker already being present.
 
 #### `src/pdf_annot/thumbnails.py`
 
@@ -205,6 +205,17 @@ from pdf_annot.thumbnails import thumbnail_path_for, render_thumbnail
 
 dest = thumbnail_path_for(pdf_info.pdf_id, env.paths.thumbnails_dir)
 result = render_thumbnail(Path(pdf_info.abs_path), dest)
+```
+
+#### `src/pdf_annot/synopsis.py`
+
+Turns raw `<pdf_id>.txt` synopsis text into a rendered `>[!abstract]` callout block: canonicalizes the text (strips and drops blank lines, collapses `<br>`/`<hr>` variants into single breaks), then renders one `>`-prefixed line per paragraph. Pure and filesystem-free -- callers read the `.txt` and pass the decoded text in. `synopsis_path_for` is the naming rule, by `pdf_id`, mirroring `thumbnails.thumbnail_path_for`.
+
+```python
+from pdf_annot.synopsis import synopsis_path_for, format_synopsis_callout
+
+txt_path = synopsis_path_for(pdf_info.pdf_id, env.paths.synopses_dir)
+callout = format_synopsis_callout(txt_path.read_text(encoding="utf-8-sig"))
 ```
 
 #### `src/pdf_annot/pdf_registry.py` & `notes_db.py`
@@ -263,6 +274,13 @@ pdf_textboxes: 0
 
 <span class="pdf-thumbnail"><img src="(Albini 2013).jpg" width="250"></span>
 
+<span class="pdf-thumbnail"><img src="(Albini 2013).jpg" width="250"></span>
+
+>[!abstract] Synopsis (ISBNdb.com)
+> A concise guide to recognizing destructive emotional patterns as they arise, drawing on both contemplative and psychological perspectives.
+>
+> Written for readers already familiar with basic meditation practice who want to work more directly with difficult mind states.
+
 <hr class="pdf-annot-sep">
 
 <span class="pdf-annot-info">below the automatically generated annotations from the PDF</span>
@@ -275,6 +293,10 @@ pdf_textboxes: 0
 ### Info Text Preservation
 
 The `<span class="pdf-annot-info">...</span>` text is designed to be edited by the user. The sync workflow **preserves** this text rather than overwriting it with defaults.
+
+### Synopses
+
+An `>[!abstract] Synopsis (ISBNdb.com)` callout, sourced from a `<pdf_id>.txt` file fetched separately via `haddolib`'s `isbndb_synopsis.py`, inserted below the thumbnail span by `make fill-synopses`. Never added automatically by `sync.py` -- fetching a synopsis is already a manual, deliberate step, so inserting it into the note is too. Insertion is permanent: to refresh a synopsis, delete the callout from the note by hand and re-run the tool.
 
 ---
 
@@ -298,6 +320,7 @@ make showtree                   # Display project structure
 make filesdump                  # Create context dump for LLMs
 make time-extraction            # Time extraction per PDF (read-only)
 make backfill-thumbnail-example # Regenerate the (Wallis 2017a) thumbnail -- quick sanity check
+make fill-synopses              # Insert ISBNdb synopses into bibnotes missing one (pass ARGS="--pdf-id ...")
 ```
 
 ---

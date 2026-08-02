@@ -11,9 +11,16 @@
 
 ---
 
+## Synopsis feature: polishing pass (from live testing against (Aylward 2021) and others)
+
+- Break-tag collapsing only merges tags directly adjacent to each other; a literal space between two tags (e.g. `<br> <br>`) breaks the run and leaks a stranded near-empty paragraph into the rendered callout. Fix: let whitespace between/around break tags count as part of the same run.
+- No per-paragraph strip after the break-to-newline conversion, only a whole-string strip at the very end; this leaves stray leading/trailing spaces on individual paragraphs (e.g. a paragraph starting " --Martin Aylward"). Fix: strip each resulting paragraph line individually.
+- `<p>` tags also show up in some synopses as paragraph separators, both standalone and as a wrapping `<p>...</p>` pair; needs real examples collected before designing the handling, since the two forms likely need different treatment.
+- Inline markup like `<b>`/`<i>` passes through untouched by design (Obsidian renders it fine inside a callout); confirmed not a bug, no action needed, just noting it was checked.
+- `tests/fixtures/synopsis/johnson_2017a_expected.md` keeps getting a BOM and a trailing newline added by some tool on save/commit -- probably a pre-commit hook such as `end-of-file-fixer`, not `black` itself (`black` doesn't touch `.md` files by default). Check `.pre-commit-config.yaml` next session; currently blocks a clean commit since it breaks `test_johnson_2017a_fixture`.
+
 ## Tooling
 
-- ~~**Thumbnails:** Page-1 thumbnails render via PyMuPDF, named by `pdf_id` (not `pdf_hash` -- hashes are Anima-internal), JPEG quality 80, display width tuned by eye to 250px (both code constants in `thumbnails.py`). `sync.py` adds them automatically for new/changed bibnotes when `thumbnails_dir` is configured; `tools/backfill_thumbnails.py` (`make backfill-thumbnails`) retrofits the existing corpus, `--pdf-id`/`--force` (`make backfill-thumbnail-example`) regenerates one file on demand. The two workflow buttons are added manually via a Dataview template call, never by this tool.~~ Landed 2026-07-26; see `HISTORY.md`.
 - **Pin `black` in `requirements.txt`:** It is unpinned while `pre-commit` runs it, so a version bump can reformat unrelated files and produce a diff containing more than the change being made -- which collides with `CRITICAL_RULES.md` Rule 2. Noticed 2026-07-23: two black versions disagree about one `textwrap.dedent` block in `tests/test_notes_db.py`. Second instance 2026-07-24: black 26.5.1 wants a blank line between the module docstring and `from __future__ import annotations` in `src/pdf_annot/notes.py`, which your version does not; left unapplied, since that reformat is not the change being made.
 - **Rename `(Anyen Rinpoche+Graboski 2012)`:** "Rinpoche" is a title, not a surname, so the id should be `(Anyen+Graboski 2012)`. Not a filesystem rename: the id *is* the identity, so `crc32_az7` yields a new `pdf_hash`, the bibnote must be renamed to match, and every `pdf://` link inside its annotation block points at the old hash until that block is regenerated.
 - **Identify the invisible character in `(Liljenberg 2012) A critical study of the thirteen later translations of the Dzogchen mind series.pdf`:** A normalization scan flagged the filename as non-ASCII although it reads as plain ASCII. Not in the id -- V2 came back empty -- so it is cosmetic, somewhere in the title.

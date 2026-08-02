@@ -30,6 +30,9 @@ class Paths(BaseModel):
     )
     temp_dir: Optional[Path] = Field(None, description="Optional directory for temporary test artifacts.")
     thumbnails_dir: Optional[Path] = Field(None, description="Optional directory for PDF page-1 thumbnail images.")
+    synopses_dir: Optional[Path] = Field(
+        None, description="Optional directory of <pdf_id>.txt synopsis files, written by isbndb_synopsis.py."
+    )
 
     @field_validator("notes_root", mode="before")
     @classmethod
@@ -44,6 +47,11 @@ class Paths(BaseModel):
     @field_validator("thumbnails_dir", mode="before")
     @classmethod
     def _norm_thumbnails_dir(cls, v: Any) -> Any:
+        return _expand_path(v)
+
+    @field_validator("synopses_dir", mode="before")
+    @classmethod
+    def _norm_synopses_dir(cls, v: Any) -> Any:
         return _expand_path(v)
 
     @field_validator("pdf_dirs", mode="before")
@@ -112,6 +120,16 @@ class Env(BaseModel):
                 self.paths.thumbnails_dir.mkdir(parents=True, exist_ok=True)
             else:
                 raise ValueError(f"thumbnails_dir does not exist: {self.paths.thumbnails_dir}")
+
+        # synopses_dir, unlike the paths above, is never auto-created, even
+        # when create_missing_dirs is True: this tool only ever reads from
+        # it (isbndb_synopsis.py, a separate script, is what writes into
+        # it). A missing synopses_dir almost always means that export/copy
+        # step hasn't happened yet -- silently creating an empty directory
+        # would turn one clear configuration error into 1600 identical
+        # "no synopsis file" skips instead.
+        if self.paths.synopses_dir is not None and not self.paths.synopses_dir.exists():
+            raise ValueError(f"synopses_dir does not exist: {self.paths.synopses_dir}")
 
         # pdf_dirs are optional; if provided, they must exist (we do not create them)
         for p in self.paths.pdf_dirs:
@@ -188,6 +206,7 @@ def _build_env_from_data(data: Mapping[str, Any]) -> Env:
         "pdf_dirs": ("paths", "pdf_dirs"),
         "temp_dir": ("paths", "temp_dir"),
         "thumbnails_dir": ("paths", "thumbnails_dir"),
+        "synopses_dir": ("paths", "synopses_dir"),
         "create_missing_dirs": ("io", "create_missing_dirs"),
     }
 
