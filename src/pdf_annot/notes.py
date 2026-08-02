@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Optional
 
 from pdf_annot.thumbnails import DISPLAY_WIDTH_PX
+from pdf_annot.synopsis import SYNOPSIS_HEADER
 
 DEFAULT_INFO_TEXT = "(annotations from the PDF below)"
 
@@ -79,6 +80,56 @@ def ensure_thumbnail_header(body: str, pdf_id: str) -> str:
         return body
     span_line = THUMBNAIL_SPAN_TEMPLATE.format(pdf_id=pdf_id)
     return f"\n{span_line}\n\n{body}"
+
+
+def has_synopsis_block(body: str) -> bool:
+    """
+    Does this bibnote's body already carry a synopsis callout?
+
+    Case-insensitive: also matches (Thrangu 2003)'s pre-existing,
+    hand-written ">[!Abstract] Synopsis (ISBNdb.com)" callout -- the one
+    manually-inserted synopsis already in the corpus -- so the fill-synopses
+    tool never double-inserts on top of it. Requires the full sentinel, not
+    just "[!abstract]", so an unrelated callout the user wrote for some
+    other purpose is never mistaken for ours.
+    """
+    return SYNOPSIS_HEADER.lower() in body.lower()
+
+
+def ensure_synopsis_block(body: str, callout: str) -> str:
+    """
+    Insert a rendered synopsis callout into an existing bibnote's body,
+    unless one is already there.
+
+    Placement: directly below the thumbnail span if present, else directly
+    below the resume-pdf button, else at the very top of the body -- covers
+    the case where a thumbnail was never configured/rendered, or was
+    manually deleted from a note (bibnotes are plain text; nothing stops
+    that). Always normalizes to exactly one blank line before and after
+    the callout, regardless of how much whitespace was already there --
+    same fixed-spacing convention as ensure_thumbnail_header, so re-running
+    against a hand-edited note doesn't accumulate stray blank lines.
+
+    Idempotent: calling this twice on the same body is a no-op the second
+    time. Does not touch the filesystem or read the synopsis .txt --
+    formatting the callout text is synopsis.format_synopsis_callout's job
+    (see `resolve_row` in `isbndb_synopsis.py` for where the raw text
+    itself comes from); this only manages the note text.
+    """
+    if has_synopsis_block(body):
+        return body
+
+    anchor_end = 0
+    for marker in (THUMBNAIL_MARKER, RESUME_BUTTON_LINE):
+        idx = body.find(marker)
+        if idx != -1:
+            newline_idx = body.find("\n", idx)
+            anchor_end = newline_idx + 1 if newline_idx != -1 else len(body)
+            break
+
+    before = body[:anchor_end]
+    after = body[anchor_end:].lstrip("\n")
+    return f"{before}\n{callout}\n\n{after}"
 
 
 @dataclass

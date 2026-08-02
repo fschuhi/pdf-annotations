@@ -11,6 +11,9 @@ notes_root = "~/notes/pdf-annotations"
 # OPTIONAL: sidecar directory containing the first-PDF-page images
 # thumbnails_dir = "~/Documents/Thumnbails"
 
+# OPTIONAL: directory of <pdf_id>.txt synopsis files, written by isbndb_synopsis.py (haddolib)
+# synopses_dir = "~/Obsidian/Papers/Collection/Synopses"
+
 # OPTIONAL: directory for temporary files during testing/development
 # Useful for test runs to isolate temporary artifacts
 # temp_dir = "~/notes/.tmp"
