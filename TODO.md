@@ -1,8 +1,9 @@
-# TODO
+# pdf-annotations -- TODO
 
 (Note: "I" in the following paragraphs refer to the user, "you" to you as the AI model.)
 
 ## Charter
+
 - Forward-looking only -- concrete, startable work: tasks specified well enough that next-session-me can begin within ten minutes, plus investigation items, test specs, and scratchpad ideas awaiting promotion or deletion.
 - Items are unordered within their theme sections; open questions are marked _Needs investigation_ in the bullet.
 - When an item is completed, record its durable outcome in `HISTORY.md` during the same session while the evidence and rationale are fresh, then strike it through in `TODO.md` with a concise handover note.
@@ -10,14 +11,6 @@
 - Architecture, contract, and settled decisions live in `README.md`.
 
 ---
-
-## Synopsis feature: polishing pass (from live testing against (Aylward 2021) and others)
-
-- Break-tag collapsing only merges tags directly adjacent to each other; a literal space between two tags (e.g. `<br> <br>`) breaks the run and leaks a stranded near-empty paragraph into the rendered callout. Fix: let whitespace between/around break tags count as part of the same run.
-- No per-paragraph strip after the break-to-newline conversion, only a whole-string strip at the very end; this leaves stray leading/trailing spaces on individual paragraphs (e.g. a paragraph starting " --Martin Aylward"). Fix: strip each resulting paragraph line individually.
-- `<p>` tags also show up in some synopses as paragraph separators, both standalone and as a wrapping `<p>...</p>` pair; needs real examples collected before designing the handling, since the two forms likely need different treatment.
-- Inline markup like `<b>`/`<i>` passes through untouched by design (Obsidian renders it fine inside a callout); confirmed not a bug, no action needed, just noting it was checked.
-- `tests/fixtures/synopsis/johnson_2017a_expected.md` keeps getting a BOM and a trailing newline added by some tool on save/commit -- probably a pre-commit hook such as `end-of-file-fixer`, not `black` itself (`black` doesn't touch `.md` files by default). Check `.pre-commit-config.yaml` next session; currently blocks a clean commit since it breaks `test_johnson_2017a_fixture`.
 
 ## Tooling
 

@@ -60,81 +60,83 @@ src/pdf_annot/utils.py
 
 ### --- testing the PDF annotations tool ---
 
-tests/test_backfill_thumbnails.py
+# tests/test_backfill_thumbnails.py
 tests/test_core_workflow.py
-tests/test_env.py
-tests/test_extract.py
-tests/test_fasching_extraction.py
-tests/test_frontmatter.py
-tests/test_notes_db.py
-tests/test_pdf_registry.py
+# tests/test_env.py
+# tests/test_extract.py
+# tests/test_fasching_extraction.py
+# tests/test_frontmatter.py
+# tests/test_notes_db.py
+# tests/test_pdf_registry.py
 tests/test_pdf_to_markdown_e2e.py
-tests/test_resolve.py
-tests/test_streamline_integration.py
-tests/test_streamline_unit.py
-tests/test_sync_cli.py
-tests/test_sync_thumbnails.py
-tests/test_synopsis.py
-tests/test_thumbnail_header.py
-tests/test_thumbnails.py
-tests/test_utils.py
+# tests/test_resolve.py
+# tests/test_streamline_integration.py
+# tests/test_streamline_unit.py
+# tests/test_sync_cli.py
+# tests/test_sync_thumbnails.py
+# tests/test_synopsis.py
+# tests/test_thumbnail_header.py
+# tests/test_thumbnails.py
+# tests/test_utils.py
+
+# pdf files are never included in the filesdump (##)
 
 ## tests/fixtures/annot_types/(Ealbini 2017) On regarding constructive emotions.pdf
 ## tests/fixtures/annot_types/input.pdf
-#tests/fixtures/consecutive_links/expected.ndjson
-#tests/fixtures/consecutive_links/input.ndjson
+# tests/fixtures/consecutive_links/expected.ndjson
+# tests/fixtures/consecutive_links/input.ndjson
 #tests/fixtures/fasching_extraction/expected_extracted_texts.json
 ## tests/fixtures/fasching_extraction/input.pdf
-#tests/fixtures/filter_and_pages/expected.ndjson
-#tests/fixtures/filter_and_pages/input.ndjson
-#tests/fixtures/headers/expected.ndjson
+# tests/fixtures/filter_and_pages/expected.ndjson
+# tests/fixtures/filter_and_pages/input.ndjson
+# tests/fixtures/headers/expected.ndjson
 ## tests/fixtures/highlight_scrambled_bug/(Dalbini 2016) On disregarding constructive emotions.pdf
 ## tests/fixtures/highlight_scrambled_bug/input.pdf
-#tests/fixtures/headers/input.ndjson
-#tests/fixtures/link_merge/expected.ndjson
-#tests/fixtures/link_merge/input.ndjson
-#tests/fixtures/malformed/input.ndjson
-#tests/fixtures/pdf_to_markdown_e2e/expected_markdown.md
-#tests/fixtures/pdf_to_markdown_e2e/expected_raw.ndjson
-#tests/fixtures/pdf_to_markdown_e2e/expected_streamlined.ndjson
-#tests/fixtures/pdf_to_markdown_e2e/final_streamlined.ndjson
+# tests/fixtures/headers/input.ndjson
+# tests/fixtures/link_merge/expected.ndjson
+# tests/fixtures/link_merge/input.ndjson
+# tests/fixtures/malformed/input.ndjson
+# tests/fixtures/pdf_to_markdown_e2e/expected_markdown.md
+# tests/fixtures/pdf_to_markdown_e2e/expected_raw.ndjson
+# tests/fixtures/pdf_to_markdown_e2e/expected_streamlined.ndjson
+# tests/fixtures/pdf_to_markdown_e2e/final_streamlined.ndjson
 ## tests/fixtures/pdf_to_markdown_e2e/input.pdf
-#tests/fixtures/simple/expected.ndjson
-#tests/fixtures/simple/input.ndjson
-#tests/fixtures/synopsis/johnson_2017a_expected.md
-#tests/fixtures/synopsis/Johnson_2017a_raw.txt
+# tests/fixtures/simple/expected.ndjson
+# tests/fixtures/simple/input.ndjson
+# tests/fixtures/synopsis/johnson_2017a_expected.md
+# tests/fixtures/synopsis/Johnson_2017a_raw.txt
 
-#tests/fixtures/workflow_all_pdfs_loop/goldens/(Albini 2013).md
-#tests/fixtures/workflow_all_pdfs_loop/seeds/(Albini 2013).md
+# tests/fixtures/workflow_all_pdfs_loop/goldens/(Albini 2013).md
+# tests/fixtures/workflow_all_pdfs_loop/seeds/(Albini 2013).md
 ## tests/fixtures/workflow_all_pdfs_loop/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 
-#tests/fixtures/workflow_complete_update/goldens/(Albini 2013).md
-#tests/fixtures/workflow_complete_update/seeds/(Albini 2013).md
+# tests/fixtures/workflow_complete_update/goldens/(Albini 2013).md
+# tests/fixtures/workflow_complete_update/seeds/(Albini 2013).md
 ## tests/fixtures/workflow_complete_update/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 
-#tests/fixtures/workflow_declines/goldens/(Albini 2013).md
-#tests/fixtures/workflow_declines/goldens/(Balbini 2014).md
-#tests/fixtures/workflow_declines/seeds/(Albini 2013).md
+# tests/fixtures/workflow_declines/goldens/(Albini 2013).md
+# tests/fixtures/workflow_declines/goldens/(Balbini 2014).md
+# tests/fixtures/workflow_declines/seeds/(Albini 2013).md
 ## tests/fixtures/workflow_declines/seeds/(Albini 2013) On dealing with destructive emotions.pdf
-#tests/fixtures/workflow_declines/seeds/(Balbini 2014).md
+# tests/fixtures/workflow_declines/seeds/(Balbini 2014).md
 ## tests/fixtures/workflow_declines/seeds/(Balbini 2014) On dealing with constructive emotions.pdf
 
-#tests/fixtures/workflow_manual_edits/goldens/(Albini 2013).md
-#tests/fixtures/workflow_manual_edits/goldens/(Calbini 2015).md
-#tests/fixtures/workflow_manual_edits/seeds/(Albini 2013).md
-#tests/fixtures/workflow_manual_edits/seeds/(Calbini 2015).md
+# tests/fixtures/workflow_manual_edits/goldens/(Albini 2013).md
+# tests/fixtures/workflow_manual_edits/goldens/(Calbini 2015).md
+# tests/fixtures/workflow_manual_edits/seeds/(Albini 2013).md
+# tests/fixtures/workflow_manual_edits/seeds/(Calbini 2015).md
 ## tests/fixtures/workflow_manual_edits/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 ## tests/fixtures/workflow_manual_edits/seeds/(Calbini 2015) On disregarding destructive emotions.pdf
 
-#tests/fixtures/workflow_new_pdfs/goldens/(Albini 2013).md
-#tests/fixtures/workflow_new_pdfs/goldens/(Balbini 2014).md
+# tests/fixtures/workflow_new_pdfs/goldens/(Albini 2013).md
+# tests/fixtures/workflow_new_pdfs/goldens/(Balbini 2014).md
 ## tests/fixtures/workflow_new_pdfs/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 ## tests/fixtures/workflow_new_pdfs/seeds/(Balbini 2014) On dealing with constructive emotions.pdf
 
-#tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013).md
+# tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013).md
 ## tests/fixtures/workflow_pdf_unchanged/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 
-#tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013).md
+# tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013).md
 ## tests/fixtures/workflow_unquoted_mtime/seeds/(Albini 2013) On dealing with destructive emotions.pdf
 
 ### --- Support tools ---
@@ -143,7 +145,7 @@ tests/test_utils.py
 # tools/backfill_thumbnails.py
 # tools/concat_files.py
 # tools/discover_pdfs.py
-tools/fill_synopses.py
+# tools/fill_synopses.py
 # tools/show_pdf_info.py
 # tools/time_extraction.py
 
