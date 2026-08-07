@@ -13,7 +13,7 @@ tmp/project_tree.txt
 README.md
 GOALS.md
 TODO.md
-# HISTORY.md
+HISTORY.md
 
 # Historical plan to combine `anima` and `pdf-annotations` for a fully macOS-native workflow. Complete 2026-07-19.
 # docs/TARGET_ARCHITECTURE.md
@@ -96,10 +96,10 @@ tests/test_pdf_to_markdown_e2e.py
 # tests/fixtures/link_merge/expected.ndjson
 # tests/fixtures/link_merge/input.ndjson
 # tests/fixtures/malformed/input.ndjson
-# tests/fixtures/pdf_to_markdown_e2e/expected_markdown.md
-# tests/fixtures/pdf_to_markdown_e2e/expected_raw.ndjson
-# tests/fixtures/pdf_to_markdown_e2e/expected_streamlined.ndjson
-# tests/fixtures/pdf_to_markdown_e2e/final_streamlined.ndjson
+tests/fixtures/pdf_to_markdown_e2e/expected_markdown.md
+tests/fixtures/pdf_to_markdown_e2e/expected_raw.ndjson
+tests/fixtures/pdf_to_markdown_e2e/expected_streamlined.ndjson
+tests/fixtures/pdf_to_markdown_e2e/final_streamlined.ndjson
 ## tests/fixtures/pdf_to_markdown_e2e/input.pdf
 # tests/fixtures/simple/expected.ndjson
 # tests/fixtures/simple/input.ndjson
@@ -163,7 +163,7 @@ tests/test_pdf_to_markdown_e2e.py
 
 # Obsidian/docs/Fleeting-Notes-Processing-Checklist.md
 # Obsidian/docs/Query-Candidates.md
-# Obsidian/docs/The-Studio-Manual.md
+Obsidian/docs/The-Studio-Manual.md
 # Obsidian/docs/TODO-Obsidian.md
 
 ### --- Obsidian tooling for The Studio, the Zettelkasten which uses the PDF annotations ---
@@ -172,5 +172,5 @@ tests/test_pdf_to_markdown_e2e.py
 # Obsidian/Scripts/bibnote_overview.js
 # Obsidian/Scripts/fleeting_block_markers.js
 # Obsidian/Scripts/next_in_chain.js
-# Obsidian/Scripts/open_pdf_resume.js
+Obsidian/Scripts/open_pdf_resume.js
 # Obsidian/Scripts/workbench_list.js

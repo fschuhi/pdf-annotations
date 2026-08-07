@@ -2,20 +2,23 @@
 
 (Note: "I" in the following paragraphs refer to the user, "you" to you as the AI model.)
 
-**Charter:** This file answers: where is the project going, in what order, and what happens next. It holds the strategic vision, the phased roadmap, and goals that need a strategy discussion before they are actionable. The _Current Session Pointer_ below is the single canonical "where we are / what's next" -- keep it to a few lines, update it, don't grow it; `FIRST_PROMPT.md` sends the reader here first. Concrete, startable work lives in `TODO.md`; the resolved-work record lives in `HISTORY.md` or `CHANGELOG.md`(on the heap, out of the per-session dump); architecture, contract, and settled decisions live in `README.md`.
+**Charter:** This file answers: where is the project going, in what order, and what happens next. It holds the strategic vision, the phased roadmap, and goals that need a strategy discussion before they are actionable. The _Current Session Pointer_ below is the single canonical "where we are / what's next" -- keep it to a few lines, update it, don't grow it; `FIRST_PROMPT.md` sends the reader here first. Concrete, startable work lives in `TODO.md`; the resolved-work record lives in `HISTORY.md` or `CHANGELOG.md` (on the heap, out of the routine per-session dump); architecture, contract, and settled decisions live in `README.md`.
 
 ---
 
 ## 📍 Current Session Pointer
 
-Synopsis feature landed 2026-08-02: `pdf_annot/synopsis.py` + `notes.py` additions render and insert ISBNdb synopsis callouts, `tools/fill_synopses.py` (`make fill-synopses`) is the sole insertion mechanism (not wired into `sync.py`), gated on the new `synopses_dir` config. Live-tested successfully against individual bibnotes via `--pdf-id`. See `HISTORY.md`.
+Focused production-path architecture review and backlog reset completed 2026-08-06. The review found no major architectural problems: indexing, safety gates, annotation transformation, preservation-aware composition, and atomic persistence have clear ownership. `TODO.md` is now deliberately lean, prioritizing quick witnessed corrections and low-priority maintenance over further development for its own sake.
 
 **What's next:**
-1. Review and prioritize the backlog in `TODO.md`.
+1. Tier 1 quick win: strengthen existing-note frontmatter safety and make declines operationally loud.
+2. Then complete the duplicate-id reporting and annotation-separator contract quick wins.
+3. Otherwise, return attention to working with books, highlights, PDFs, and ideas in The Studio.
 
 Everything else sits in `TODO.md` until it earns a place here.
 
 ---
 
 ## 🎯 Strategic Vision
+
 Create a robust, automated "drumbeat" for knowledge management that propels the reading, highlighting, and writing process (Zettelkasten) in Obsidian. The system must reliably handle 1600+ PDF files, including complex multi-column layouts, and integrate seamlessly with Obsidian Dataview for process tracking.
