@@ -2,10 +2,9 @@
 
 (Note: "I" in the following paragraphs refer to the user, "you" to you as the AI model.)
 
-- The resolved-work record: what was built, when, why it mattered, and which decisions should not be casually reversed.
-- This is the trophy case, not a second reference manual or backlog. For forward work see `TODO.md`; for direction see `GOALS.md`; for the architecture as it currently stands see `README.md`.
-- `HISTORY.md` is normally excluded from routine filesdumps to save context. Include it when reviewing architecture, revisiting an existing subsystem, or entering territory where earlier decisions may matter.
-- Treat this file as append-oriented. When later work changes the architecture, add a new dated entry rather than maintaining old entries as current documentation.
+- The resolved-work record: what was built and when (note date, or have the points in roughly reverse-chronological order).
+- This is the trophy case -- kept in the repo, **out of the per-session filesdump** (so it no longer rides along every session).
+- For *forward* work see `TODO.md`; for direction see `GOALS.md`; for the architecture as it stands see `README.md`.
 - See "Workflow for the Whole Session (CRITICAL)" in `LLM_INSTRUCTIONS.md` for the interplay between `TODO.md` and this file.
 
 ---

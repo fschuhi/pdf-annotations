@@ -124,12 +124,17 @@ gentree: ## Save tree structure to tmp/project_tree.txt
 	@tree -I "node_modules|dist|build|.git|.idea|.vscode|.venv|__pycache__|tmp|cache|*egg-info" > tmp/project_tree.txt
 	@echo "Project tree saved to tmp/project_tree.txt"
 
-filesdump: gentree ## Create context dump for LLMs with manifest.lst
+filesdump: gentree ## Create context dump for LLMs (manifest.lst)
 	@echo "--- Generating filesdump ---"
 	$(RUN_WITH_PATH) python tools/concat_files.py manifest.lst > tmp/filesdump.txt
 	@echo "Filesdump created at tmp/filesdump.txt"
 
-filesdump-compact: gentree ## Create context dump for LLMs with manifest-compact.lst
+filesdump-detailed: gentree ## Create context dump for LLMs with per-file size details (manifest.lst)
+	@echo "--- Generating filesdump ---"
+	$(RUN_WITH_PATH) python tools/concat_files.py --detailed --sort manifest.lst > tmp/filesdump.txt
+	@echo "Filesdump created at tmp/filesdump.txt"
+
+filesdump-compact: gentree ## Create context dump for LLMs ()manifest-compact.lst)
 	@echo "--- Generating filesdump ---"
 	$(ACTIVATE) && python tools/concat_files.py manifest-compact.lst > tmp/filesdump-compact.txt
 	@echo "Filesdump created at tmp/filesdump-compact.txt"
